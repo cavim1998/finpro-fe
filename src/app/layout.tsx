@@ -1,10 +1,8 @@
-import { Toaster } from "@/components/ui/sonner";
-import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import type { Metadata } from "next";
-import { SessionProvider } from "next-auth/react";
 import { Geist, Geist_Mono } from "next/font/google";
-import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { Providers } from "@/components/Providers";
 import { Suspense } from "react";
 
 const geistSans = Geist({
@@ -32,13 +30,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>
-          <ReactQueryProvider>
-            <NuqsAdapter>
-              <Suspense>{children}</Suspense>
-            </NuqsAdapter>
-          </ReactQueryProvider>
-        </SessionProvider>
+        {/* Gunakan Wrapper Providers disini */}
+        <Providers>
+           <Suspense fallback={<div>Loading...</div>}>
+             {children}
+           </Suspense>
+        </Providers>
 
         <Toaster richColors position="top-right" />
       </body>
