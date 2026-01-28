@@ -22,7 +22,7 @@ export default function MasterDataSection() {
       </div>
 
       {/* Main Content Area */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[400px]">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-100">
         {subTab === 'USERS' && <UsersTable />}
         {subTab === 'OUTLETS' && <OutletsGrid />}
         {subTab === 'ITEMS' && <ItemsGrid />}
