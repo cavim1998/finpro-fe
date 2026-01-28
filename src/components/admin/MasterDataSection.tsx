@@ -35,8 +35,8 @@ export default function MasterDataSection() {
 
 const UsersTable = () => {
   const users = [
-    { id: 1, name: 'Budi Santoso', role: 'Outlet Admin', outlet: 'Cabang Binjai' },
-    { id: 2, name: 'Siti Aminah', role: 'Washing Worker', outlet: 'Cabang Medan' },
+    { id: 1, name: 'Budi Santoso', role: 'Outlet Admin', outlet: 'Cabang Tangerang' },
+    { id: 2, name: 'Siti Aminah', role: 'Washing Worker', outlet: 'Cabang Jakarta' },
   ];
 
   return (

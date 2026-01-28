@@ -22,7 +22,7 @@ export const OrderListView = ({
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
        <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-          <p className="text-sm text-gray-500">Outlet: Cabang Binjai (ID: 104)</p>
+          <p className="text-sm text-gray-500">Outlet: Cabang Tangerang (ID: 104)</p>
        </div>
 
        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
