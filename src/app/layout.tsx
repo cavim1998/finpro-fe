@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/Providers";
 import { Suspense } from "react";
+import "./globals.css";
+import "leaflet/dist/leaflet.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +33,7 @@ export default function RootLayout({
       >
         {/* Gunakan Wrapper Providers disini */}
         <Providers>
-           <Suspense fallback={<div>Loading...</div>}>
-             {children}
-           </Suspense>
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         </Providers>
 
         <Toaster richColors position="top-right" />
