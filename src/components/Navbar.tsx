@@ -14,7 +14,7 @@ const Navbar = () => {
 
                 {/* Logo Teks */}
                 <a href="/">
-                    <h1 className='text-4xl font-bold text-[#1dacbc]'>
+                    <h1 className='text-4xl font-bold text-[#1dacbc] tracking-tight'>
                         LAUNDRYQ
                     </h1>
                 </a>
