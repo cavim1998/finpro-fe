@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { Menu, AlertTriangle, LayoutDashboard, Truck, ShoppingBag, FileText, Database } from 'lucide-react';
-import { TabType, UserRole } from '@/types/admin';
+import { TabType, RoleCode } from '@/types';
 
 interface NavbarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
   onOpenBypass: () => void;
-  userRole: UserRole;
+  roleCode: RoleCode;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenBypass, userRole }) => {
+const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenBypass, roleCode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navClass = (tab: TabType) => 
@@ -32,7 +32,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenBypass, 
               <Menu size={24} />
             </button>
             <span className="text-xl font-bold text-[#17A2B8]">
-              CHINGU <span className="text-xs font-normal text-gray-500 block sm:inline">{userRole.replace('_', ' ')}</span>
+              CHINGU <span className="text-xs font-normal text-gray-500 block sm:inline">{roleCode.replace('_', ' ')}</span>
             </span>
             
             {/* Desktop Menu (Hidden on Mobile) */}
@@ -53,7 +53,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenBypass, 
               </button>
 
               {/* Menu Khusus SUPER_ADMIN */}
-              {userRole === 'SUPER_ADMIN' && (
+              {roleCode === 'SUPER_ADMIN' && (
                 <button onClick={() => setActiveTab('MASTER')} className={navClass('MASTER')}>
                   <Database size={18}/> Master Data
                 </button>
@@ -69,7 +69,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenBypass, 
               <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
             </button>
             <div className="h-8 w-8 rounded-full bg-[#17A2B8] flex items-center justify-center text-white font-bold text-xs">
-              {userRole === 'SUPER_ADMIN' ? 'SA' : 'OA'}
+              {roleCode === 'SUPER_ADMIN' ? 'SA' : 'OA'}
             </div>
           </div>
         </div>
@@ -81,7 +81,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenBypass, 
           <button onClick={() => setActiveTab('DASHBOARD')} className="block w-full text-left py-2 px-3 text-gray-600">Dashboard</button>
           <button onClick={() => setActiveTab('PICKUP')} className="block w-full text-left py-2 px-3 text-gray-600">Pickup</button>
           <button onClick={() => setActiveTab('ORDERS')} className="block w-full text-left py-2 px-3 text-gray-600">Orders</button>
-          {userRole === 'SUPER_ADMIN' && (
+          {roleCode === 'SUPER_ADMIN' && (
              <button onClick={() => setActiveTab('MASTER')} className="block w-full text-left py-2 px-3 text-[#17A2B8] font-bold">Master Data</button>
           )}
         </div>
