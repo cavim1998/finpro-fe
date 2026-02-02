@@ -23,7 +23,7 @@ function WhyMustCard(props: WhyMustCardProps) {
         </div>
 
         {/* Description */}
-        <div className="flex-grow flex items-center justify-center">
+        <div className="grow flex items-center justify-center">
           <p className="text-base text-gray-600 text-center leading-relaxed">{props.desc}</p>
         </div>
       </div>

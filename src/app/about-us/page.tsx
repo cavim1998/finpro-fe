@@ -80,7 +80,7 @@ export default function AboutUsPage() {
             <Navbar />
 
             {/* Hero Section */}
-            <div className="bg-gradient-to-r from-[#1dacbc] to-[#14939e] text-white py-20">
+            <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-20">
                 <div className="container mx-auto px-4 text-center">
                     <h1 className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
                         About LaundryQ
@@ -187,7 +187,7 @@ export default function AboutUsPage() {
             </div>
 
             {/* CTA Section */}
-            <div className="bg-gradient-to-r from-[#1dacbc] to-[#14939e] text-white py-16">
+            <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-16">
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-4xl font-bold mb-6">
                         Ready to Experience the Best Laundry Service?

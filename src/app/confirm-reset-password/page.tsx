@@ -57,9 +57,9 @@ export default function ConfirmResetPasswordPage() {
         <div className="flex flex-col min-h-screen bg-white">
             <Navbar />
             
-            <div className="flex-grow">
+            <div className="grow">
                 {/* Hero Section */}
-                <div className="bg-gradient-to-r from-[#1dacbc] to-[#14939e] text-white py-12">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-12">
                     <div className="container mx-auto px-4">
                         <h1 className="text-4xl md:text-5xl font-extrabold">Create New Password</h1>
                         <p className="text-[#e8faf7] text-lg mt-2">Enter your new password below</p>

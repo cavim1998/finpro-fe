@@ -48,7 +48,7 @@ const page = () => {
             <div className='min-h-screen bg-[#f9f9f9]'>
 
                 {/* Hero Section */}
-                <div className="bg-gradient-to-r from-[#1dacbc] to-[#14939e] text-white py-20">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-20">
                     <div className="container mx-auto px-4 text-center">
                         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
                             Terms & Conditions

@@ -26,7 +26,7 @@ function ReviewsCard(props: ReviewsCardProps) {
                 </div>
 
                 {/* Review Text */}
-                <div className="flex-grow">
+                <div className="grow">
                     <p className="text-base text-gray-600 leading-relaxed italic">
                         "{props.review}"
                     </p>
@@ -45,7 +45,7 @@ function ReviewsCard(props: ReviewsCardProps) {
                 {/* Customer Info */}
                 <div className="flex items-center gap-3">
                     {/* Avatar */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1dacbc] to-[#14939e] text-white font-bold flex items-center justify-center text-sm shadow-md">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-[#1dacbc] to-[#14939e] text-white font-bold flex items-center justify-center text-sm shadow-md">
                         {getInitials(props.name)}
                     </div>
                     

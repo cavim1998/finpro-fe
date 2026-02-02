@@ -16,7 +16,7 @@ interface ProfileCardProps {
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ data }) => {
     return (
-        <div className="w-full bg-gradient-to-br from-[#f0fefb] to-[#ffffff] rounded-lg shadow-lg overflow-hidden">
+        <div className="w-full bg-linear-to-br from-[#f0fefb] to-[#ffffff] rounded-lg shadow-lg overflow-hidden">
             <div className="container mx-auto px-4 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Profile Image Section */}
@@ -47,12 +47,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ data }) => {
                         <div className="space-y-4">
                             {/* Email */}
                             <div className="flex items-start gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-[#1dacbc] transition">
-                                <div className="flex-shrink-0">
+                                <div className="shrink-0">
                                     <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-[#e8faf7]">
                                         <FaEnvelope className="text-[#1dacbc] text-lg" />
                                     </div>
                                 </div>
-                                <div className="flex-grow">
+                                <div className="grow">
                                     <p className="text-sm font-medium text-gray-500">Email</p>
                                     <p className="text-lg font-semibold text-gray-800">{data.email}</p>
                                 </div>
@@ -61,12 +61,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ data }) => {
                             {/* Phone */}
                             {data.phone && (
                                 <div className="flex items-start gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-[#1dacbc] transition">
-                                    <div className="flex-shrink-0">
+                                    <div className="shrink-0">
                                         <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-[#e8faf7]">
                                             <FaPhone className="text-[#1dacbc] text-lg" />
                                         </div>
                                     </div>
-                                    <div className="flex-grow">
+                                    <div className="grow">
                                         <p className="text-sm font-medium text-gray-500">Phone Number</p>
                                         <p className="text-lg font-semibold text-gray-800">{data.phone}</p>
                                     </div>
@@ -76,12 +76,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ data }) => {
                             {/* Address */}
                             {data.address && (
                                 <div className="flex items-start gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-[#1dacbc] transition">
-                                    <div className="flex-shrink-0">
+                                    <div className="shrink-0">
                                         <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-[#e8faf7]">
                                             <FaMapMarkerAlt className="text-[#1dacbc] text-lg" />
                                         </div>
                                     </div>
-                                    <div className="flex-grow">
+                                    <div className="grow">
                                         <p className="text-sm font-medium text-gray-500">Address</p>
                                         <p className="text-lg font-semibold text-gray-800">{data.address}</p>
                                     </div>
@@ -91,12 +91,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ data }) => {
                             {/* Join Date */}
                             {data.joinDate && (
                                 <div className="flex items-start gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-[#1dacbc] transition">
-                                    <div className="flex-shrink-0">
+                                    <div className="shrink-0">
                                         <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-[#e8faf7]">
                                             <FaCalendarAlt className="text-[#1dacbc] text-lg" />
                                         </div>
                                     </div>
-                                    <div className="flex-grow">
+                                    <div className="grow">
                                         <p className="text-sm font-medium text-gray-500">Member Since</p>
                                         <p className="text-lg font-semibold text-gray-800">{data.joinDate}</p>
                                     </div>

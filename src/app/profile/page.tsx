@@ -160,9 +160,9 @@ export default function ProfilePage() {
             <Navbar />
             
             {/* Main Content */}
-            <div className="flex-grow">
+            <div className="grow">
                 {/* Hero Section */}
-                <div className="bg-gradient-to-r from-[#1dacbc] to-[#14939e] text-white py-8">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-8">
                     <div className="container mx-auto px-4">
                         <h1 className="text-4xl md:text-5xl font-extrabold">My Profile</h1>
                         <p className="text-[#e8faf7] text-lg mt-2">Manage your personal information</p>
@@ -192,7 +192,7 @@ export default function ProfilePage() {
                     {!loading && profile && !profile.verified && (
                         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded">
                             <div className="flex">
-                                <div className="flex-shrink-0">
+                                <div className="shrink-0">
                                     <span className="text-yellow-400">⚠</span>
                                 </div>
                                 <div className="ml-3">
