@@ -1,22 +1,30 @@
 interface WhyMustCardProps {
-  image: string;
+  icon: React.ReactNode;
   title: string;
   desc: string;
 }
 
 function WhyMustCard(props: WhyMustCardProps) {
   return (
-    <div className="bg-white rounded-lg overflow-hidden border shadow-md">
-      <div className="p-6 space-y-3">
-        <div className="flex justify-center w-auto h-65">
-          <img src={props.image} alt={props.title} className="mb-3" />
+    <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300 h-full">
+      <div className="p-8 space-y-4 flex flex-col h-full">
+        
+        {/* Icon */}
+        <div className="flex justify-center pt-2">
+          {props.icon}
         </div>
-        <hr />
+
+        {/* Divider */}
+        <hr className="border-gray-200" />
+
+        {/* Title */}
         <div className="flex justify-center">
-          <p className="text-3xl font-extrabold text-[#14939e] tracking-tight">{props.title}</p>
+          <p className="text-2xl font-bold text-[#14939e] tracking-tight text-center">{props.title}</p>
         </div>
-        <div className="flex justify-center">
-          <p className="text-xl text-[#6b7280] text-justify">{props.desc}</p>
+
+        {/* Description */}
+        <div className="flex-grow flex items-center justify-center">
+          <p className="text-base text-gray-600 text-center leading-relaxed">{props.desc}</p>
         </div>
       </div>
     </div>

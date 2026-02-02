@@ -1,26 +1,27 @@
 import React from 'react'
 import WhyMustCard from './WhyMustCard';
+import { FaShieldAlt, FaTruck, FaCheckCircle, FaTag } from 'react-icons/fa';
 
 const WhyMust = () => {
 
-    const experienceItems: { image: string; title: string; desc: string; }[] = [
+    const experienceItems: { icon: React.ReactNode; title: string; desc: string; }[] = [
         {
-            image: "/ImgAssets/laundry-basket.png",
+            icon: <FaShieldAlt className="text-5xl text-[#1dacbc]" />,
             title: "Trusted Service",
             desc: "We prioritize customer satisfaction and have built a reputation for reliability and excellence in laundry services."
         },
         {
-            image: "/ImgAssets/laundry-basket.png",
+            icon: <FaTruck className="text-5xl text-[#1dacbc]" />,
             title: "Express Delivery",
             desc: "We offer fast and reliable delivery services to ensure your laundry is returned to you quickly and efficiently."
         },
         {
-            image: "/ImgAssets/laundry-basket.png",
+            icon: <FaCheckCircle className="text-5xl text-[#1dacbc]" />,
             title: "Quality Assurance",
             desc: "We ensure all garments are cleaned and handled with care, maintaining the highest standards of quality."
         },
         {
-            image: "/ImgAssets/laundry-basket.png",
+            icon: <FaTag className="text-5xl text-[#1dacbc]" />,
             title: "Affordable Pricing",
             desc: "We offer competitive pricing without compromising on quality, making our services accessible to all customers."
         }
@@ -40,7 +41,7 @@ const WhyMust = () => {
                             return (
                                 <WhyMustCard
                                     key={index}
-                                    image={experienceItem.image}
+                                    icon={experienceItem.icon}
                                     title={experienceItem.title}
                                     desc={experienceItem.desc}
                                 />
