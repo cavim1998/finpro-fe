@@ -70,7 +70,8 @@ export function WorkerOrders() {
   const workerStation = user?.workerStation || "WASHING";
   const config = stationConfig[workerStation];
   const StationIcon = config.icon;
-  const isChecked = user ? isUserCheckedIn(user.id) : false;
+  const outletStaffId = user?.outletStaffId;
+  const isChecked = outletStaffId ? isUserCheckedIn(outletStaffId) : false;
 
   // Get orders for this station
   const pendingOrders = orders.filter(

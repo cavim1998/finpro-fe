@@ -7,6 +7,7 @@ import { User, UserProfile, RoleCode, StationType } from '@/types';
 export interface AppUser extends User {
   profile?: UserProfile;
   outletId?: number;
+  outletStaffId?: number;
   workerStation?: StationType;
 }
 
@@ -23,7 +24,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Demo users for each role
-const demoUsers: Record<string, User & { profile: UserProfile; outletStaffInfo?: { outletId: number; workerStation?: StationType } }> = {
+const demoUsers: Record<
+  string,
+  User & {
+    profile: UserProfile;
+    outletStaffInfo?: { outletId: number; outletStaffId: number; workerStation?: StationType };
+  }
+> = {
   'customer@demo.com': {
     id: 'cust-1',
     email: 'customer@demo.com',
@@ -55,7 +62,7 @@ const demoUsers: Record<string, User & { profile: UserProfile; outletStaffInfo?:
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    outletStaffInfo: { outletId: 1 },
+    outletStaffInfo: { outletId: 1, outletStaffId: 5 },
   },
   'washer@demo.com': {
     id: 'worker-wash-1',
@@ -72,7 +79,7 @@ const demoUsers: Record<string, User & { profile: UserProfile; outletStaffInfo?:
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    outletStaffInfo: { outletId: 1, workerStation: 'WASHING' },
+    outletStaffInfo: { outletId: 1, outletStaffId: 2, workerStation: "WASHING" },
   },
   'ironer@demo.com': {
     id: 'worker-iron-1',
@@ -89,7 +96,7 @@ const demoUsers: Record<string, User & { profile: UserProfile; outletStaffInfo?:
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    outletStaffInfo: { outletId: 1, workerStation: 'IRONING' },
+    outletStaffInfo: { outletId: 1, outletStaffId: 3, workerStation: "IRONING" },
   },
   'packer@demo.com': {
     id: 'worker-pack-1',
@@ -106,7 +113,7 @@ const demoUsers: Record<string, User & { profile: UserProfile; outletStaffInfo?:
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    outletStaffInfo: { outletId: 1, workerStation: 'PACKING' },
+    outletStaffInfo: { outletId: 1, outletStaffId: 4, workerStation: 'PACKING' },
   },
   'admin@demo.com': {
     id: 'admin-1',
@@ -123,7 +130,7 @@ const demoUsers: Record<string, User & { profile: UserProfile; outletStaffInfo?:
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    outletStaffInfo: { outletId: 1 },
+    outletStaffInfo: { outletId: 1, outletStaffId: 1 },
   },
   'superadmin@demo.com': {
     id: 'super-1',
@@ -155,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const appUser: AppUser = {
         ...demoUser,
         outletId: demoUser.outletStaffInfo?.outletId,
+        outletStaffId: demoUser.outletStaffInfo?.outletStaffId,
         workerStation: demoUser.outletStaffInfo?.workerStation,
       };
       setUser(appUser);
