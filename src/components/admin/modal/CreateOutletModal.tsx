@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Store, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
-import { useCreateOutlet, useUpdateOutlet } from "@/hooks/useOutlet";
+import { useCreateOutlet, useUpdateOutlet } from "@/hooks/api/useOutlet";
 import { outletSchema, OutletFormData } from "@/lib/schema/outlet.schema";
 import { FormInput } from "@/components/FormInput";
 import { CoordinateDisplay } from "@/components/CoordinateDisplay";
