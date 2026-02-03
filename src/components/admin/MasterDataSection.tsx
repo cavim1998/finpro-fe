@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Store, Shirt } from "lucide-react";
+import { Users, Store, Shirt, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { UsersTable } from "./MasterDataSection/UsersTable";
 import { OutletsGrid } from "./MasterDataSection/OutletsGrid";
 import { ItemsGrid } from "./MasterDataSection/ItemsGrid";
@@ -9,6 +10,7 @@ import CreateOutletModal from "@/components/admin/modal/CreateOutletModal";
 import CreateItemModal from "@/components/admin/modal/CreateItemModal";
 import CreateEmployeeModal from "@/components/admin/modal/CreateEmployeeModal";
 import DeleteConfirmationModal from "@/components/admin/modal/DeleteConfirmationModal";
+import { useOutlets, useDeleteOutlet } from "@/hooks/useOutlet";
 
 type SubTab = "USERS" | "OUTLETS" | "ITEMS";
 
@@ -18,13 +20,20 @@ export default function MasterDataSection() {
   const [showItemModal, setShowItemModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedOutlet, setSelectedOutlet] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     id: number;
     name: string;
     type: SubTab;
   } | null>(null);
-  const [selectedOutlet, setSelectedOutlet] = useState<any>(null);
 
+  const {
+    data: outlets = [],
+    isLoading: isLoadingOutlets,
+    isError: isErrorOutlets,
+  } = useOutlets();
+
+  const deleteOutletMutation = useDeleteOutlet();
   const handleEditUser = (user: any) => {
     setSelectedUser(user);
     setShowEmployeeModal(true);
@@ -35,15 +44,7 @@ export default function MasterDataSection() {
     setShowEmployeeModal(true);
   };
 
-  const handleDelete = (id: number, name: string, type: SubTab) => {
-    setDeleteTarget({ id, name, type });
-  };
-
-  const confirmDelete = () => {
-    console.log("Deleted:", deleteTarget);
-    setDeleteTarget(null);
-  };
-
+  // Outlet Handlers
   const handleEditOutlet = (outlet: any) => {
     setSelectedOutlet(outlet);
     setShowOutletModal(true);
@@ -52,6 +53,33 @@ export default function MasterDataSection() {
   const handleCreateOutlet = () => {
     setSelectedOutlet(null);
     setShowOutletModal(true);
+  };
+
+  // Generic Delete Setup
+  const handleDeleteTrigger = (id: number, name: string, type: SubTab) => {
+    setDeleteTarget({ id, name, type });
+  };
+
+  // Confirm Delete Action
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === "OUTLETS") {
+      deleteOutletMutation.mutate(deleteTarget.id, {
+        onSuccess: () => {
+          toast.success(`Outlet ${deleteTarget.name} berhasil dihapus`);
+          setDeleteTarget(null);
+        },
+        onError: (err: any) => {
+          console.error(err);
+          toast.error("Gagal menghapus outlet");
+        },
+      });
+    } else {
+      console.log("Deleted Mock:", deleteTarget);
+      toast.info(`Simulasi hapus ${deleteTarget.type}: ${deleteTarget.name}`);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -84,27 +112,43 @@ export default function MasterDataSection() {
       </div>
 
       {/* Content Area */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[400px]">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-100">
         {subTab === "USERS" && (
           <UsersTable
             onAdd={handleAddUser}
             onEdit={handleEditUser}
-            onDelete={(id, name) => handleDelete(id, name, "USERS")}
+            onDelete={(id, name) => handleDeleteTrigger(id, name, "USERS")}
           />
         )}
 
-        {subTab === "OUTLETS" && (
-          <OutletsGrid
-            onCreate={handleCreateOutlet}
-            onEdit={handleEditOutlet}
-            onDelete={(id, name) => console.log("Delete", id)}
-          />
-        )}
+        {subTab === "OUTLETS" &&
+          (isLoadingOutlets ? (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+              <Loader2 className="animate-spin mb-2" size={32} />
+              <p>Memuat data outlet...</p>
+            </div>
+          ) : isErrorOutlets ? (
+            <div className="text-center py-10 text-red-500">
+              Gagal mengambil data outlet. Pastikan backend berjalan.
+            </div>
+          ) : (
+            <OutletsGrid
+              data={outlets}
+              onCreate={handleCreateOutlet}
+              onEdit={handleEditOutlet}
+              onDelete={(id) => {
+                const outletName =
+                  outlets.find((o: any) => o.id === id)?.name || "Outlet";
+                handleDeleteTrigger(id, outletName, "OUTLETS");
+              }}
+            />
+          ))}
 
+        {/* TAB ITEMS */}
         {subTab === "ITEMS" && (
           <ItemsGrid
             onCreate={() => setShowItemModal(true)}
-            onDelete={(id, name) => handleDelete(id, name, "ITEMS")}
+            onDelete={(id, name) => handleDeleteTrigger(id, name, "ITEMS")}
           />
         )}
       </div>
@@ -115,11 +159,14 @@ export default function MasterDataSection() {
         onClose={() => setShowEmployeeModal(false)}
         initialData={selectedUser}
       />
+
+      {/* Modal Outlet dengan Hooks yang baru */}
       <CreateOutletModal
         isOpen={showOutletModal}
         onClose={() => setShowOutletModal(false)}
         initialData={selectedOutlet}
       />
+
       <CreateItemModal
         isOpen={showItemModal}
         onClose={() => setShowItemModal(false)}
