@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 declare module "next-auth" {
@@ -12,18 +12,25 @@ declare module "next-auth" {
   }
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  trustHost: true,
+export const authOptions: NextAuthOptions = {
   providers: [
     Credentials({
-      async authorize(user) {
-        if (!user) return null;
-        return user;
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials: any) {
+        if (!credentials) return null;
+        return {
+          id: credentials.id || "1",
+          name: credentials.name || "User",
+          email: credentials.email || "",
+        };
       },
     }),
   ],
   pages: {
-    signIn: "/login",
+    signIn: "/signin",
   },
   session: {
     strategy: "jwt",
@@ -42,4 +49,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session;
     },
   },
-});
+};
