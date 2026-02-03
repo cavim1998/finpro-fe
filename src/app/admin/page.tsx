@@ -10,7 +10,7 @@ import { DashboardView } from '@/components/admin/DashboardView';
 import { OrderListView } from '@/components/admin/OrderListView';
 import ReportSection from '@/components/admin/ReportSection';
 import MasterDataSection from '@/components/admin/MasterDataSection';
-import { Order, PickupRequest, TabType, UserRole } from '@/types/admin';
+import { Order, PickupRequest, TabType, RoleCode } from '@/types';
 
 export const mockPickupRequests: PickupRequest[] = [
   {
@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
   const [showBypassModal, setShowBypassModal] = useState(false);
   const [page, setPage] = useState(1);
   
-  const userRole: UserRole = 'SUPER_ADMIN'; 
+  const roleCode: RoleCode = 'SUPER_ADMIN'; 
   const TAKE = 5;
 
   useEffect(() => setPage(1), [activeTab]);
@@ -63,13 +63,13 @@ export default function AdminDashboardPage() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onOpenBypass={() => setShowBypassModal(true)} 
-        userRole={userRole}
+        roleCode={roleCode}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === 'DASHBOARD' && (
           <DashboardView 
-            userRole={userRole}
+            roleCode={roleCode}
             onNavigate={setActiveTab}
             onProcessPickup={() => setShowCreateModal(true)}
           />
@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
 
         {activeTab === 'REPORT' && <ReportSection />}
         
-        {activeTab === 'MASTER' && userRole === 'SUPER_ADMIN' && <MasterDataSection />}
+        {activeTab === 'MASTER' && roleCode === 'SUPER_ADMIN' && <MasterDataSection />}
       </main>
 
       <CreateOrderModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
