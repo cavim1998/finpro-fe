@@ -7,6 +7,7 @@ import Cookies from 'js-cookie';
 import UploadPhotoModal from '@/components/modals/UploadPhotoModal';
 import ChangeEmailModal from '@/components/modals/ChangeEmailModal';
 import ChangePasswordModal from '@/components/modals/ChangePasswordModal';
+import AddressManagement from '@/components/profile/AddressManagement';
 import { axiosInstance } from '@/lib/axios';
 
 interface UserProfile {
@@ -234,6 +235,7 @@ export default function ProfilePage() {
                                 <h4 className="font-semibold text-gray-800 mb-3">Account</h4>
                                 <ul className="space-y-2">
                                     <li><a href="#personal" className="text-[#1dacbc] hover:underline text-sm">Personal Data</a></li>
+                                    <li><a href="#addresses" className="text-[#1dacbc] hover:underline text-sm">My Addresses</a></li>
                                     <li><a href="#email" className="text-[#1dacbc] hover:underline text-sm">Email & Password</a></li>
                                 </ul>
                             </div>
@@ -320,10 +322,19 @@ export default function ProfilePage() {
                                 </div>
                             </div>
 
+                            {/* Address Management Section */}
+                            <div id="addresses" className="bg-white rounded-lg shadow-md p-6">
+                                <h3 className="text-2xl font-bold text-[#1dacbc] mb-6 flex items-center">
+                                    <span className="w-8 h-8 bg-[#1dacbc] text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+                                    My Addresses
+                                </h3>
+                                <AddressManagement />
+                            </div>
+
                             {/* Email & Password Section */}
                             <div id="email" className="bg-white rounded-lg shadow-md p-6">
                                 <h3 className="text-2xl font-bold text-[#1dacbc] mb-6 flex items-center">
-                                    <span className="w-8 h-8 bg-[#1dacbc] text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+                                    <span className="w-8 h-8 bg-[#1dacbc] text-white rounded-full flex items-center justify-center mr-3 text-sm">3</span>
                                     Email & Password
                                 </h3>
 
