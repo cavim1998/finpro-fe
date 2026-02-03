@@ -46,6 +46,26 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  /* App semantic colors (enable text-status-success, bg-station-washing/10, etc.) */
+  --color-status-pending: hsl(var(--status-pending));
+  --color-status-active: hsl(var(--status-active));
+  --color-status-success: hsl(var(--status-success));
+  --color-status-warning: hsl(var(--status-warning));
+  --color-status-error: hsl(var(--status-error));
+
+  --color-station-washing: hsl(var(--station-washing));
+  --color-station-ironing: hsl(var(--station-ironing));
+  --color-station-packing: hsl(var(--station-packing));
+
+  --color-role-customer: hsl(var(--role-customer));
+  --color-role-driver: hsl(var(--role-driver));
+  --color-role-worker: hsl(var(--role-worker));
+  --color-role-admin: hsl(var(--role-admin));
+
+  /* Custom utilities used in UI */
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --shadow-card: 0 10px 25px -10px rgb(0 0 0 / 0.15);
+
 }
 
 :root {
@@ -81,6 +101,24 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Status */
+  --status-pending: 215 20% 65%;
+  --status-active: 160 58% 35%;
+  --status-success: 142 76% 36%;
+  --status-warning: 38 92% 50%;
+  --status-error: 0 84% 60%;
+
+  /* Station */
+  --station-washing: 190 90% 45%;
+  --station-ironing: 25 95% 55%;
+  --station-packing: 260 75% 60%;
+
+  /* Role */
+  --role-customer: 200 90% 50%;
+  --role-driver: 160 58% 35%;
+  --role-worker: 220 70% 55%;
+  --role-admin: 280 70% 55%;
 }
 
 .dark {
@@ -115,6 +153,24 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Status */
+  --status-pending: 215 20% 70%;
+  --status-active: 160 58% 45%;
+  --status-success: 142 76% 45%;
+  --status-warning: 38 92% 55%;
+  --status-error: 0 84% 65%;
+
+  /* Station */
+  --station-washing: 190 90% 55%;
+  --station-ironing: 25 95% 60%;
+  --station-packing: 260 75% 65%;
+
+  /* Role */
+  --role-customer: 200 90% 60%;
+  --role-driver: 160 58% 45%;
+  --role-worker: 220 70% 65%;
+  --role-admin: 280 70% 65%;
 }
 
 @layer base {
@@ -123,5 +179,15 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
   }
 }

@@ -29,7 +29,8 @@ export function DriverDashboard() {
         o.status === "DELIVERING_TO_CUSTOMER"),
   );
 
-  const isChecked = user ? isUserCheckedIn(user.id) : false;
+  const outletStaffId = user?.outletStaffId;
+  const isChecked = outletStaffId ? isUserCheckedIn(outletStaffId) : false;
   const displayName = user?.profile?.fullName || "Driver";
 
   return (

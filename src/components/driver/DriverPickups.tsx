@@ -18,7 +18,8 @@ export function DriverPickups() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("pickups");
 
-  const isChecked = user ? isUserCheckedIn(user.id) : false;
+  const outletStaffId = user?.outletStaffId;
+  const isChecked = outletStaffId ? isUserCheckedIn(outletStaffId) : false;
   const pickupOrders = getOrdersByStatus(["WAITING_DRIVER_PICKUP"]);
   const deliveryOrders = getOrdersByStatus(["READY_TO_DELIVER"]);
 
