@@ -8,55 +8,54 @@ import { RoleCode } from "@/types";
 
 type Props = {
   children: React.ReactNode;
-  roles?: RoleCode[]; // optional: batasi untuk role tertentu
-  redirectTo?: string; // default: "/attendance"
+  roles?: RoleCode[];
+  redirectTo?: string;
 };
 
-export function RequireCheckIn({
+export default function RequireCheckIn({
   children,
   roles,
   redirectTo = "/attendance",
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuth();
-  const { isUserCheckedIn } = useAttendance();
+  const { user, isAuthenticated, authReady } = useAuth();
+  const { today, loadingToday, refreshToday } = useAttendance();
 
-  // kalau belum login, kamu bisa redirect ke login (sesuaikan route kamu)
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/login");
-    }
-  }, [isAuthenticated, router]);
+    if (!authReady) return;
+    if (!isAuthenticated) router.replace("/signin");
+  }, [authReady, isAuthenticated, router]);
 
+  // refresh attendance kalau sudah authenticated
+  useEffect(() => {
+    if (!authReady) return;
+    if (isAuthenticated) {
+      refreshToday().catch(() => {});
+    }
+  }, [authReady, isAuthenticated, refreshToday]);
+
+  if (!authReady) return null;
   if (!isAuthenticated || !user) return null;
 
-  /**
-   * Default: hanya WORKER & DRIVER yang wajib check-in sebelum masuk dashboard.
-   * Kalau `roles` diberikan, maka hanya role-role itu yang wajib check-in.
-   */
   const defaultMustCheckIn = user.role === "WORKER" || user.role === "DRIVER";
   const mustCheckIn = roles ? roles.includes(user.role as RoleCode) : defaultMustCheckIn;
 
-  // AttendanceContext pakai outletStaffId (number)
-  const outletStaffId = user.outletStaffId;
-  const checkedIn = mustCheckIn
-    ? outletStaffId
-      ? isUserCheckedIn(outletStaffId)
-      : false
-    : true;
+  const isLockedToday = !!today?.isCompleted;
+  const isCheckedIn = !!today?.isCheckedIn;
 
-  // kalau belum check-in, paksa ke halaman attendance
+  const allowAccess = !mustCheckIn ? true : isCheckedIn && !isLockedToday;
+
   useEffect(() => {
-    if (mustCheckIn && !checkedIn && pathname !== redirectTo) {
+    if (!mustCheckIn) return;
+    if (loadingToday) return;
+
+    if (!allowAccess && pathname !== redirectTo) {
       router.replace(redirectTo);
     }
-  }, [mustCheckIn, checkedIn, pathname, redirectTo, router]);
+  }, [mustCheckIn, allowAccess, loadingToday, pathname, redirectTo, router]);
 
-  if (mustCheckIn && !checkedIn) {
-    // optional: render fallback (kalau redirect terasa delay)
-    return null;
-  }
+  if (mustCheckIn && (loadingToday || !allowAccess)) return null;
 
   return <>{children}</>;
 }

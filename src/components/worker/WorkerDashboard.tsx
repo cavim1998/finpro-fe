@@ -16,63 +16,69 @@ import {
   Flame,
   Package,
 } from "lucide-react";
-import { useAttendance } from "../../contexts/AttendanceContext";
-import { useAuth } from "../../contexts/AuthContext";
-import { useOrders } from "../../contexts/OrderContext";
+import { useAttendance } from "@/contexts/AttendanceContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useOrders } from "@/contexts/OrderContext";
 import Link from "next/link";
 
 const stationConfig: Record<
   StationType,
   {
     icon: React.ElementType;
-    color: string;
-    bgColor: string;
     label: string;
     waitingStatus: string;
+    colorVar: string; // CSS var name without `--`
   }
 > = {
   WASHING: {
     icon: Droplets,
-    color: "text-station-washing",
-    bgColor: "bg-station-washing/10",
     label: "Washing Station",
     waitingStatus: "ARRIVED_AT_OUTLET",
+    colorVar: "station-washing",
   },
   IRONING: {
     icon: Flame,
-    color: "text-station-ironing",
-    bgColor: "bg-station-ironing/10",
     label: "Ironing Station",
     waitingStatus: "WASHING",
+    colorVar: "station-ironing",
   },
   PACKING: {
     icon: Package,
-    color: "text-station-packing",
-    bgColor: "bg-station-packing/10",
     label: "Packing Station",
     waitingStatus: "IRONING",
+    colorVar: "station-packing",
   },
 };
+
+function formatTimeId(date: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
 
 export function WorkerDashboard() {
   const { user } = useAuth();
   const { getOrdersByStation, bypassRequests } = useOrders();
-  const { isUserCheckedIn, checkOut, getTodayAttendance } = useAttendance();
+  const { isUserCheckedIn, checkOut, getTodayOpenAttendance } = useAttendance();
 
-  const workerStation = user?.workerStation || "WASHING";
+  if (!user) return null;
+
+  const workerStation = (user.workerStation || "WASHING") as StationType;
   const config = stationConfig[workerStation];
   const StationIcon = config.icon;
 
-  const outletStaffId = user?.outletStaffId;
-  const isChecked = outletStaffId ? isUserCheckedIn(outletStaffId) : false;
-  const todayAtt = outletStaffId ? getTodayAttendance(outletStaffId) : null;
+  const outletStaffId = (user as any).outletStaffId as number | undefined;
 
-  const sinceText = todayAtt?.clockInAt
-    ? new Date(todayAtt.clockInAt).toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "-";
+  const isChecked = outletStaffId ? isUserCheckedIn(outletStaffId) : false;
+  const todayAtt = outletStaffId ? getTodayOpenAttendance(outletStaffId) : null;
+
+  const sinceText =
+    todayAtt?.clockInAt ? formatTimeId(new Date(todayAtt.clockInAt)) : "-";
+
+  // Inline station colors (no external tailwind station classes)
+  const stationColor = `hsl(var(--${config.colorVar}))`;
+  const stationBg = `hsl(var(--${config.colorVar}) / 0.10)`;
 
   const stationOrders = getOrdersByStation(workerStation);
   const pendingOrders = stationOrders.filter(
@@ -86,17 +92,20 @@ export function WorkerDashboard() {
   });
 
   const myBypassRequests = bypassRequests.filter(
-    (r) => r.requestedByWorkerId === user?.id && r.status === "REQUESTED",
+    (r) => r.requestedByWorkerId === user.id && r.status === "REQUESTED",
   );
 
-  const displayName = user?.profile?.fullName || "Worker";
+  const displayName = user.profile?.fullName || "Worker";
 
   const [openCheckout, setOpenCheckout] = React.useState(false);
 
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className={`p-4 pt-6 pb-8 rounded-b-3xl ${config.bgColor}`}>
+      <header
+        className="p-4 pt-6 pb-8 rounded-b-3xl"
+        style={{ backgroundColor: stationBg }}
+      >
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-muted-foreground text-sm">Welcome back,</p>
@@ -114,9 +123,10 @@ export function WorkerDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div
-                className={`w-12 h-12 rounded-xl ${config.bgColor} flex items-center justify-center`}
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: stationBg }}
               >
-                <StationIcon className={`h-6 w-6 ${config.color}`} />
+                <StationIcon className="h-6 w-6" style={{ color: stationColor }} />
               </div>
               <div>
                 <p className="font-display font-semibold">{config.label}</p>
@@ -130,7 +140,7 @@ export function WorkerDashboard() {
       </header>
 
       <div className="p-4 space-y-4 -mt-4">
-        {/* Attendance card  */}
+        {/* Attendance card */}
         <Card className="shadow-card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between gap-4">
@@ -145,11 +155,11 @@ export function WorkerDashboard() {
                 </p>
 
                 <p className="text-xs text-muted-foreground">
-                  Since {sinceText}
+                  Since {isChecked ? sinceText : "-"}
                 </p>
               </div>
 
-              {/* CHECKOUT */}
+              {/* Checkout only */}
               <Button
                 variant="outline"
                 onClick={() => setOpenCheckout(true)}
@@ -199,7 +209,7 @@ export function WorkerDashboard() {
         <div className="grid grid-cols-3 gap-3">
           <Card className="shadow-card">
             <CardContent className="p-3 text-center">
-              <Clock className={`h-5 w-5 mx-auto mb-1 ${config.color}`} />
+              <Clock className="h-5 w-5 mx-auto mb-1" style={{ color: stationColor }} />
               <p className="text-lg font-bold">{pendingOrders.length}</p>
               <p className="text-[10px] text-muted-foreground">Waiting</p>
             </CardContent>
@@ -207,7 +217,7 @@ export function WorkerDashboard() {
 
           <Card className="shadow-card">
             <CardContent className="p-3 text-center">
-              <StationIcon className={`h-5 w-5 mx-auto mb-1 ${config.color}`} />
+              <StationIcon className="h-5 w-5 mx-auto mb-1" style={{ color: stationColor }} />
               <p className="text-lg font-bold">{inProgressOrders.length}</p>
               <p className="text-[10px] text-muted-foreground">In Progress</p>
             </CardContent>
@@ -254,7 +264,11 @@ export function WorkerDashboard() {
                         <Link href={`/worker/process/${order.id}`}>
                           <Button
                             size="sm"
-                            className={`${config.bgColor} ${config.color}`}
+                            className="hover:opacity-90"
+                            style={{
+                              backgroundColor: stationBg,
+                              color: stationColor,
+                            }}
                           >
                             Process
                             <ChevronRight className="h-4 w-4 ml-1" />
