@@ -1,12 +1,11 @@
 "use client";
 
-import { RequireCheckIn } from "@/components/guards/RequireCheckIn";
 import { DriverDashboard } from "@/components/driver/DriverDashboard";
-import { RoleCode } from "@/types";
+import RequireCheckIn from "@/components/guards/RequireCheckIn";
 
 export default function DriverPage() {
   return (
-    <RequireCheckIn roles={["DRIVER" as RoleCode]} redirectTo="/attendance">
+    <RequireCheckIn roles={["DRIVER"]} redirectTo="/attendance?next=/driver">
       <DriverDashboard />
     </RequireCheckIn>
   );

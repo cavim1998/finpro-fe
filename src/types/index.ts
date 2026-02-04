@@ -174,6 +174,7 @@ export interface AttendanceLog {
   clockOutAt?: Date;
   notes?: string;
   createdAt: Date;
+  updatedAt: Date;
   staff?: OutletStaff;
 }
 

@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { axiosInstance } from '@/lib/axios';
 import { OutletListTypes } from '@/types/outlet';
 import { FaMapMarkerAlt } from "react-icons/fa";
+import OutletsMap from '@/components/OutletsMap';
 
 export default function OutletsPage() {
     const router = useRouter();
@@ -182,6 +183,11 @@ export default function OutletsPage() {
             {/* Outlets Grid */}
             {!loading && !error && (
                 <div className="container mx-auto px-4 py-12">
+                    {/* Map Section */}
+                    <div className="mb-12">
+                        <OutletsMap outlets={outlets} loading={loading} />
+                    </div>
+
                     {/* Controls */}
                     <div className="bg-white rounded-lg shadow-sm p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="md:col-span-2">
