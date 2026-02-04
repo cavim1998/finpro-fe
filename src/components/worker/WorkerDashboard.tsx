@@ -1,3 +1,7 @@
+"use client";
+
+import * as React from "react";
+import { CheckInOutDialog } from "@/components/attendance/CheckInOutDialog";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,18 +56,29 @@ const stationConfig: Record<
 
 export function WorkerDashboard() {
   const { user } = useAuth();
-  const { orders, getOrdersByStation, bypassRequests } = useOrders();
-  const { isUserCheckedIn } = useAttendance();
+  const { getOrdersByStation, bypassRequests } = useOrders();
+  const { isUserCheckedIn, checkOut, getTodayAttendance } = useAttendance();
 
   const workerStation = user?.workerStation || "WASHING";
   const config = stationConfig[workerStation];
   const StationIcon = config.icon;
 
-  const isChecked = user ? isUserCheckedIn(user.id) : false;
+  const outletStaffId = user?.outletStaffId;
+  const isChecked = outletStaffId ? isUserCheckedIn(outletStaffId) : false;
+  const todayAtt = outletStaffId ? getTodayAttendance(outletStaffId) : null;
+
+  const sinceText = todayAtt?.clockInAt
+    ? new Date(todayAtt.clockInAt).toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-";
+
   const stationOrders = getOrdersByStation(workerStation);
   const pendingOrders = stationOrders.filter(
     (o) => o.status === config.waitingStatus,
   );
+
   const inProgressOrders = stationOrders.filter((o) => {
     if (workerStation === "WASHING") return o.status === "WASHING";
     if (workerStation === "IRONING") return o.status === "IRONING";
@@ -75,6 +90,8 @@ export function WorkerDashboard() {
   );
 
   const displayName = user?.profile?.fullName || "Worker";
+
+  const [openCheckout, setOpenCheckout] = React.useState(false);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -92,6 +109,7 @@ export function WorkerDashboard() {
           </div>
         </div>
 
+        {/* Station card */}
         <Card className="shadow-card">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -112,6 +130,49 @@ export function WorkerDashboard() {
       </header>
 
       <div className="p-4 space-y-4 -mt-4">
+        {/* Attendance card  */}
+        <Card className="shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-display font-semibold">Attendance</p>
+                <p
+                  className={`text-sm ${
+                    isChecked ? "text-status-success" : "text-status-warning"
+                  }`}
+                >
+                  {isChecked ? "Checked In" : "Not Checked In"}
+                </p>
+
+                <p className="text-xs text-muted-foreground">
+                  Since {sinceText}
+                </p>
+              </div>
+
+              {/* CHECKOUT */}
+              <Button
+                variant="outline"
+                onClick={() => setOpenCheckout(true)}
+                className="min-w-[140px]"
+                disabled={!isChecked}
+              >
+                Check Out
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <CheckInOutDialog
+          open={openCheckout}
+          onOpenChange={setOpenCheckout}
+          mode="checkout"
+          name={displayName}
+          onConfirm={() => {
+            if (!outletStaffId) return;
+            checkOut(outletStaffId);
+          }}
+        />
+
         {/* Pending Bypass Requests */}
         {myBypassRequests.length > 0 && (
           <Card className="border-2 border-status-warning shadow-card">
@@ -130,7 +191,6 @@ export function WorkerDashboard() {
                   View Details
                 </Button>
               </Link>
-              
             </CardContent>
           </Card>
         )}
@@ -144,6 +204,7 @@ export function WorkerDashboard() {
               <p className="text-[10px] text-muted-foreground">Waiting</p>
             </CardContent>
           </Card>
+
           <Card className="shadow-card">
             <CardContent className="p-3 text-center">
               <StationIcon className={`h-5 w-5 mx-auto mb-1 ${config.color}`} />
@@ -151,6 +212,7 @@ export function WorkerDashboard() {
               <p className="text-[10px] text-muted-foreground">In Progress</p>
             </CardContent>
           </Card>
+
           <Card className="shadow-card">
             <CardContent className="p-3 text-center">
               <CheckCircle2 className="h-5 w-5 mx-auto mb-1 text-status-success" />
@@ -188,10 +250,11 @@ export function WorkerDashboard() {
                             {order.totalWeightKg || "?"} kg
                           </p>
                         </div>
+
                         <Link href={`/worker/process/${order.id}`}>
                           <Button
                             size="sm"
-                            className={config.bgColor + " " + config.color}
+                            className={`${config.bgColor} ${config.color}`}
                           >
                             Process
                             <ChevronRight className="h-4 w-4 ml-1" />

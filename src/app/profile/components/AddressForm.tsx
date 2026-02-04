@@ -37,9 +37,13 @@ export default function AddressForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [showMap, setShowMap] = useState(true);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     if (address) {
+      // Edit mode - load existing address
       setFormData({
         label: address.label || '',
         addressText: address.addressText,
@@ -49,7 +53,9 @@ export default function AddressForm({
         receiverPhone: address.receiverPhone || '',
         isPrimary: address.isPrimary,
       });
+      setErrors({});
     } else {
+      // Add mode - reset form and get GPS
       setFormData({
         label: '',
         addressText: '',
@@ -59,9 +65,34 @@ export default function AddressForm({
         receiverPhone: '',
         isPrimary: false,
       });
+      setErrors({});
+
+      // Get GPS location
+      if ('geolocation' in navigator) {
+        setGettingLocation(true);
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setFormData(prev => ({
+              ...prev,
+              latitude,
+              longitude,
+            }));
+            setGettingLocation(false);
+          },
+          (error) => {
+            console.warn('GPS error:', error.message);
+            setGettingLocation(false);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0,
+          }
+        );
+      }
     }
-    setErrors({});
-  }, [address, isOpen]);
+  }, [isOpen, address]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -116,7 +147,7 @@ export default function AddressForm({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white w-full sm:max-w-2xl sm:rounded-lg rounded-t-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 flex items-center justify-between">
@@ -147,7 +178,13 @@ export default function AddressForm({
               <MapPin className="w-4 h-4 inline mr-2" />
               Pilih Lokasi di Map
             </label>
-            {showMap && (
+            {gettingLocation && (
+              <div className="h-[350px] bg-blue-50 border border-blue-200 rounded-lg flex flex-col items-center justify-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-[#1dacbc]" />
+                <p className="text-sm text-gray-600">Mendapatkan lokasi GPS Anda...</p>
+              </div>
+            )}
+            {!gettingLocation && showMap && (
               <Suspense fallback={<div className="h-[350px] bg-gray-100 rounded-lg flex items-center justify-center">Loading map...</div>}>
                 <MapPicker
                   latitude={formData.latitude}

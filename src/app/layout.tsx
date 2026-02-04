@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/Providers";
 import { Suspense } from "react";
 import "./globals.css";
-import "leaflet/dist/leaflet.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

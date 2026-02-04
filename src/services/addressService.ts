@@ -72,7 +72,8 @@ class AddressService {
    */
   async setPrimary(id: number): Promise<Address> {
     try {
-      const response = await axiosInstance.patch<AddressResponse>(`/users/addresses/${id}/set-primary`, {});
+      const response = await axiosInstance.put(`/users/addresses/${id}/primary`);
+      // BE response format: { success: true, data: addressObject }
       return response.data.data as Address;
     } catch (error) {
       console.error('Failed to set primary address:', error);

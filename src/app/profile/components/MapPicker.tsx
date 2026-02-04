@@ -29,6 +29,7 @@ export default function MapPicker({
   const map = useRef<L.Map | null>(null);
   const marker = useRef<L.Marker | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const isInitialLoad = useRef(true);
 
   // Ensure component only renders on client side
   useEffect(() => {
@@ -54,7 +55,11 @@ export default function MapPicker({
 
       // Initialize map
       if (!map.current) {
-        map.current = L.map(mapContainer.current).setView(
+        map.current = L.map(mapContainer.current, {
+          doubleClickZoom: false, // Disable double click zoom
+          scrollWheelZoom: true,
+          zoomControl: true,
+        }).setView(
           [safeLat, safeLng],
           zoom
         );
@@ -98,8 +103,11 @@ export default function MapPicker({
           { maxWidth: 250 }
         );
 
-      // Center map to marker
-      map.current?.setView([safeLat, safeLng], zoom);
+      // Only center map on initial load, not on subsequent updates
+      if (isInitialLoad.current && map.current) {
+        map.current.setView([safeLat, safeLng], zoom);
+        isInitialLoad.current = false;
+      }
     } catch (error) {
       console.error('Map initialization error:', error);
     }

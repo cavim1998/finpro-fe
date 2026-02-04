@@ -5,21 +5,29 @@ import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaWeightHanging, FaTshirt } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTshirt } from 'react-icons/fa';
+import { addressService } from '@/services/addressService';
+import { axiosInstance } from '@/lib/axios';
+import { OutletListTypes } from '@/types/outlet';
+import { Address } from '@/types/address';
 
 export default function ReservationPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState<any>(null);
+    const [addresses, setAddresses] = useState<Address[]>([]);
+    const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+    const [outlets, setOutlets] = useState<OutletListTypes[]>([]);
+    const [selectedOutletId, setSelectedOutletId] = useState<number | null>(null);
     
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
         address: '',
+        outletId: null as number | null,
         pickupDate: '',
         pickupTime: '',
         serviceType: 'regular',
-        estimatedWeight: '3',
         specialInstructions: ''
     });
 
@@ -37,14 +45,75 @@ export default function ReservationPage() {
                 ...prev,
                 name: user.name || '',
                 phone: user.phone || '',
-                address: user.address || ''
             }));
+            
+            // Load user's saved addresses
+            loadAddresses();
+            loadOutlets();
         } catch (error) {
             console.error('Error parsing user data:', error);
             router.push('/signin');
         }
         setLoading(false);
     }, [router]);
+
+    const loadAddresses = async () => {
+        try {
+            const data = await addressService.getAll();
+            setAddresses(data);
+            
+            // Auto-select primary address if exists, or first address
+            const primaryAddress = data.find(addr => addr.isPrimary);
+            if (primaryAddress) {
+                handleAddressSelect(primaryAddress.id.toString());
+            } else if (data.length > 0) {
+                handleAddressSelect(data[0].id.toString());
+            }
+        } catch (error) {
+            console.error('Failed to load addresses:', error);
+        }
+    };
+
+    const loadOutlets = async () => {
+        try {
+            const response = await axiosInstance.get('/outlets');
+            let data = response.data;
+            if (data && typeof data === 'object' && 'data' in data) {
+                data = data.data;
+            }
+            const outletArray = Array.isArray(data) ? data : [];
+            setOutlets(outletArray);
+            // Auto-select first active outlet
+            if (outletArray.length > 0) {
+                const activeOutlet = outletArray.find(o => o.isActive) || outletArray[0];
+                handleOutletSelect(activeOutlet.id);
+            }
+        } catch (error) {
+            console.error('Failed to load outlets:', error);
+        }
+    };
+
+    const handleAddressSelect = (addressId: string) => {
+        const selected = addresses.find(addr => addr.id === parseInt(addressId));
+        if (selected) {
+            setSelectedAddressId(selected.id);
+            setFormData(prev => ({
+                ...prev,
+                address: `${selected.addressText}\n\nPenerima: ${selected.receiverName}\nTelepon: ${selected.receiverPhone}`
+            }));
+        }
+    };
+
+    const handleOutletSelect = (outletId: number) => {
+        const selected = outlets.find(outlet => outlet.id === outletId);
+        if (selected) {
+            setSelectedOutletId(outletId);
+            setFormData(prev => ({
+                ...prev,
+                outletId: outletId
+            }));
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({
@@ -128,20 +197,106 @@ export default function ReservationPage() {
                                     </div>
                                 </div>
                                 <div className="mt-6">
-                                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label htmlFor="addressSelect" className="block text-sm font-medium text-gray-700 mb-2">
                                         <FaMapMarkerAlt className="inline mr-2 text-[#1dacbc]" />
                                         Pickup Address *
                                     </label>
-                                    <textarea
-                                        id="address"
-                                        name="address"
-                                        value={formData.address}
-                                        onChange={handleChange}
-                                        required
-                                        rows={3}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
-                                        placeholder="Enter your complete pickup address"
-                                    />
+                                    
+                                    {/* Address Selector */}
+                                    {addresses.length > 0 ? (
+                                        <>
+                                            <select
+                                                id="addressSelect"
+                                                value={selectedAddressId || ''}
+                                                onChange={(e) => handleAddressSelect(e.target.value)}
+                                                required
+                                                className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent mb-3 appearance-none bg-white"
+                                                style={{
+                                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E")`,
+                                                    backgroundPosition: 'right 1rem center',
+                                                    backgroundRepeat: 'no-repeat',
+                                                }}
+                                            >
+                                                <option value="" disabled>Pilih alamat</option>
+                                                {addresses.map((addr) => (
+                                                    <option key={addr.id} value={addr.id}>
+                                                        {addr.label ? `${addr.label} - ` : ''}{addr.addressText.substring(0, 50)}{addr.addressText.length > 50 ? '...' : ''}
+                                                        {addr.isPrimary ? ' (Utama)' : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {selectedAddressId && formData.address && (
+                                                <textarea
+                                                    id="address"
+                                                    name="address"
+                                                    value={formData.address}
+                                                    readOnly
+                                                    rows={4}
+                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                                                />
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                            <p className="text-sm text-yellow-800 font-semibold mb-2">
+                                                ⚠️ Anda belum memiliki alamat tersimpan
+                                            </p>
+                                            <p className="text-sm text-yellow-700 mb-3">
+                                                Silakan tambah alamat terlebih dahulu di halaman profil untuk melanjutkan pemesanan.
+                                            </p>
+                                            <a 
+                                                href="/profile#addresses" 
+                                                className="inline-block px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-semibold hover:bg-[#14939e] transition text-sm"
+                                            >
+                                                + Tambah Alamat
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Outlet Selection */}
+                            <div>
+                                <h2 className="text-2xl font-bold text-[#1dacbc] mb-6">
+                                    Choose Outlet
+                                </h2>
+                                <div>
+                                    <label htmlFor="outlet" className="block text-sm font-medium text-gray-700 mb-3">
+                                        Select Outlet *
+                                    </label>
+                                    {outlets.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {outlets.map((outlet) => (
+                                                <div
+                                                    key={outlet.id}
+                                                    onClick={() => handleOutletSelect(outlet.id)}
+                                                    className={`p-4 border-2 rounded-lg transition cursor-pointer ${
+                                                        selectedOutletId === outlet.id
+                                                            ? 'border-[#1dacbc] bg-blue-50 shadow-md'
+                                                            : 'border-gray-300 hover:border-[#1dacbc] hover:shadow-md'
+                                                    }`}
+                                                >
+                                                    <div className="font-semibold text-gray-800 mb-2">{outlet.name}</div>
+                                                    <div className="text-sm text-gray-600 mb-2">📍 {outlet.addressText}</div>
+                                                    <div className="text-sm text-gray-600 mb-2">📏 Radius: {outlet.serviceRadiusKm} km</div>
+                                                    {outlet.staffCount !== undefined && (
+                                                        <div className="text-sm text-gray-600">👥 {outlet.staffCount} staff</div>
+                                                    )}
+                                                    {selectedOutletId === outlet.id && (
+                                                        <div className="mt-3 text-sm font-semibold text-[#1dacbc]">
+                                                            ✓ Terpilih
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                            <p className="text-sm text-yellow-800">
+                                                Tidak ada outlet tersedia saat ini
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -196,44 +351,24 @@ export default function ReservationPage() {
                                 <h2 className="text-2xl font-bold text-[#1dacbc] mb-6">
                                     Service Details
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700 mb-2">
-                                            <FaTshirt className="inline mr-2 text-[#1dacbc]" />
-                                            Service Type *
-                                        </label>
-                                        <select
-                                            id="serviceType"
-                                            name="serviceType"
-                                            value={formData.serviceType}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
-                                        >
-                                            <option value="regular">Regular Wash (2-3 days)</option>
-                                            <option value="express">Express Wash (1 day)</option>
-                                            <option value="premium">Premium Care (3-4 days)</option>
-                                            <option value="dry-clean">Dry Clean (4-5 days)</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="estimatedWeight" className="block text-sm font-medium text-gray-700 mb-2">
-                                            <FaWeightHanging className="inline mr-2 text-[#1dacbc]" />
-                                            Estimated Weight (kg) *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            id="estimatedWeight"
-                                            name="estimatedWeight"
-                                            value={formData.estimatedWeight}
-                                            onChange={handleChange}
-                                            required
-                                            min="3"
-                                            step="0.5"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">Minimum 3kg</p>
-                                    </div>
+                                <div>
+                                    <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700 mb-2">
+                                        <FaTshirt className="inline mr-2 text-[#1dacbc]" />
+                                        Service Type *
+                                    </label>
+                                    <select
+                                        id="serviceType"
+                                        name="serviceType"
+                                        value={formData.serviceType}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
+                                    >
+                                        <option value="regular">Regular Wash (2-3 days)</option>
+                                        <option value="express">Express Wash (1 day)</option>
+                                        <option value="premium">Premium Care (3-4 days)</option>
+                                        <option value="dry-clean">Dry Clean (4-5 days)</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -251,32 +386,6 @@ export default function ReservationPage() {
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
                                     placeholder="Any special care instructions for your laundry?"
                                 />
-                            </div>
-
-                            {/* Pricing Info */}
-                            <div className="bg-gray-50 rounded-lg p-6">
-                                <h3 className="font-semibold text-gray-800 mb-3">Estimated Price</h3>
-                                <div className="space-y-2 text-sm text-gray-600">
-                                    <div className="flex justify-between">
-                                        <span>Regular Wash:</span>
-                                        <span className="font-medium">Rp 7,000 / kg</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Express Wash:</span>
-                                        <span className="font-medium">Rp 10,000 / kg</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Premium Care:</span>
-                                        <span className="font-medium">Rp 12,000 / kg</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Dry Clean:</span>
-                                        <span className="font-medium">Starting from Rp 25,000 / item</span>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-4">
-                                    * Final price will be calculated based on actual weight
-                                </p>
                             </div>
 
                             {/* Submit Button */}
@@ -312,3 +421,4 @@ export default function ReservationPage() {
         </div>
     );
 }
+
