@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Address } from '@/types/address';
 import { addressService } from '@/services/addressService';
 import { MapPin, Edit2, Trash2, Star } from 'lucide-react';
@@ -24,17 +25,18 @@ export default function AddressList({
   const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Yakin ingin menghapus alamat ini?')) return;
+    if (!window.confirm('Are you sure you want to delete this address?')) return;
 
     setDeletingId(id);
     try {
       await addressService.delete(id);
+      toast.success('Address deleted successfully');
       onAddressDeleted(id);
     } catch (error: any) {
       const message =
         error.response?.data?.message ||
-        'Gagal menghapus alamat. Silakan coba lagi.';
-      alert(message);
+        'Failed to delete address. Please try again.';
+      toast.error(message);
     } finally {
       setDeletingId(null);
     }
@@ -44,12 +46,13 @@ export default function AddressList({
     setSettingPrimaryId(id);
     try {
       await addressService.setPrimary(id);
+      toast.success('Set as primary address successfully');
       onAddressPrimary(id);
     } catch (error: any) {
       const message =
         error.response?.data?.message ||
-        'Gagal mengatur alamat utama. Silakan coba lagi.';
-      alert(message);
+        'Failed to set primary address. Please try again.';
+      toast.error(message);
     } finally {
       setSettingPrimaryId(null);
     }
@@ -60,7 +63,7 @@ export default function AddressList({
       <div className="flex flex-col items-center justify-center py-12">
         <MapPin className="w-16 h-16 text-gray-300 mb-4" />
         <p className="text-gray-500 text-center mb-4">
-          Belum ada alamat tersimpan. Tambahkan alamat pertama Anda.
+          No saved addresses yet. Add your first address.
         </p>
       </div>
     );
@@ -78,7 +81,7 @@ export default function AddressList({
       {sortedAddresses.map((address) => (
         <div
           key={address.id}
-          className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+          className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
         >
           {/* Header dengan badge primary */}
           <div className="flex items-start justify-between mb-3">
@@ -89,7 +92,7 @@ export default function AddressList({
               {address.isPrimary && (
                 <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
                   <Star className="w-3 h-3" />
-                  Utama
+                  Primary
                 </span>
               )}
             </div>
@@ -105,13 +108,13 @@ export default function AddressList({
             <div className="bg-gray-50 rounded p-3 mb-3 text-sm space-y-1">
               {address.receiverName && (
                 <p className="text-gray-700">
-                  <span className="font-semibold">Nama Penerima:</span>{' '}
+                  <span className="font-semibold">Recipient Name:</span>{' '}
                   {address.receiverName}
                 </p>
               )}
               {address.receiverPhone && (
                 <p className="text-gray-700">
-                  <span className="font-semibold">No. HP:</span>{' '}
+                  <span className="font-semibold">Phone Number:</span>{' '}
                   {address.receiverPhone}
                 </p>
               )}
@@ -142,7 +145,7 @@ export default function AddressList({
                 className="inline-flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded hover:bg-amber-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Star className="w-4 h-4" />
-                Jadikan Utama
+                Set as Primary
               </button>
             )}
 
@@ -152,7 +155,7 @@ export default function AddressList({
               className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="w-4 h-4" />
-              {deletingId === address.id ? 'Menghapus...' : 'Hapus'}
+              {deletingId === address.id ? 'Deleting...' : 'Delete'}
             </button>
           </div>
         </div>

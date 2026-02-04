@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import AddressList from './AddressList';
 import AddressForm from './AddressForm';
 import { Address } from '@/types/address';
@@ -12,20 +13,18 @@ export default function AddressManagement() {
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  const [error, setError] = useState('');
 
   // Load addresses
   useEffect(() => {
     const loadAddresses = async () => {
       setLoading(true);
-      setError('');
       try {
         const data = await addressService.getAll();
         setAddresses(data);
       } catch (error: any) {
         const message =
-          error.response?.data?.message || 'Gagal memuat alamat. Silakan refresh halaman.';
-        setError(message);
+          error.response?.data?.message || 'Failed to load addresses. Please refresh the page.';
+        toast.error(message);
         console.error('Failed to load addresses:', error);
       } finally {
         setLoading(false);
@@ -56,9 +55,11 @@ export default function AddressManagement() {
         // Update existing
         const updated = [...prevAddresses];
         updated[index] = savedAddress;
+        toast.success('Address updated successfully');
         return updated;
       } else {
         // Add new
+        toast.success('Address added successfully');
         return [...prevAddresses, savedAddress];
       }
     });
@@ -83,12 +84,12 @@ export default function AddressManagement() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-blue-50 rounded-lg">
-            <MapPin className="w-6 h-6 text-blue-600" />
+            <MapPin className="w-6 h-6 text-[#1dacbc]" />
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Alamat Saya</h2>
+          <div className='flex flex-col'>
+            <h2 className="text-2xl font-bold text-[#1dacbc]">My Addresses</h2>
             <p className="text-gray-500 text-sm">
-              Kelola alamat pengiriman Anda
+              Manage your delivery addresses
             </p>
           </div>
         </div>
@@ -96,25 +97,18 @@ export default function AddressManagement() {
         <button
           onClick={() => handleOpenForm()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-medium hover:bg-[#14939e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-5 h-5" />
-          Tambah Alamat
+          Add Address
         </button>
       </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
-        </div>
-      )}
 
       {/* Loading State */}
       {loading && (
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-          <p className="text-gray-500">Memuat alamat Anda...</p>
+          <p className="text-gray-500">Loading your addresses...</p>
         </div>
       )}
 

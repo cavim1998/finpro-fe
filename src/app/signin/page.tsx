@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 import { axiosInstance } from '@/lib/axios';
 import { GoogleLogin } from '@react-oauth/google';
@@ -12,15 +13,13 @@ const page = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
     const handleGoogleLogin = async (credential: string | undefined) => {
         if (!credential) {
-            setError('Google login failed. Please try again.');
+            toast.error('Google login failed. Please try again.');
             return;
         }
 
-        setError('');
         setLoading(true);
 
         try {
@@ -54,6 +53,7 @@ const page = () => {
                     window.dispatchEvent(new Event('user-data-updated'));
                 }
                 
+                toast.success('Login successful');
                 router.push('/profile');
             }
         } catch (err: any) {
@@ -64,13 +64,13 @@ const page = () => {
             console.error('Google login error:', { message, status, data: err?.response?.data });
             
             if (status === 404 || message.toLowerCase().includes('not found') || message.toLowerCase().includes('not registered')) {
-                setError('Account not found. Please sign up first with Google. Click here to sign up.');
+                toast.error('Account not found. Please sign up first with Google.');
                 // Redirect ke signup setelah 3 detik
                 setTimeout(() => {
                     router.push('/signup');
                 }, 3000);
             } else {
-                setError(message || 'Google login failed. Please try again.');
+                toast.error(message || 'Google login failed. Please try again.');
             }
         } finally {
             setLoading(false);
@@ -79,7 +79,6 @@ const page = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
 
         try {
@@ -101,12 +100,13 @@ const page = () => {
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new Event('user-data-updated'));
                 }
+                toast.success('Login successful');
             }
 
             router.push('/profile');
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Login failed. Please try again.';
-            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -119,11 +119,6 @@ const page = () => {
                 </h1>
 
                 <form className="space-y-5" onSubmit={handleSubmit}>
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <p className="text-red-600 text-sm">{error}</p>
-                        </div>
-                    )}
                     {/* Email */}
                     <div>
                         <input
@@ -188,7 +183,7 @@ const page = () => {
                             onSuccess={(credentialResponse) =>
                                 handleGoogleLogin(credentialResponse.credential)
                             }
-                            onError={() => setError('Google login failed. Please try again.')}
+                            onError={() => toast.error('Google login failed. Please try again.')}
                             useOneTap={false}
                             text="signin_with"
                             width="100%"

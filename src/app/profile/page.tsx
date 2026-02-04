@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Cookies from 'js-cookie';
@@ -31,8 +32,6 @@ export default function ProfilePage() {
     const [address, setAddress] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
 
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
@@ -42,7 +41,6 @@ export default function ProfilePage() {
     useEffect(() => {
         const loadProfile = async () => {
             setLoading(true);
-            setError('');
             try {
                 const response = await axiosInstance.get('/users/profile');
                 const user = response?.data?.data?.user || response?.data?.data;
@@ -54,7 +52,7 @@ export default function ProfilePage() {
                 }
             } catch (err: any) {
                 const message = err?.response?.data?.message || 'Failed to load profile.';
-                setError(message);
+                toast.error(message);
             } finally {
                 setLoading(false);
             }
@@ -65,8 +63,6 @@ export default function ProfilePage() {
 
     const handleSaveProfile = async (newName: string, newPhone: string) => {
         setSaving(true);
-        setMessage('');
-        setError('');
         try {
             const response = await axiosInstance.put('/users/profile', {
                 name: newName,
@@ -87,20 +83,17 @@ export default function ProfilePage() {
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new Event('user-data-updated'));
                 }
+                toast.success('Profile updated successfully');
             }
-            setMessage('Profile updated successfully.');
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Failed to update profile.';
-            setError(message);
-            throw err;
+            toast.error(message);
         } finally {
             setSaving(false);
         }
     };
 
     const handleUploadPhoto = async (file: File) => {
-        setMessage('');
-        setError('');
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -123,41 +116,37 @@ export default function ProfilePage() {
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new Event('user-data-updated'));
                 }
+                toast.success('Profile photo updated successfully');
             }
-            setMessage('Profile photo updated successfully.');
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Failed to upload profile photo.';
-            setError(message);
+            toast.error(message);
         }
     };
 
     const handleChangeEmail = async (newEmail: string, password: string) => {
-        setMessage('');
-        setError('');
         try {
             await axiosInstance.put('/users/profile/email', {
                 newEmail,
                 password,
             });
-            setMessage('Verification code sent to your new email. Please verify to complete the change.');
+            toast.success('Verification code sent to your new email. Please verify to complete the change.');
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Failed to change email.';
-            setError(message);
+            toast.error(message);
         }
     };
 
     const handleChangePassword = async (currentPassword: string, newPassword: string) => {
-        setMessage('');
-        setError('');
         try {
             await axiosInstance.put('/users/profile/password', {
                 currentPassword,
                 newPassword,
             });
-            setMessage('Password changed successfully.');
+            toast.success('Password changed successfully');
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Failed to change password.';
-            setError(message);
+            toast.error(message);
         }
     };
     return (
@@ -179,18 +168,6 @@ export default function ProfilePage() {
                     {loading && (
                         <div className="bg-white rounded-lg shadow-md p-6 text-center">
                             <p className="text-gray-600">Loading profile...</p>
-                        </div>
-                    )}
-
-                    {!loading && error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                            <p className="text-red-600 text-sm">{error}</p>
-                        </div>
-                    )}
-
-                    {!loading && message && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                            <p className="text-green-700 text-sm">{message}</p>
                         </div>
                     )}
 
@@ -250,7 +227,6 @@ export default function ProfilePage() {
                             <div id="personal" className="bg-white rounded-lg shadow-md p-6">
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-2xl font-bold text-[#1dacbc] flex items-center">
-                                        <span className="w-8 h-8 bg-[#1dacbc] text-white rounded-full flex items-center justify-center mr-3 text-sm">1</span>
                                         Personal Data
                                     </h3>
                                     <button
@@ -350,10 +326,6 @@ export default function ProfilePage() {
 
                             {/* Address Management Section */}
                             <div id="addresses" className="bg-white rounded-lg shadow-md p-6">
-                                <h3 className="text-2xl font-bold text-[#1dacbc] mb-6 flex items-center">
-                                    <span className="w-8 h-8 bg-[#1dacbc] text-white rounded-full flex items-center justify-center mr-3 text-sm">2</span>
-                                    My Addresses
-                                </h3>
                                 <AddressManagement />
                             </div>
                         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, lazy, Suspense } from 'react';
+import { toast } from 'sonner';
 import { Address, CreateAddressPayload } from '@/types/address';
 import { addressService } from '@/services/addressService';
 import { X, MapPin, Loader2 } from 'lucide-react';
@@ -98,17 +99,17 @@ export default function AddressForm({
     const newErrors: Record<string, string> = {};
 
     if (!formData.addressText.trim()) {
-      newErrors.addressText = 'Alamat tidak boleh kosong';
+      newErrors.addressText = 'Address cannot be empty';
     } else if (formData.addressText.trim().length < 10) {
-      newErrors.addressText = 'Alamat minimal 10 karakter';
+      newErrors.addressText = 'Address must be at least 10 characters';
     }
 
     if (formData.latitude < -90 || formData.latitude > 90) {
-      newErrors.latitude = 'Latitude harus antara -90 hingga 90';
+      newErrors.latitude = 'Latitude must be between -90 and 90';
     }
 
     if (formData.longitude < -180 || formData.longitude > 180) {
-      newErrors.longitude = 'Longitude harus antara -180 hingga 180';
+      newErrors.longitude = 'Longitude must be between -180 and 180';
     }
 
     setErrors(newErrors);
@@ -137,8 +138,9 @@ export default function AddressForm({
     } catch (error: any) {
       const message =
         error.response?.data?.message ||
-        (address ? 'Gagal memperbarui alamat' : 'Gagal menambah alamat');
-      setErrors({ submit: message });
+        (address ? 'Failed to update address' : 'Failed to add address');
+      toast.error(message);
+      setErrors({});
     } finally {
       setLoading(false);
     }
@@ -152,7 +154,7 @@ export default function AddressForm({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900">
-            {address ? 'Edit Alamat' : 'Tambah Alamat Baru'}
+            {address ? 'Edit Address' : 'Add New Address'}
           </h2>
           <button
             onClick={onClose}
@@ -165,23 +167,16 @@ export default function AddressForm({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
-          {/* Error Message */}
-          {errors.submit && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {errors.submit}
-            </div>
-          )}
-
           {/* Map Picker */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               <MapPin className="w-4 h-4 inline mr-2" />
-              Pilih Lokasi di Map
+              Select Location on Map
             </label>
             {gettingLocation && (
               <div className="h-[350px] bg-blue-50 border border-blue-200 rounded-lg flex flex-col items-center justify-center gap-2">
                 <Loader2 className="w-6 h-6 animate-spin text-[#1dacbc]" />
-                <p className="text-sm text-gray-600">Mendapatkan lokasi GPS Anda...</p>
+                <p className="text-sm text-gray-600">Getting your GPS location...</p>
               </div>
             )}
             {!gettingLocation && showMap && (
@@ -201,7 +196,7 @@ export default function AddressForm({
               </Suspense>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              💡 Klik pada peta untuk mengubah lokasi
+              💡 Click on the map to change location
             </p>
           </div>
 
@@ -233,10 +228,10 @@ export default function AddressForm({
             </div>
           </div>
 
-          {/* Alamat Text */}
+          {/* Address Text */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Alamat Lengkap <span className="text-red-500">*</span>
+              Full Address <span className="text-red-500">*</span>
             </label>
             <textarea
               value={formData.addressText}
@@ -253,7 +248,7 @@ export default function AddressForm({
                   });
                 }
               }}
-              placeholder="Jl. Merdeka No. 123, Jakarta Pusat, DKI Jakarta"
+              placeholder="Your full address here..."
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
@@ -265,7 +260,7 @@ export default function AddressForm({
           {/* Label */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Label Alamat (contoh: Rumah, Kantor, Kos)
+              Address Label (e.g.: Home, Office, Boarding House)
             </label>
             <input
               type="text"
@@ -277,7 +272,7 @@ export default function AddressForm({
                   label: value,
                 }));
               }}
-              placeholder="Rumah"
+              placeholder="Home"
               maxLength={50}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -289,7 +284,7 @@ export default function AddressForm({
           {/* Receiver Name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Nama Penerima
+              Recipient Name
             </label>
             <input
               type="text"
@@ -300,7 +295,7 @@ export default function AddressForm({
                   receiverName: e.target.value,
                 }))
               }
-              placeholder="Nama lengkap penerima paket"
+              placeholder="Receipient full name"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -308,7 +303,7 @@ export default function AddressForm({
           {/* Receiver Phone */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Nomor HP Penerima
+              Recipient Phone Number
             </label>
             <input
               type="tel"
@@ -319,7 +314,7 @@ export default function AddressForm({
                   receiverPhone: e.target.value,
                 }))
               }
-              placeholder="08123456789"
+              placeholder="Your phone number"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -339,7 +334,7 @@ export default function AddressForm({
               className="w-4 h-4 text-blue-600 rounded"
             />
             <label htmlFor="isPrimary" className="ml-3 text-sm text-gray-700">
-              Jadikan sebagai alamat utama
+              Set as primary address
             </label>
           </div>
 
@@ -351,7 +346,7 @@ export default function AddressForm({
               disabled={loading}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              Batal
+              Cancel
             </button>
             <button
               type="submit"
@@ -359,7 +354,7 @@ export default function AddressForm({
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {address ? 'Update Alamat' : 'Simpan Alamat'}
+              {address ? 'Update Address' : 'Save Address'}
             </button>
           </div>
         </form>

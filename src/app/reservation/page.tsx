@@ -242,13 +242,13 @@ export default function ReservationPage() {
                                                 ⚠️ Anda belum memiliki alamat tersimpan
                                             </p>
                                             <p className="text-sm text-yellow-700 mb-3">
-                                                Silakan tambah alamat terlebih dahulu di halaman profil untuk melanjutkan pemesanan.
+                                                Please add an address first in the profile page to continue with the order.
                                             </p>
                                             <a 
                                                 href="/profile#addresses" 
                                                 className="inline-block px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-semibold hover:bg-[#14939e] transition text-sm"
                                             >
-                                                + Tambah Alamat
+                                                + Add Address
                                             </a>
                                         </div>
                                     )}
