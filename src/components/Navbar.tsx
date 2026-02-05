@@ -103,7 +103,7 @@ const Navbar = () => {
                 <div className='sm:flex items-center gap-4 hidden'>
                     <a href="/" className='text-lg font-semibold text-[#1dacbc] hover:underline underline-offset-4 decoration-2'>Home</a>
                     <a href="/about-us" className='text-lg font-semibold text-[#1dacbc] hover:underline underline-offset-4 decoration-2'>About Us</a>
-                    <a href="/outlet" className='text-lg font-semibold text-[#1dacbc] hover:underline underline-offset-4 decoration-2'>Outlet</a>
+                    <a href="/outlets" className='text-lg font-semibold text-[#1dacbc] hover:underline underline-offset-4 decoration-2'>Outlet</a>
                     <a href="/check-status" className='text-lg font-semibold text-[#1dacbc] hover:underline underline-offset-4 decoration-2'>Check Status</a>
                     <a href="/terms-and-conditions" className='text-lg font-semibold text-[#1dacbc] hover:underline underline-offset-4 decoration-2'>T&C</a>
                 </div>
