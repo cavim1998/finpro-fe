@@ -161,6 +161,12 @@ const Navbar = () => {
                                             >
                                                 Profile
                                             </a>
+                                            <a
+                                                href="/check-status"
+                                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-[#f2fbfb]"
+                                            >
+                                                Check Status
+                                            </a>
                                             <button
                                                 onClick={handleLogout}
                                                 className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-[#fff1f2]"
