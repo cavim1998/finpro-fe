@@ -1,169 +1,115 @@
 "use client";
-
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { UsersTable } from "./MasterDataSection/UsersTable";
 import { OutletsGrid } from "./MasterDataSection/OutletsGrid";
 import { ItemsGrid } from "./MasterDataSection/ItemsGrid";
-import { MasterDataNav, SubTab } from "./MasterDataSection/MasterDataNav";
+import { ShiftsGrid } from "./MasterDataSection/ShiftsGrid";
+import { MasterDataNav } from "./MasterDataSection/MasterDataNav";
+import { ErrorState } from "@/components/ErrorState";
+import { LoadingState } from "@/components/LoadingState";
 import CreateOutletModal from "@/components/admin/modal/CreateOutletModal";
 import CreateItemModal from "@/components/admin/modal/CreateItemModal";
-import CreateEmployeeModal from "@/components/admin/modal/CreateEmployeeModal";
+import AssignEmployeeModal from "@/components/admin/modal/AssignEmployeeModal";
+import CreateShiftModal from "@/components/admin/modal/CreateShiftModal";
 import DeleteConfirmationModal from "@/components/admin/modal/DeleteConfirmationModal";
-import { useOutlets, useDeleteOutlet } from "@/hooks/api/useOutlet";
-import { useLaundryItems, useDeleteItem } from "@/hooks/api/useLaundryItem";
-import { ErrorState } from "../ErrorState";
-import { LoadingState } from "../LoadingState";
+import { useMasterData } from "./MasterDataSection/useMasterData";
 
 export default function MasterDataSection() {
-  const [subTab, setSubTab] = useState<SubTab>("USERS");
-  const [showOutletModal, setShowOutletModal] = useState(false);
-  const [showItemModal, setShowItemModal] = useState(false);
-  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [selectedOutlet, setSelectedOutlet] = useState<any>(null);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{
-    id: number;
-    name: string;
-    type: SubTab;
-  } | null>(null);
-  const {
-    data: outlets = [],
-    isLoading: isLoadingOutlets,
-    isError: isErrorOutlets,
-  } = useOutlets();
-  const deleteOutletMutation = useDeleteOutlet();
-  const {
-    data: items = [],
-    isLoading: isLoadingItems,
-    isError: isErrorItems,
-  } = useLaundryItems();
-  const deleteItemMutation = useDeleteItem();
-
-  const handleEditUser = (user: any) => {
-    setSelectedUser(user);
-    setShowEmployeeModal(true);
-  };
-  const handleAddUser = () => {
-    setSelectedUser(null);
-    setShowEmployeeModal(true);
-  };
-  const handleEditOutlet = (outlet: any) => {
-    setSelectedOutlet(outlet);
-    setShowOutletModal(true);
-  };
-  const handleCreateOutlet = () => {
-    setSelectedOutlet(null);
-    setShowOutletModal(true);
-  };
-  const handleEditItem = (item: any) => {
-    setSelectedItem(item);
-    setShowItemModal(true);
-  };
-  const handleCreateItem = () => {
-    setSelectedItem(null);
-    setShowItemModal(true);
-  };
-  const handleDeleteTrigger = (id: number, name: string, type: SubTab) => {
-    setDeleteTarget({ id, name, type });
-  };
-
-  const confirmDelete = () => {
-    if (!deleteTarget) return;
-
-    const onSuccess = () => {
-      toast.success(
-        `${deleteTarget.type === "OUTLETS" ? "Outlet" : "Item"} ${deleteTarget.name} berhasil dihapus`,
-      );
-      setDeleteTarget(null);
-    };
-    const onError = () => toast.error("Gagal menghapus data");
-
-    if (deleteTarget.type === "OUTLETS") {
-      deleteOutletMutation.mutate(deleteTarget.id, { onSuccess, onError });
-    } else if (deleteTarget.type === "ITEMS") {
-      deleteItemMutation.mutate(deleteTarget.id, { onSuccess, onError });
-    } else {
-      toast.info("Fitur hapus user belum tersedia");
-      setDeleteTarget(null);
-    }
-  };
+  const { state, actions } = useMasterData();
 
   return (
     <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-      <MasterDataNav activeTab={subTab} onTabChange={setSubTab} />
+      <MasterDataNav activeTab={state.subTab} onTabChange={actions.setSubTab} />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-100">
-        {subTab === "USERS" && (
-          <UsersTable
-            onAdd={handleAddUser}
-            onEdit={handleEditUser}
-            onDelete={(id, name) => handleDeleteTrigger(id, name, "USERS")}
-          />
-        )}
-
-        {subTab === "OUTLETS" &&
-          (isLoadingOutlets ? (
-            <LoadingState text="Memuat data outlet..." />
-          ) : isErrorOutlets ? (
-            <ErrorState text="Gagal memuat outlet." />
+        {state.subTab === "USERS" &&
+          (state.isLoadingEmployees ? (
+            <LoadingState text="Memuat pegawai..." />
+          ) : state.isErrorEmployees ? (
+            <ErrorState text="Gagal memuat pegawai." />
           ) : (
-            <OutletsGrid
-              data={outlets}
-              onCreate={handleCreateOutlet}
-              onEdit={handleEditOutlet}
-              onDelete={(id) => {
-                const name =
-                  outlets.find((o: any) => o.id === id)?.name || "Outlet";
-                handleDeleteTrigger(id, name, "OUTLETS");
-              }}
+            <UsersTable
+              data={state.employees}
+              onAdd={() => actions.openModal("employee")}
+              onEdit={(u) => actions.openModal("employee", u)}
+              onDelete={(id, name) =>
+                actions.handleDeleteTrigger(id, name, "USERS")
+              }
             />
           ))}
 
-        {subTab === "ITEMS" &&
-          (isLoadingItems ? (
-            <LoadingState text="Memuat item laundry..." />
-          ) : isErrorItems ? (
-            <ErrorState text="Gagal memuat item laundry." />
+        {state.subTab === "OUTLETS" &&
+          (state.isLoadingOutlets ? (
+            <LoadingState text="Memuat outlet..." />
+          ) : state.isErrorOutlets ? (
+            <ErrorState text="Gagal memuat outlet." />
+          ) : (
+            <OutletsGrid
+              data={state.outlets}
+              onCreate={() => actions.openModal("outlet")}
+              onEdit={(o) => actions.openModal("outlet", o)}
+              onDelete={(id) =>
+                actions.handleDeleteTrigger(id, "Outlet", "OUTLETS")
+              }
+            />
+          ))}
+
+        {state.subTab === "ITEMS" &&
+          (state.isLoadingItems ? (
+            <LoadingState text="Memuat items..." />
+          ) : state.isErrorItems ? (
+            <ErrorState text="Gagal memuat items." />
           ) : (
             <ItemsGrid
-              data={items}
-              onCreate={handleCreateItem}
-              onEdit={handleEditItem}
-              onDelete={(id) => {
-                const name =
-                  items.find((i: any) => i.id === id)?.name || "Item";
-                handleDeleteTrigger(id, name, "ITEMS");
-              }}
+              data={state.items}
+              onCreate={() => actions.openModal("item")}
+              onEdit={(i) => actions.openModal("item", i)}
+              onDelete={(id) =>
+                actions.handleDeleteTrigger(id, "Item", "ITEMS")
+              }
+            />
+          ))}
+
+        {state.subTab === "SHIFTS" &&
+          (state.isLoadingShifts ? (
+            <LoadingState text="Memuat shifts..." />
+          ) : state.isErrorShifts ? (
+            <ErrorState text="Gagal memuat shifts." />
+          ) : (
+            <ShiftsGrid
+              data={state.shifts}
+              onCreate={() => actions.openModal("shift")}
+              onDelete={(id) =>
+                actions.handleDeleteTrigger(id, "Shift", "SHIFTS")
+              }
             />
           ))}
       </div>
 
-      <CreateEmployeeModal
-        isOpen={showEmployeeModal}
-        onClose={() => setShowEmployeeModal(false)}
-        initialData={selectedUser}
+      <AssignEmployeeModal
+        isOpen={state.modals.employee}
+        onClose={() => actions.closeModal("employee")}
+        initialData={state.selectedData.user}
       />
-
       <CreateOutletModal
-        isOpen={showOutletModal}
-        onClose={() => setShowOutletModal(false)}
-        initialData={selectedOutlet}
+        isOpen={state.modals.outlet}
+        onClose={() => actions.closeModal("outlet")}
+        initialData={state.selectedData.outlet}
       />
-
       <CreateItemModal
-        isOpen={showItemModal}
-        onClose={() => setShowItemModal(false)}
-        initialData={selectedItem}
+        isOpen={state.modals.item}
+        onClose={() => actions.closeModal("item")}
+        initialData={state.selectedData.item}
+      />
+      <CreateShiftModal
+        isOpen={state.modals.shift}
+        onClose={() => actions.closeModal("shift")}
       />
 
       <DeleteConfirmationModal
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
-        itemName={deleteTarget?.name}
+        isOpen={!!state.deleteTarget}
+        onClose={() => actions.setDeleteTarget(null)}
+        onConfirm={actions.confirmDelete}
+        itemName={state.deleteTarget?.name}
       />
     </div>
   );
