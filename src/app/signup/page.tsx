@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { axiosInstance } from '@/lib/axios';
 import Cookies from 'js-cookie';
 import { GoogleLogin } from '@react-oauth/google';
@@ -13,17 +14,13 @@ const page = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
 
     const handleGoogleSignup = async (credential: string | undefined) => {
         if (!credential) {
-            setError('Google sign up failed. Please try again.');
+            toast.error('Google sign up failed. Please try again.');
             return;
         }
 
-        setError('');
-        setSuccess('');
         setLoading(true);
 
         try {
@@ -57,6 +54,7 @@ const page = () => {
                 }
                 
                 // Google signup berhasil, user sudah auto-verified
+                toast.success('Sign up successful');
                 router.push('/profile');
             }
         } catch (err: any) {
@@ -71,13 +69,13 @@ const page = () => {
             
             // Jika user sudah terdaftar, suruh login (sesuai diagram)
             if (status === 409 || status === 400 || message.toLowerCase().includes('already exists') || message.toLowerCase().includes('already registered')) {
-                setError('This Google account is already registered. Redirecting to sign in...');
+                toast.error('This Google account is already registered. Redirecting to sign in...');
                 // Redirect ke login setelah 3 detik
                 setTimeout(() => {
                     router.push('/signin');
                 }, 3000);
             } else {
-                setError(message || 'Google sign up failed. Please try again.');
+                toast.error(message || 'Google sign up failed. Please try again.');
             }
         } finally {
             setLoading(false);
@@ -86,8 +84,6 @@ const page = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
         setLoading(true);
 
         try {
@@ -96,7 +92,7 @@ const page = () => {
                 email,
                 password: password || undefined,
             });
-            setSuccess('Registration successful! Redirecting to verification page...');
+            toast.success('Registration successful! Redirecting to verification page...');
             
             // Redirect ke verify-email page setelah 2 detik
             setTimeout(() => {
@@ -104,7 +100,7 @@ const page = () => {
             }, 2000);
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Registration failed. Please try again.';
-            setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -117,16 +113,6 @@ const page = () => {
                 </h1>
 
                 <form className="space-y-5" onSubmit={handleSubmit}>
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <p className="text-red-600 text-sm">{error}</p>
-                        </div>
-                    )}
-                    {success && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                            <p className="text-green-700 text-sm">{success}</p>
-                        </div>
-                    )}
                     {/* Name */}
                     <div>
                         <input
@@ -192,7 +178,7 @@ const page = () => {
                             onSuccess={(credentialResponse) =>
                                 handleGoogleSignup(credentialResponse.credential)
                             }
-                            onError={() => setError('Google sign up failed. Please try again.')}
+                            onError={() => toast.error('Google sign up failed. Please try again.')}
                             useOneTap={false}
                             text="signup_with"
                             width="100%"

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -180,6 +181,41 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Leaflet Map Styling */
+.leaflet-container {
+  font-family: inherit;
+  z-index: 1;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.leaflet-popup-tip {
+  background: white;
+  border: 1px solid #ccc;
+}
+
+.leaflet-marker-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.leaflet-control-zoom,
+.leaflet-control-layers,
+.leaflet-control-attribution {
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  border-bottom: none !important;
+  font-size: 18px !important;
+  line-height: 24px !important;
 }
 
 

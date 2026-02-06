@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 import { axiosInstance } from '@/lib/axios';
 import { GoogleLogin } from '@react-oauth/google';
@@ -14,8 +15,80 @@ const page = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // RoleCode: CUSTOMER | SUPER_ADMIN | OUTLET_ADMIN | WORKER | DRIVER
+    const getRoleFromUser = (user: any) => {
+        return user?.role ?? user?.roleCode ?? user?.role?.code ?? 'CUSTOMER';
+    };
+
+    const getRoleFromToken = (accessToken?: string) => {
+        if (!accessToken) return null;
+        try {
+            const decoded: any = jwtDecode(accessToken);
+            return decoded?.role ?? decoded?.roleCode ?? null;
+        } catch {
+            return null;
+        }
+    };
+
+    const routeByRole = (role: string) => {
+        if (role === 'SUPER_ADMIN' || role === 'OUTLET_ADMIN') return '/admin';
+        if (role === 'DRIVER') return '/attendance?next=/driver';
+        if (role === 'WORKER') return '/attendance?next=/worker';
+        return '/profile'; // CUSTOMER default
+    };
+
+    const redirectAfterLogin = async (userFromResponse: any, accessToken?: string) => {
+        // 1) Prioritas: role dari token (paling reliable)
+        const roleFromToken = getRoleFromToken(accessToken);
+        if (roleFromToken) {
+            toast.success('Login successful');
+            router.push(routeByRole(roleFromToken));
+            return;
+        }
+
+        // 2) Fallback: role dari user response atau fetch /users/profile
+        let user = userFromResponse;
+
+        if (!user) {
+            try {
+                const me = await axiosInstance.get('/users/profile');
+                user = me.data?.data ?? me.data;
+            } catch {
+                user = { role: 'CUSTOMER' };
+            }
+        } else {
+            // kalau user ada tapi role-nya kosong, tetap coba fetch profile
+            const roleMaybe = getRoleFromUser(user);
+            if (!roleMaybe) {
+                try {
+                    const me = await axiosInstance.get('/users/profile');
+                    user = me.data?.data ?? me.data;
+                } catch {
+                    // keep user as is
+                }
+            }
+        }
+
+        const role = getRoleFromUser(user);
+        toast.success('Login successful');
+        router.push(routeByRole(role));
+    };
+
+    const setAuthCookies = (accessToken: string, user?: any) => {
+        const isProduction = window.location.protocol === 'https:';
+
+        Cookies.set('auth_token', accessToken, { expires: 7, secure: isProduction, sameSite: 'strict' });
+        if (user) {
+            Cookies.set('user_data', JSON.stringify(user), { expires: 7, secure: isProduction, sameSite: 'strict' });
+        }
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('user-data-updated'));
+        }
+    };
+
     const handleGoogleLogin = async (credential: string | undefined) => {
         if (!credential) {
+            toast.error('Google login failed. Please try again.');
             setError('Google login failed. Please try again.');
             return;
         }
@@ -42,35 +115,31 @@ const page = () => {
 
             console.log('Google login response:', { accessToken, user });
 
-            if (accessToken) {
-                const isProduction = window.location.protocol === 'https:';
-                
-                Cookies.set('auth_token', accessToken, { expires: 7, secure: isProduction, sameSite: 'strict' });
-                if (user) {
-                    Cookies.set('user_data', JSON.stringify(user), { expires: 7, secure: isProduction, sameSite: 'strict' });
-                }
-                
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new Event('user-data-updated'));
-                }
-                
-                router.push('/profile');
+            if (!accessToken) {
+                setError('Google login failed: access token not found.');
+                toast.error('Google login failed: access token not found.');
+                return;
             }
+
+            setAuthCookies(accessToken, user);
+            await redirectAfterLogin(user, accessToken);
         } catch (err: any) {
             // Handle error sesuai diagram - jika user belum terdaftar
             const message = err?.response?.data?.message || '';
             const status = err?.response?.status;
-            
+
             console.error('Google login error:', { message, status, data: err?.response?.data });
-            
+
             if (status === 404 || message.toLowerCase().includes('not found') || message.toLowerCase().includes('not registered')) {
-                setError('Account not found. Please sign up first with Google. Click here to sign up.');
-                // Redirect ke signup setelah 3 detik
+                setError('Account not found. Please sign up first with Google.');
+                toast.error('Account not found. Please sign up first with Google.');
+                // Redirect ke signup setelah 1.2 detik
                 setTimeout(() => {
                     router.push('/signup');
-                }, 3000);
+                }, 1200);
             } else {
                 setError(message || 'Google login failed. Please try again.');
+                toast.error(message || 'Google login failed. Please try again.');
             }
         } finally {
             setLoading(false);
@@ -90,27 +159,24 @@ const page = () => {
 
             const accessToken = response?.data?.data?.accessToken;
             const user = response?.data?.data?.user;
-            
-            if (accessToken) {
-                // Store in secure cookies (7 days expiry)
-                const isProduction = window.location.protocol === 'https:';
-                Cookies.set('auth_token', accessToken, { expires: 7, secure: isProduction, sameSite: 'strict' });
-                if (user) {
-                    Cookies.set('user_data', JSON.stringify(user), { expires: 7, secure: isProduction, sameSite: 'strict' });
-                }
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new Event('user-data-updated'));
-                }
+
+            if (!accessToken) {
+                setError('Login failed: access token not found.');
+                toast.error('Login failed: access token not found.');
+                return;
             }
 
-            router.push('/profile');
+            setAuthCookies(accessToken, user);
+            await redirectAfterLogin(user, accessToken);
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Login failed. Please try again.';
             setError(message);
+            toast.error(message);
         } finally {
             setLoading(false);
         }
     };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
@@ -124,6 +190,7 @@ const page = () => {
                             <p className="text-red-600 text-sm">{error}</p>
                         </div>
                     )}
+
                     {/* Email */}
                     <div>
                         <input
@@ -146,7 +213,7 @@ const page = () => {
                         />
                     </div>
 
-                    {/* Forgot password */}
+                    {/* Forgot Password */}
                     <div className="text-right">
                         <a
                             href="/forgot-password"
@@ -156,7 +223,7 @@ const page = () => {
                         </a>
                     </div>
 
-                    {/* Button */}
+                    {/* Submit Button */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -166,7 +233,7 @@ const page = () => {
                     </button>
                 </form>
 
-                {/* Sign up link */}
+                {/* Sign Up Link */}
                 <p className="text-center text-sm text-gray-500 mt-4">
                     Don&apos;t have an account?{' '}
                     <a href="/signup" className="text-[#1dacbc] hover:underline">
@@ -188,7 +255,10 @@ const page = () => {
                             onSuccess={(credentialResponse) =>
                                 handleGoogleLogin(credentialResponse.credential)
                             }
-                            onError={() => setError('Google login failed. Please try again.')}
+                            onError={() => {
+                                toast.error('Google login failed. Please try again.');
+                                setError('Google login failed. Please try again.');
+                            }}
                             useOneTap={false}
                             text="signin_with"
                             width="100%"
@@ -197,7 +267,7 @@ const page = () => {
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default page
+export default page;
