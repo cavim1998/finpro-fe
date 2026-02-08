@@ -10,6 +10,7 @@ import { addressService } from '@/services/addressService';
 import { axiosInstance } from '@/lib/axios';
 import { OutletListTypes } from '@/types/outlet';
 import { Address } from '@/types/address';
+import { toast } from 'sonner';
 
 export default function ReservationPage() {
     const router = useRouter();
@@ -19,6 +20,7 @@ export default function ReservationPage() {
     const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
     const [outlets, setOutlets] = useState<OutletListTypes[]>([]);
     const [selectedOutletId, setSelectedOutletId] = useState<number | null>(null);
+    const [submitting, setSubmitting] = useState(false);
     
     const [formData, setFormData] = useState({
         name: '',
@@ -122,11 +124,54 @@ export default function ReservationPage() {
         });
     };
 
+    const buildScheduledPickupAt = (pickupDate: string, pickupTime: string) => {
+        if (!pickupDate || !pickupTime) {
+            return null;
+        }
+        const timeStart = pickupTime.split('-')[0]?.trim();
+        if (!timeStart) {
+            return null;
+        }
+        const localDateTime = new Date(`${pickupDate}T${timeStart}:00`);
+        if (Number.isNaN(localDateTime.getTime())) {
+            return null;
+        }
+        return localDateTime.toISOString();
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Implement API call to create reservation
-        console.log('Reservation data:', formData);
-        alert('Reservation submitted! (API integration pending)');
+        if (!selectedAddressId) {
+            toast.error('Please select a pickup address');
+            return;
+        }
+        const scheduledPickupAt = buildScheduledPickupAt(formData.pickupDate, formData.pickupTime);
+        if (!scheduledPickupAt) {
+            toast.error('Please select a valid pickup date and time');
+            return;
+        }
+
+        const outletName = outlets.find(outlet => outlet.id === selectedOutletId)?.name;
+        const notesParts = [formData.specialInstructions?.trim(), `Service: ${formData.serviceType}`];
+        if (outletName) {
+            notesParts.push(`Outlet Preference: ${outletName}`);
+        }
+        const notes = notesParts.filter(Boolean).join('\n');
+
+        setSubmitting(true);
+        try {
+            await axiosInstance.post('/pickup-requests', {
+                addressId: selectedAddressId,
+                scheduledPickupAt,
+                notes: notes || undefined,
+            });
+            toast.success('Pickup request created successfully');
+        } catch (error: any) {
+            const message = error?.response?.data?.message || 'Failed to create pickup request';
+            toast.error(message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (loading) {
@@ -392,9 +437,10 @@ export default function ReservationPage() {
                             <div className="flex justify-center pt-6">
                                 <button
                                     type="submit"
+                                    disabled={submitting}
                                     className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white px-12 py-4 rounded-full font-bold text-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                                 >
-                                    Confirm Reservation
+                                    {submitting ? 'Submitting...' : 'Confirm Reservation'}
                                 </button>
                             </div>
                         </form>

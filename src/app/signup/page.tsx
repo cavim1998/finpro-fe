@@ -12,7 +12,6 @@ const page = () => {
     const router = useRouter();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleGoogleSignup = async (credential: string | undefined) => {
@@ -90,7 +89,6 @@ const page = () => {
             await axiosInstance.post('/auth/register', {
                 name,
                 email,
-                password: password || undefined,
             });
             toast.success('Registration successful! Redirecting to verification page...');
             
@@ -131,17 +129,6 @@ const page = () => {
                             placeholder="Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full border text-black border-gray-300 rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#14939e]"
-                        />
-                    </div>
-
-                    {/* Password */}
-                    <div>
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
                             className="w-full border text-black border-gray-300 rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#14939e]"
                         />
                     </div>
