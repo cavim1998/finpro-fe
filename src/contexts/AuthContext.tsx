@@ -91,7 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sameSite: "strict",
       });
     } catch {
-      // token ada tapi profile gagal → anggap unauth untuk keamanan
       setIsAuthenticated(false);
       setUser(null);
     }

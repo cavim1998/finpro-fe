@@ -29,7 +29,6 @@ export function CheckInOutDialog({
           </h1>
 
           <div className="mx-auto my-10 flex h-[240px] w-[240px] items-center justify-center overflow-hidden rounded-full bg-white/40">
-            {/* pakai image bebas. kalau belum ada, boleh ganti placeholder */}
             <Image
               src="/placeholder.png"
               alt="illustration"

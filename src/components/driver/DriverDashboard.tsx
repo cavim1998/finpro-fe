@@ -1,140 +1,178 @@
-import OrderCard from "@/components/admin/card/OrderCard";
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Bell,
-  CheckCircle2,
-  ChevronRight,
-  Clock,
-  Package,
-  Truck,
-} from "lucide-react";
-import { useAttendance } from "../../contexts/AttendanceContext";
-import { useAuth } from "../../contexts/AuthContext";
-import { useOrders } from "../../contexts/OrderContext";
-import Link from "next/link";
+import { Bell, Truck, ClipboardList, Clock } from "lucide-react";
+import { useProfileQuery } from "@/hooks/api/useProfile";
+import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
+import { useClockOutMutation } from "@/hooks/api/useAttendanceMutations";
+import ConfirmActionDialog from "@/app/attendance/components/ConfirmActionDialog";
 
-export function DriverDashboard() {
-  const { user } = useAuth();
-  const { orders, getOrdersByStatus } = useOrders();
-  const { isUserCheckedIn } = useAttendance();
+function formatTime(d?: Date | string | null) {
+  if (!d) return "-";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(dt.getTime())) return "-";
+  return dt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
 
-  const pickupOrders = getOrdersByStatus(["WAITING_DRIVER_PICKUP"]);
-  const deliveryOrders = getOrdersByStatus(["READY_TO_DELIVER"]);
-  const myActiveOrder = orders.find(
-    (o) =>
-      o.driverName &&
-      (o.status === "ON_THE_WAY_TO_OUTLET" ||
-        o.status === "DELIVERING_TO_CUSTOMER"),
-  );
+export default function DriverDashboard() {
+  const router = useRouter();
+  const profileQ = useProfileQuery();
+  const attendanceQ = useAttendanceTodayQuery();
+  const clockOutM = useClockOutMutation();
+  const today = attendanceQ.data;
+  const isCheckedIn = !!today?.isCheckedIn;
+  const isCompleted = !!today?.isCompleted;
 
-  const outletStaffId = user?.outletStaffId;
-  const isChecked = outletStaffId ? isUserCheckedIn(outletStaffId) : false;
-  const displayName = user?.profile?.fullName || "Driver";
+  const displayName =
+    profileQ.data?.fullName || profileQ.data?.name || profileQ.data?.email || "Driver";
+
+  const sinceText = formatTime(today?.log?.clockInAt ?? null);
+
+  const [openClockOut, setOpenClockOut] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+
+  const handleConfirmClockOut = async () => {
+    setErrorMsg(null);
+    try {
+      await clockOutM.mutateAsync();
+      await attendanceQ.refetch();
+      setOpenClockOut(false);
+      router.push("/attendance?next=/driver");
+    } catch (e: any) {
+      setErrorMsg(e?.response?.data?.message ?? "Clock-out gagal.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="gradient-hero text-primary-foreground p-4 pt-6 pb-8 rounded-b-3xl">
+      <header className="p-4 pt-6 pb-8 rounded-b-3xl bg-muted/30">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-primary-foreground/80 text-sm">Good morning,</p>
-            <h1 className="text-xl font-display font-bold">{displayName}</h1>
+            <p className="text-muted-foreground text-sm">Welcome back,</p>
+            <h1 className="text-xl font-bold">{displayName}</h1>
+            <p className="text-xs text-muted-foreground">
+              {profileQ.isLoading ? "Memuat profil..." : "Driver Dashboard"}
+            </p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-primary-foreground"
-          >
+
+          <Button variant="ghost" size="icon" aria-label="notifications">
             <Bell className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <Truck className="h-5 w-5 mx-auto mb-1" />
-            <p className="text-lg font-bold">{pickupOrders.length}</p>
-            <p className="text-xs text-primary-foreground/80">Pickups</p>
-          </div>
-          <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <Package className="h-5 w-5 mx-auto mb-1" />
-            <p className="text-lg font-bold">{deliveryOrders.length}</p>
-            <p className="text-xs text-primary-foreground/80">Deliveries</p>
-          </div>
-          <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-3 text-center">
-            <CheckCircle2 className="h-5 w-5 mx-auto mb-1" />
-            <p className="text-lg font-bold">12</p>
-            <p className="text-xs text-primary-foreground/80">Completed</p>
-          </div>
-        </div>
+        {/* Attendance summary */}
+        <Card className="shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-semibold">Attendance</p>
+                <p className="text-sm text-muted-foreground">
+                  {attendanceQ.isLoading
+                    ? "Memuat status..."
+                    : isCompleted
+                      ? "Shift selesai (locked sampai besok)"
+                      : isCheckedIn
+                        ? "Sedang shift"
+                        : "Belum clock-in"}
+                </p>
+                <p className="text-xs text-muted-foreground">Since: {isCheckedIn ? sinceText : "-"}</p>
+              </div>
+
+              <Button
+                variant="outline"
+                className="min-w-[140px]"
+                disabled={!isCheckedIn || isCompleted || clockOutM.isPending}
+                onClick={() => setOpenClockOut(true)}
+              >
+                {clockOutM.isPending ? "Clocking Out..." : "Clock Out"}
+              </Button>
+            </div>
+
+            {errorMsg && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {errorMsg}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </header>
 
       <div className="p-4 space-y-4 -mt-4">
-        {/* Active Order */}
-        {myActiveOrder && (
-          <Card className="border-2 border-accent shadow-card">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="shadow-card">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-accent">
-                <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                Active Order
+              <CardTitle className="text-base flex items-center gap-2">
+                <Truck className="h-4 w-4" /> Pickup Requests
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <OrderCard order={myActiveOrder} showItems />
-              <Link href={`/driver/order/${myActiveOrder.id}`}>
-                <Button className="w-full mt-3 gradient-accent">
-                  Continue Order
-                  <ChevronRight className="h-4 w-4 ml-1" />
+              <p className="text-sm text-muted-foreground mb-3">
+                (Nanti kita sambungkan endpoint pickup)
+              </p>
+              <Link href="/driver/pickups">
+                <Button className="w-full" disabled={!isCheckedIn || isCompleted}>
+                  Open
                 </Button>
               </Link>
             </CardContent>
           </Card>
-        )}
 
-        {/* Available Pickups */}
-        {!myActiveOrder && isChecked && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display font-semibold">Available Pickups</h2>
-              <Link
-                href="/driver/pickups"
-                className="text-sm text-primary font-medium"
-              >
-                View All
-              </Link>
-            </div>
-
-            {pickupOrders.length > 0 ? (
-              <div className="space-y-3">
-                {pickupOrders.slice(0, 3).map((order) => (
-                  <OrderCard key={order.id} order={order} onClick={() => {}} />
-                ))}
-              </div>
-            ) : (
-              <Card className="shadow-card">
-                <CardContent className="py-8 text-center">
-                  <Clock className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                  <p className="text-muted-foreground">
-                    No pickup requests available
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {/* Not Checked In Warning */}
-        {!isChecked && (
-          <Card className="bg-status-warning/10 border-status-warning/20">
-            <CardContent className="py-4 text-center">
-              <p className="text-status-warning font-medium">
-                Check in to start accepting orders
+          <Card className="shadow-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" /> My Tasks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">
+                (Nanti kita sambungkan endpoint tasks/delivery)
               </p>
+              <Link href="/driver/tasks">
+                <Button className="w-full" variant="outline" disabled={!isCheckedIn || isCompleted}>
+                  Open
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Reminder kalau belum check-in */}
+        {!attendanceQ.isLoading && !isCheckedIn && !isCompleted && (
+          <Card className="border">
+            <CardContent className="py-4 flex items-center gap-3">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Kamu harus clock-in dulu sebelum mulai ambil pickup/delivery.
+              </p>
+              <Button
+                className="ml-auto"
+                onClick={() => router.push("/attendance?next=/driver")}
+              >
+                Go to Attendance
+              </Button>
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Confirm Clock-out */}
+      <ConfirmActionDialog
+        open={openClockOut}
+        onOpenChange={setOpenClockOut}
+        title="Konfirmasi Clock Out"
+        description="Apakah kamu yakin ingin clock-out sekarang? Setelah clock-out, shift akan terkunci sampai besok."
+        confirmText="Ya, Clock Out"
+        cancelText="Batal"
+        loading={clockOutM.isPending}
+        onConfirm={handleConfirmClockOut}
+      />
 
       <BottomNav />
     </div>

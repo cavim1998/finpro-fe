@@ -23,6 +23,9 @@ type NavItem = {
 export function BottomNav() {
   const { user } = useAuth();
   const pathname = usePathname();
+    console.log("[BottomNav] pathname:", pathname);
+  console.log("[BottomNav] user:", user);
+  console.log("[BottomNav] user.role:", user?.role, "type:", typeof user?.role);
 
   if (!user) return null;
 
@@ -59,12 +62,13 @@ export function BottomNav() {
   };
 
   const navItems = getNavItems();
+  console.log("[BottomNav] navItems:", navItems);
 
-  // helper: biar /driver/pickups aktif juga ketika di subpath lebih dalam
   const isActivePath = (target: string) =>
     pathname === target || pathname.startsWith(target + "/");
 
   return (
+    
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 safe-bottom">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {navItems.map((item) => {
@@ -92,7 +96,10 @@ export function BottomNav() {
             </Link>
           );
         })}
+        
       </div>
+      
     </nav>
+    
   );
 }

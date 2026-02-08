@@ -1,61 +1,83 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { useAttendance } from "@/contexts/AttendanceContext";
+import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
+import { useProfileQuery } from "@/hooks/api/useProfile";
 import { RoleCode } from "@/types";
+import Cookies from "js-cookie";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { getRoleFromToken } from "@/lib/auth";
 
 type Props = {
   children: React.ReactNode;
-  roles?: RoleCode[];
-  redirectTo?: string;
+  roles: RoleCode[];
+  redirectTo: string;
 };
 
-export default function RequireCheckIn({
+export default function RequireCheckInRQ({
   children,
   roles,
-  redirectTo = "/attendance",
+  redirectTo,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, authReady } = useAuth();
-  const { today, loadingToday, refreshToday } = useAttendance();
+
+  const token = Cookies.get("auth_token");
+  const roleFromToken = getRoleFromToken(token ?? undefined) as RoleCode | null;
+
+  const profileQ = useProfileQuery();
+  const attendanceQ = useAttendanceTodayQuery();
+
+  const role = (profileQ.data?.role as RoleCode | undefined) ?? roleFromToken ?? undefined;
+  const isCheckedIn = !!attendanceQ.data?.isCheckedIn;
+  const isLockedToday = !!attendanceQ.data?.isCompleted;
+
+  const profileStatus = (profileQ.error as any)?.response?.status;
+
+const shouldGoSignin = useMemo(() => {
+  if (!token) return true;
+  if (profileQ.isLoading) return false;
+  if (profileQ.isError) return profileStatus === 401;
+  if (!role) return true;
+  if (!roles.includes(role)) return true;
+  return false;
+}, [token, profileQ.isLoading, profileQ.isError, profileStatus, role, roles]);
+
+  const shouldGoAttendance = useMemo(() => {
+    if (!token) return false;
+    if (profileQ.isLoading || attendanceQ.isLoading) return false;
+    if (profileQ.isError) return false;
+    if (!role || !roles.includes(role)) return false;
+
+    const allowAccess = isCheckedIn && !isLockedToday;
+    return !allowAccess;
+  }, [
+    token,
+    profileQ.isLoading,
+    attendanceQ.isLoading,
+    profileQ.isError,
+    role,
+    roles,
+    isCheckedIn,
+    isLockedToday,
+  ]);
 
   useEffect(() => {
-    if (!authReady) return;
-    if (!isAuthenticated) router.replace("/signin");
-  }, [authReady, isAuthenticated, router]);
-
-  // refresh attendance kalau sudah authenticated
-  useEffect(() => {
-    if (!authReady) return;
-    if (isAuthenticated) {
-      refreshToday().catch(() => {});
+    if (shouldGoSignin) {
+      router.replace("/signin");
+      return;
     }
-  }, [authReady, isAuthenticated, refreshToday]);
 
-  if (!authReady) return null;
-  if (!isAuthenticated || !user) return null;
-
-  const defaultMustCheckIn = user.role === "WORKER" || user.role === "DRIVER";
-  const mustCheckIn = roles ? roles.includes(user.role as RoleCode) : defaultMustCheckIn;
-
-  const isLockedToday = !!today?.isCompleted;
-  const isCheckedIn = !!today?.isCheckedIn;
-
-  const allowAccess = !mustCheckIn ? true : isCheckedIn && !isLockedToday;
-
-  useEffect(() => {
-    if (!mustCheckIn) return;
-    if (loadingToday) return;
-
-    if (!allowAccess && pathname !== redirectTo) {
+    if (shouldGoAttendance && pathname !== redirectTo) {
       router.replace(redirectTo);
+      return;
     }
-  }, [mustCheckIn, allowAccess, loadingToday, pathname, redirectTo, router]);
+  }, [shouldGoSignin, shouldGoAttendance, pathname, redirectTo, router]);
 
-  if (mustCheckIn && (loadingToday || !allowAccess)) return null;
+  if (!token) return null;
+  if (profileQ.isLoading || attendanceQ.isLoading) return null;
+  if (shouldGoSignin) return null;
+  if (shouldGoAttendance) return null;
 
   return <>{children}</>;
 }
