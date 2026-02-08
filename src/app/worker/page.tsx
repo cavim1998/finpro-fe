@@ -1,12 +1,16 @@
 "use client";
 
-import RequireCheckIn from "@/components/guards/RequireCheckIn";
+import RequireCheckInRQ from "@/components/guards/RequireCheckIn";
 import { WorkerDashboard } from "@/components/worker/WorkerDashboard";
+import { RoleCode } from "@/types";
 
 export default function WorkerPage() {
   return (
-    <RequireCheckIn roles={["WORKER"]} redirectTo="/attendance?next=/worker">
+    <RequireCheckInRQ
+      roles={["WORKER" as RoleCode]}
+      redirectTo="/attendance?next=/worker"
+    >
       <WorkerDashboard />
-    </RequireCheckIn>
+    </RequireCheckInRQ>
   );
 }
