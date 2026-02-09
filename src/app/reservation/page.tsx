@@ -11,6 +11,7 @@ import { axiosInstance } from '@/lib/axios';
 import { OutletListTypes } from '@/types/outlet';
 import { Address } from '@/types/address';
 import { toast } from 'sonner';
+import { sortOutletsByDistance } from '@/lib/distance';
 
 export default function ReservationPage() {
     const router = useRouter();
@@ -19,7 +20,9 @@ export default function ReservationPage() {
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
     const [outlets, setOutlets] = useState<OutletListTypes[]>([]);
+    const [sortedOutlets, setSortedOutlets] = useState<Array<OutletListTypes & { distance?: number }>>([]);
     const [selectedOutletId, setSelectedOutletId] = useState<number | null>(null);
+    const [showAllOutlets, setShowAllOutlets] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     
     const [formData, setFormData] = useState({
@@ -85,6 +88,20 @@ export default function ReservationPage() {
             }
             const outletArray = Array.isArray(data) ? data : [];
             setOutlets(outletArray);
+            
+            // If address is already selected, sort outlets by distance
+            if (selectedAddressId && addresses.length > 0) {
+                const selectedAddr = addresses.find(a => a.id === selectedAddressId);
+                if (selectedAddr && selectedAddr.latitude && selectedAddr.longitude) {
+                    const sorted = sortOutletsByDistance(outletArray, selectedAddr.latitude, selectedAddr.longitude);
+                    setSortedOutlets(sorted as Array<OutletListTypes & { distance?: number }>);
+                    return;
+                }
+            }
+            
+            // Otherwise just set them as is
+            setSortedOutlets(outletArray as Array<OutletListTypes & { distance?: number }>);
+            
             // Auto-select first active outlet
             if (outletArray.length > 0) {
                 const activeOutlet = outletArray.find(o => o.isActive) || outletArray[0];
@@ -103,6 +120,18 @@ export default function ReservationPage() {
                 ...prev,
                 address: `${selected.addressText}\n\nPenerima: ${selected.receiverName}\nTelepon: ${selected.receiverPhone}`
             }));
+            
+            // Calculate distances to all outlets if address has coordinates
+            if (selected.latitude && selected.longitude && outlets.length > 0) {
+                const sorted = sortOutletsByDistance(outlets, selected.latitude, selected.longitude);
+                setSortedOutlets(sorted as Array<OutletListTypes & { distance?: number }>);
+                setShowAllOutlets(false);
+                
+                // Auto-select the closest outlet
+                if (sorted.length > 0) {
+                    handleOutletSelect(sorted[0].id);
+                }
+            }
         }
     };
 
@@ -310,30 +339,49 @@ export default function ReservationPage() {
                                         Select Outlet *
                                     </label>
                                     {outlets.length > 0 ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {outlets.map((outlet) => (
-                                                <div
-                                                    key={outlet.id}
-                                                    onClick={() => handleOutletSelect(outlet.id)}
-                                                    className={`p-4 border-2 rounded-lg transition cursor-pointer ${
-                                                        selectedOutletId === outlet.id
-                                                            ? 'border-[#1dacbc] bg-blue-50 shadow-md'
-                                                            : 'border-gray-300 hover:border-[#1dacbc] hover:shadow-md'
-                                                    }`}
+                                        <div>
+                                            {/* Display Top 3 Outlets or All based on toggle */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                                {(showAllOutlets ? sortedOutlets : sortedOutlets.slice(0, 3)).map((outlet) => (
+                                                    <div
+                                                        key={outlet.id}
+                                                        onClick={() => handleOutletSelect(outlet.id)}
+                                                        className={`p-4 border-2 rounded-lg transition cursor-pointer ${
+                                                            selectedOutletId === outlet.id
+                                                                ? 'border-[#1dacbc] bg-blue-50 shadow-md'
+                                                                : 'border-gray-300 hover:border-[#1dacbc] hover:shadow-md'
+                                                        }`}
+                                                    >
+                                                        <div className="font-semibold text-gray-800 mb-2">{outlet.name}</div>
+                                                        <div className="text-sm text-gray-600 mb-2">📍 {outlet.addressText}</div>
+                                                        <div className="text-sm text-gray-600 mb-2">📏 Radius: {outlet.serviceRadiusKm} km</div>
+                                                        {outlet.distance !== undefined && (
+                                                            <div className="text-sm font-semibold text-[#1dacbc] mb-2">
+                                                                📍 Distance: {outlet.distance} km
+                                                            </div>
+                                                        )}
+                                                        {outlet.staffCount !== undefined && (
+                                                            <div className="text-sm text-gray-600">👥 {outlet.staffCount} staff</div>
+                                                        )}
+                                                        {selectedOutletId === outlet.id && (
+                                                            <div className="mt-3 text-sm font-semibold text-[#1dacbc]">
+                                                                ✓ Terpilih
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* View All Button */}
+                                            {sortedOutlets.length > 3 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowAllOutlets(!showAllOutlets)}
+                                                    className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition text-sm"
                                                 >
-                                                    <div className="font-semibold text-gray-800 mb-2">{outlet.name}</div>
-                                                    <div className="text-sm text-gray-600 mb-2">📍 {outlet.addressText}</div>
-                                                    <div className="text-sm text-gray-600 mb-2">📏 Radius: {outlet.serviceRadiusKm} km</div>
-                                                    {outlet.staffCount !== undefined && (
-                                                        <div className="text-sm text-gray-600">👥 {outlet.staffCount} staff</div>
-                                                    )}
-                                                    {selectedOutletId === outlet.id && (
-                                                        <div className="mt-3 text-sm font-semibold text-[#1dacbc]">
-                                                            ✓ Terpilih
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                    {showAllOutlets ? '▲ Show Top 3' : '▼ View All Outlets (' + sortedOutlets.length + ')'}
+                                                </button>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
@@ -48,22 +48,32 @@ type PickupRequestListItem = {
     notes?: string;
     createdAt: string;
     arrivedAt?: string;
+    outlet?: {
+        id: number;
+        name: string;
+        address?: string;
+    };
 };
 
 type OrderListItem = {
     id: string;
-    orderNumber: string;
+    orderNumber?: string;
+    orderNo?: string;
     status: string;
     totalAmount: number;
     itemsCount?: number;
     outletName?: string;
     createdAt: string;
+    deliveryDate?: string;
+    deliveredAt?: string;
+    receivedConfirmedAt?: string;
 };
 
 export default function CheckStatusPage() {
     const router = useRouter();
     const [orderNumber, setOrderNumber] = useState('');
     const [order, setOrder] = useState<Order | null>(null);
+    const [pickupDetail, setPickupDetail] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
     const [pickupRequests, setPickupRequests] = useState<PickupRequestListItem[]>([]);
@@ -73,6 +83,14 @@ export default function CheckStatusPage() {
     const [showAccountSection, setShowAccountSection] = useState(false);
     const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
     const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
+    const [searchType, setSearchType] = useState<'order' | 'pickup' | null>(null);
+    const [filterDateFrom, setFilterDateFrom] = useState('');
+    const [filterDateTo, setFilterDateTo] = useState('');
+    const [filteredOrders, setFilteredOrders] = useState<OrderListItem[]>([]);
+    const [filteredPickupRequests, setFilteredPickupRequests] = useState<PickupRequestListItem[]>([]);
+    const [paymentDeadlines, setPaymentDeadlines] = useState<Record<string, { deadline: Date; timeRemaining: string }>>({});
+    const [confirmationDeadlines, setConfirmationDeadlines] = useState<Record<string, { deadline: Date; timeRemaining: string }>>({});
+    const notifiedOrdersRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         const userCookie = Cookies.get('user_data');
@@ -84,25 +102,185 @@ export default function CheckStatusPage() {
         loadOrders();
     }, []);
 
+    useEffect(() => {
+        // Filter orders based on date range
+        const filtered = orders.filter(order => {
+            if (!filterDateFrom && !filterDateTo) return true;
+            
+            // Parse order date (handle both timezone-aware and simple dates)
+            const orderDate = new Date(order.createdAt);
+            const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+            
+            if (filterDateFrom) {
+                // Parse input date and create date at start of day
+                const [year, month, day] = filterDateFrom.split('-');
+                const fromDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                if (orderDateOnly < fromDate) return false;
+            }
+            
+            if (filterDateTo) {
+                // Parse input date and create date at end of day
+                const [year, month, day] = filterDateTo.split('-');
+                const toDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59, 999);
+                if (orderDateOnly > toDate) return false;
+            }
+            
+            return true;
+        });
+        
+        setFilteredOrders(filtered);
+    }, [orders, filterDateFrom, filterDateTo]);
+
+    useEffect(() => {
+        // Filter pickup requests based on scheduled date range
+        const filtered = pickupRequests.filter(request => {
+            if (!filterDateFrom && !filterDateTo) return true;
+            
+            // Parse scheduled pickup date (not createdAt - user filters by when pickup is scheduled)
+            const scheduledDate = new Date(request.scheduledPickupAt);
+            const scheduledDateOnly = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+            
+            if (filterDateFrom) {
+                // Parse input date and create date at start of day
+                const [year, month, day] = filterDateFrom.split('-');
+                const fromDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                if (scheduledDateOnly < fromDate) return false;
+            }
+            
+            if (filterDateTo) {
+                // Parse input date and create date at end of day
+                const [year, month, day] = filterDateTo.split('-');
+                const toDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59, 999);
+                if (scheduledDateOnly > toDate) return false;
+            }
+            
+            return true;
+        });
+        
+        setFilteredPickupRequests(filtered);
+    }, [pickupRequests, filterDateFrom, filterDateTo]);
+
+    // Calculate payment deadlines for each order
+    useEffect(() => {
+        const calculateDeadlines = () => {
+            const deadlinesMap: Record<string, { deadline: Date; timeRemaining: string }> = {};
+            const now = new Date();
+
+            orders.forEach(order => {
+                // Only calculate deadline for orders that need payment and are within payment window
+                if (canPayOrder(order.status)) {
+                    const orderDate = new Date(order.createdAt);
+                    const deadline = new Date(orderDate.getTime() + 24 * 60 * 60 * 1000); // 24 hours from creation
+                    const timeRemaining = deadline.getTime() - now.getTime();
+
+                    if (timeRemaining > 0) {
+                        const hours = Math.floor(timeRemaining / (60 * 60 * 1000));
+                        const minutes = Math.floor((timeRemaining % (60 * 60 * 1000)) / (60 * 1000));
+                        const seconds = Math.floor((timeRemaining % (60 * 1000)) / 1000);
+                        
+                        deadlinesMap[order.id] = {
+                            deadline,
+                            timeRemaining: `${hours}h ${minutes}m ${seconds}s`,
+                        };
+
+                        // Show toast notification when deadline is within 1 hour
+                        if (timeRemaining <= 60 * 60 * 1000 && !notifiedOrdersRef.current.has(order.id)) {
+                            toast.warning(`Payment deadline approaching for order ${order.orderNumber}! Only ${hours}h ${minutes}m remaining.`);
+                            notifiedOrdersRef.current.add(order.id);
+                        }
+                    } else {
+                        // Deadline passed
+                        deadlinesMap[order.id] = {
+                            deadline,
+                            timeRemaining: 'EXPIRED',
+                        };
+                    }
+                }
+            });
+
+            setPaymentDeadlines(deadlinesMap);
+        };
+
+        calculateDeadlines();
+        const interval = setInterval(calculateDeadlines, 1000); // Update every second
+        return () => clearInterval(interval);
+    }, [orders]);
+
+    // Calculate auto-confirmation deadlines for delivered orders (48 hours)
+    useEffect(() => {
+        const calculateConfirmDeadlines = () => {
+            const deadlinesMap: Record<string, { deadline: Date; timeRemaining: string }> = {};
+            const now = new Date();
+
+            orders.forEach(order => {
+                // Only calculate for orders in delivering status
+                if (order.status === 'DELIVERING_TO_CUSTOMER') {
+                    // Use deliveryDate, or fallback to createdAt for testing
+                    const referenceDate = order.deliveryDate ? new Date(order.deliveryDate) : new Date(order.createdAt);
+                    const deadline = new Date(referenceDate.getTime() + 48 * 60 * 60 * 1000); // 48 hours from delivery
+                    const timeRemaining = deadline.getTime() - now.getTime();
+
+                    if (timeRemaining > 0) {
+                        const hours = Math.floor(timeRemaining / (60 * 60 * 1000));
+                        const minutes = Math.floor((timeRemaining % (60 * 60 * 1000)) / (60 * 1000));
+                        
+                        deadlinesMap[order.id] = {
+                            deadline,
+                            timeRemaining: `${hours}h ${minutes}m`,
+                        };
+                    } else {
+                        // Should be auto-confirmed
+                        deadlinesMap[order.id] = {
+                            deadline,
+                            timeRemaining: 'AUTO-CONFIRMED',
+                        };
+                    }
+                }
+            });
+
+            setConfirmationDeadlines(deadlinesMap);
+        };
+
+        calculateConfirmDeadlines();
+        const interval = setInterval(calculateConfirmDeadlines, 60000); // Update every minute
+        return () => clearInterval(interval);
+    }, [orders]);
+
     const handleSearch = async () => {
-        if (!orderNumber.trim()) {
+        const query = orderNumber.trim().toUpperCase();
+        if (!query) {
             toast.error('Please enter an order number');
             return;
         }
 
         setLoading(true);
         setSearched(false);
+        setOrder(null);
+        setPickupDetail(null);
+        setSearchType(null);
+
         try {
-            const response = await axiosInstance.get(`/orders/track/${orderNumber.trim()}`);
-            const orderData = response?.data?.data;
-            if (orderData) {
-                setOrder(orderData);
-                setSearched(true);
+            // Search from loaded orders first
+            const foundOrder = orders.find(o => (o.orderNumber ?? '').toUpperCase() === query);
+            
+            if (foundOrder) {
+                // Fetch full order details
+                const response = await axiosInstance.get(`/orders/${foundOrder.id}`);
+                const orderData = response?.data?.data;
+                if (orderData) {
+                    setOrder(orderData);
+                    setSearchType('order');
+                    setSearched(true);
+                    return;
+                }
             }
+            
+            throw new Error('Order not found');
         } catch (err: any) {
-            const message = err?.response?.data?.message || 'Order not found. Please check your order number.';
+            const message = err?.response?.data?.message || 'Order not found. Please check the order number.';
             toast.error(message);
             setOrder(null);
+            setPickupDetail(null);
             setSearched(true);
         } finally {
             setLoading(false);
@@ -220,6 +398,8 @@ export default function CheckStatusPage() {
             const normalized = list.map((item: any) => ({
                 ...item,
                 orderNumber: item.orderNumber || item.orderNo || item.invoiceNumber || item.id,
+                // Support both deliveryDate dan deliveredAt from backend
+                deliveryDate: item.deliveryDate || item.deliveredAt,
             }));
             setOrders(normalized);
         } catch (error: any) {
@@ -269,8 +449,14 @@ export default function CheckStatusPage() {
     const handleConfirmReceipt = async (orderId: string) => {
         setConfirmingOrderId(orderId);
         try {
-            await axiosInstance.patch(`/orders/${orderId}/confirm-receipt`, {});
-            toast.success('Receipt confirmed');
+            const response = await axiosInstance.patch(`/orders/${orderId}`, {
+                status: 'RECEIVED_BY_CUSTOMER'
+            });
+            const responseData = response?.data?.data;
+            
+            toast.success(response?.data?.message || 'Order received successfully');
+            
+            // Reload orders to get updated status and receivedConfirmedAt
             loadOrders();
         } catch (error: any) {
             const message = error?.response?.data?.message || 'Failed to confirm receipt';
@@ -287,7 +473,7 @@ export default function CheckStatusPage() {
             {/* Main Content */}
             <div className="grow">
                 {/* Hero Section */}
-                <div className="bg-gradient-to-r from-[#1dacbc] to-[#14939e] text-white py-10">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-10">
                     <div className="container mx-auto px-4">
                         <h1 className="text-3xl md:text-4xl font-bold">Check Status</h1>
                         <p className="text-teal-50 text-sm mt-1">Track your laundry orders and pickup requests</p>
@@ -313,14 +499,14 @@ export default function CheckStatusPage() {
                                 <div className="space-y-3">
                                     <div>
                                         <label className="block text-gray-700 text-xs font-semibold mb-1">
-                                            Order Number
+                                            Search Order Number
                                         </label>
                                         <input
                                             type="text"
                                             value={orderNumber}
                                             onChange={(e) => setOrderNumber(e.target.value)}
                                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                            placeholder="ORD-2024-001"
+                                            placeholder="Enter order number"
                                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
                                         />
                                     </div>
@@ -329,22 +515,58 @@ export default function CheckStatusPage() {
                                         disabled={loading}
                                         className="w-full bg-[#1dacbc] text-white text-sm py-2 px-3 rounded-md hover:bg-[#14939e] transition disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
                                     >
-                                        {loading ? 'Searching...' : 'Check'}
+                                        {loading ? 'Searching...' : 'Search'}
                                     </button>
+
+                                    {/* Date Range Filter */}
+                                    <div className="pt-3 border-t border-gray-200">
+                                        <p className="text-gray-700 text-xs font-semibold mb-2">Filter by Date</p>
+                                        <div>
+                                            <label className="block text-gray-600 text-xs mb-1">From</label>
+                                            <input
+                                                type="date"
+                                                value={filterDateFrom}
+                                                onChange={(e) => setFilterDateFrom(e.target.value)}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
+                                            />
+                                        </div>
+                                        <div className="mt-2">
+                                            <label className="block text-gray-600 text-xs mb-1">To</label>
+                                            <input
+                                                type="date"
+                                                value={filterDateTo}
+                                                onChange={(e) => setFilterDateTo(e.target.value)}
+                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
+                                            />
+                                        </div>
+                                        {(filterDateFrom || filterDateTo) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFilterDateFrom('');
+                                                    setFilterDateTo('');
+                                                }}
+                                                className="w-full mt-2 px-3 py-1 text-xs bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition font-semibold"
+                                            >
+                                                Clear Date Filter
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Search Result */}
                                 <div className="mt-4 pt-4 border-t border-gray-200">
                                     {!searched && (
-                                        <p className="text-gray-500 text-xs">Enter order number above</p>
+                                        <p className="text-gray-500 text-xs">Enter order number above to search</p>
                                     )}
                                     {searched && !order && !loading && (
                                         <p className="text-red-500 text-xs">Order not found</p>
                                     )}
-                                    {order && (
+                                    {order && searchType === 'order' && (
                                         <div className="space-y-2 text-xs">
+                                            <div className="text-xs font-semibold text-[#1dacbc] mb-2">📦 Order Found</div>
                                             <div>
-                                                <p className="text-gray-500">Order</p>
+                                                <p className="text-gray-500">Order Number</p>
                                                 <p className="font-semibold text-gray-800">{order.orderNumber}</p>
                                             </div>
                                             <div>
@@ -402,9 +624,16 @@ export default function CheckStatusPage() {
                                         </svg>
                                         <p className="text-gray-500 text-sm">No pickup requests yet</p>
                                     </div>
+                                ) : filteredPickupRequests.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p className="text-gray-500 text-sm">No pickup requests found for the selected date range</p>
+                                    </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {pickupRequests.map((request) => (
+                                        {filteredPickupRequests.map((request) => (
                                             <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                                                 <div className="grid grid-cols-2 gap-4 mb-3">
                                                     <div>
@@ -475,9 +704,16 @@ export default function CheckStatusPage() {
                                         </svg>
                                         <p className="text-gray-500 text-sm">No orders yet</p>
                                     </div>
+                                ) : filteredOrders.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                        <p className="text-gray-500 text-sm">No orders found for the selected date range</p>
+                                    </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {orders.map((orderItem) => (
+                                        {filteredOrders.map((orderItem) => (
                                             <div key={orderItem.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                                                 <div className="grid grid-cols-2 gap-4 mb-3">
                                                     <div>
@@ -501,6 +737,15 @@ export default function CheckStatusPage() {
                                                 <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center gap-2">
                                                     {canPayOrder(orderItem.status) && (
                                                         <>
+                                                            {paymentDeadlines[orderItem.id] && (
+                                                                <div className={`text-xs font-semibold px-2 py-1 rounded ${
+                                                                    paymentDeadlines[orderItem.id].timeRemaining === 'EXPIRED'
+                                                                        ? 'bg-red-100 text-red-700'
+                                                                        : 'bg-yellow-100 text-yellow-700'
+                                                                }`}>
+                                                                    ⏱️ {paymentDeadlines[orderItem.id].timeRemaining}
+                                                                </div>
+                                                            )}
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handlePayOrder(orderItem.id)}
@@ -511,15 +756,22 @@ export default function CheckStatusPage() {
                                                             </button>
                                                         </>
                                                     )}
-                                                    {orderItem.status === 'RECEIVING_BY_CUSTOMER' && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleConfirmReceipt(orderItem.id)}
-                                                            disabled={confirmingOrderId === orderItem.id}
-                                                            className="px-3 py-1 bg-green-600 text-white text-xs rounded-md font-semibold hover:bg-green-700 transition disabled:bg-gray-400 whitespace-nowrap"
-                                                        >
-                                                            {confirmingOrderId === orderItem.id ? 'Confirming...' : 'Confirm'}
-                                                        </button>
+                                                    {orderItem.status === 'DELIVERING_TO_CUSTOMER' && (
+                                                        <>
+                                                            {confirmationDeadlines[orderItem.id] && (
+                                                                <div className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700">
+                                                                    🕐 Auto-confirm in {confirmationDeadlines[orderItem.id].timeRemaining}
+                                                                </div>
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleConfirmReceipt(orderItem.id)}
+                                                                disabled={confirmingOrderId === orderItem.id}
+                                                                className="px-3 py-1 bg-green-600 text-white text-xs rounded-md font-semibold hover:bg-green-700 transition disabled:bg-gray-400 whitespace-nowrap"
+                                                            >
+                                                                {confirmingOrderId === orderItem.id ? 'Confirming...' : 'I Received It'}
+                                                            </button>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
