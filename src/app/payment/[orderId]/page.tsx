@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { QRCodeSVG } from 'qrcode.react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { axiosInstance } from '@/lib/axios';
@@ -25,6 +26,8 @@ interface PaymentDetail {
     provider: string;
     redirectUrl?: string;
     expiresAt?: string;
+    qrCode?: string;
+    qrImage?: string;
 }
 
 export default function PaymentPage() {
@@ -40,6 +43,7 @@ export default function PaymentPage() {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [completed, setCompleted] = useState(false);
+    const [qrCodeData, setQrCodeData] = useState<string>('');
     const paymentInitRef = useRef(false);
 
     useEffect(() => {
@@ -77,6 +81,10 @@ export default function PaymentPage() {
             const payload = response?.data?.data;
             if (payload) {
                 setPayment(payload);
+                
+                // Generate dummy QRIS data (simulate payment info)
+                const qrisData = `00020101021226670016COM.NOBUBANK.WWW01189360050300000884670214${payload.id}0303UMI51440014ID.CO.QRIS.WWW0215ID10200000000010303UMI5204481253033605802ID5913LaundryQ App6007Jakarta61051234062070703A0163044C4D`;
+                setQrCodeData(qrisData);
             }
         } catch (error: any) {
             const message = error?.response?.data?.message || 'Failed to create payment.';
@@ -190,10 +198,21 @@ export default function PaymentPage() {
                             ) : payment ? (
                                 <div className="space-y-4">
                                     <div className="border border-gray-200 rounded-lg p-6 flex flex-col items-center text-center">
-                                        <div className="w-44 h-44 border border-dashed border-gray-300 rounded-lg flex items-center justify-center mb-3">
-                                            <IoQrCodeOutline className="text-6xl text-gray-400" />
-                                        </div>
-                                        <p className="text-xs text-gray-500">Scan the QR code with your banking app.</p>
+                                        {qrCodeData ? (
+                                            <div className="bg-white p-4 rounded-lg border-2 border-[#1dacbc]">
+                                                <QRCodeSVG
+                                                    value={qrCodeData}
+                                                    size={176}
+                                                    level="H"
+                                                    includeMargin={false}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="w-44 h-44 border border-dashed border-gray-300 rounded-lg flex items-center justify-center mb-3">
+                                                <IoQrCodeOutline className="text-6xl text-gray-400" />
+                                            </div>
+                                        )}
+                                        <p className="text-xs text-gray-500 mt-3">Scan the QR code with your banking app.</p>
                                         {payment.redirectUrl && (
                                             <a
                                                 href={payment.redirectUrl}
@@ -217,8 +236,9 @@ export default function PaymentPage() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            paymentInitRef.current = true;
+                                            paymentInitRef.current = false;
                                             setPayment(null);
+                                            setQrCodeData('');
                                             createPayment();
                                         }}
                                         className="text-xs font-semibold text-[#1dacbc] hover:text-[#14939e]"
