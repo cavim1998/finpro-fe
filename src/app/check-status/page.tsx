@@ -67,6 +67,7 @@ type OrderListItem = {
     deliveryDate?: string;
     deliveredAt?: string;
     receivedConfirmedAt?: string;
+    isPaid?: boolean;
 };
 
 export default function CheckStatusPage() {
@@ -400,6 +401,8 @@ export default function CheckStatusPage() {
                 orderNumber: item.orderNumber || item.orderNo || item.invoiceNumber || item.id,
                 // Support both deliveryDate dan deliveredAt from backend
                 deliveryDate: item.deliveryDate || item.deliveredAt,
+                // Include payment status from backend
+                isPaid: item.isPaid ?? false,
             }));
             setOrders(normalized);
         } catch (error: any) {
@@ -439,6 +442,10 @@ export default function CheckStatusPage() {
             'WAITING_PAYMENT',
         ]);
         return payable.has(status);
+    };
+
+    const isPaidOrder = (isPaid: boolean) => {
+        return isPaid === true;
     };
 
     const handlePayOrder = (orderId: string) => {
@@ -735,26 +742,19 @@ export default function CheckStatusPage() {
                                                     <p><span className="font-medium">Date:</span> {formatDateTime(orderItem.createdAt)}</p>
                                                 </div>
                                                 <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center gap-2">
-                                                    {canPayOrder(orderItem.status) && (
-                                                        <>
-                                                            {paymentDeadlines[orderItem.id] && (
-                                                                <div className={`text-xs font-semibold px-2 py-1 rounded ${
-                                                                    paymentDeadlines[orderItem.id].timeRemaining === 'EXPIRED'
-                                                                        ? 'bg-red-100 text-red-700'
-                                                                        : 'bg-yellow-100 text-yellow-700'
-                                                                }`}>
-                                                                    ⏱️ {paymentDeadlines[orderItem.id].timeRemaining}
-                                                                </div>
-                                                            )}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handlePayOrder(orderItem.id)}
-                                                                disabled={payingOrderId === orderItem.id}
-                                                                className="px-3 py-1 bg-[#1dacbc] text-white text-xs rounded-md font-semibold hover:bg-[#14939e] transition disabled:bg-gray-400 whitespace-nowrap"
-                                                            >
-                                                                {payingOrderId === orderItem.id ? 'Processing...' : 'Pay via QRIS'}
-                                                            </button>
-                                                        </>
+                                                    {isPaidOrder(orderItem.isPaid ?? false) ? (
+                                                        <div className="text-xs font-semibold px-3 py-1 rounded bg-green-100 text-green-700">
+                                                            ✅ PAID
+                                                        </div>
+                                                    ) : canPayOrder(orderItem.status) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handlePayOrder(orderItem.id)}
+                                                            disabled={payingOrderId === orderItem.id}
+                                                            className="px-3 py-1 bg-[#1dacbc] text-white text-xs rounded-md font-semibold hover:bg-[#14939e] transition disabled:bg-gray-400 whitespace-nowrap"
+                                                        >
+                                                            {payingOrderId === orderItem.id ? 'Processing...' : 'Pay Here'}
+                                                        </button>
                                                     )}
                                                     {orderItem.status === 'DELIVERING_TO_CUSTOMER' && (
                                                         <>
