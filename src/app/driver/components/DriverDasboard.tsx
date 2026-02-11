@@ -29,6 +29,7 @@ export default function DriverDashboard() {
     profileQ.data?.email ||
     "Driver";
 
+  const role = profileQ.data?.role ?? "DRIVE";
   const sinceText = formatTime(today?.log?.clockInAt ?? null);
   const incoming = 0;
   const inProgress = 0;
@@ -57,7 +58,7 @@ export default function DriverDashboard() {
         <DriverLists isAllowed={isAllowed} />
       </div>
 
-      <BottomNav />
+      <BottomNav role={role}/>
     </div>
   );
 }

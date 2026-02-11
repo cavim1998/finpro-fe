@@ -4,8 +4,6 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/Providers";
 import { Suspense } from "react";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { AttendanceProvider } from "@/contexts/AttendanceContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,12 +43,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${baloo2.variable} ${poppins.variable} font-sans antialiased`}
       >
         <Providers>
-          <AuthProvider>
-            <AttendanceProvider>
-              <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-            </AttendanceProvider>
-          </AuthProvider>
-          
+          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         </Providers>
 
         <Toaster richColors position="top-right" />
