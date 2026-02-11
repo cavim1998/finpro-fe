@@ -70,7 +70,7 @@ export default function DriverDashboard() {
         onClockOut={onClockOut}
         clockOutLoading={clockOutM.isPending}
         stats={stats}
-        dashboardLoading={dashboardQ.isLoading}
+        dashboardLoading={dashboardQ.isFetching}
       />
 
       <div className="p-1 space-y-5 -mt-4 pr-4 pl-4">
@@ -78,7 +78,7 @@ export default function DriverDashboard() {
           isAllowed={isAllowed}
           myTasks={tasks}
           pickupRequests={pickupRequests}
-          dashboardLoading={dashboardQ.isLoading}
+          dashboardLoading={dashboardQ.isFetching}
           dashboardError={dashboardQ.isError}
         />
       </div>
