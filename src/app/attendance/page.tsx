@@ -57,7 +57,7 @@ export default function AttendancePage() {
 
   const fallbackNext = useMemo(() => {
     if (role === "DRIVER") return "/driver";
-    if (role === "WORKER") return "/worker";
+    if (role === "WORKER") return "/worker/washing";
     if (role === "SUPER_ADMIN" || role === "OUTLET_ADMIN") return "/admin";
     return "/profile";
   }, [role]);
