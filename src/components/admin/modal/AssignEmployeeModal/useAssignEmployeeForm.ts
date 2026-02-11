@@ -83,6 +83,7 @@ export const useAssignEmployeeForm = ({
   const onSubmit = (data: AssignFormData) => {
     const payload = {
       ...data,
+      userId: Number(data.userId),
       shiftTemplateId: data.shiftTemplateId.toString(),
     };
 

@@ -1,101 +1,129 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/admin/Navbar';
-import CreateOrderModal from '@/components/admin/modal/CreateOrderModal';
-import BypassModal from '@/components/admin/modal/BypassModal';
-
-// Views Components (Yang baru dibuat)
-import { DashboardView } from '@/components/admin/DashboardView';
-import { OrderListView } from '@/components/admin/OrderListView';
-import ReportSection from '@/components/admin/ReportSection';
-import MasterDataSection from '@/components/admin/MasterDataSection';
-import { Order, PickupRequest, TabType, RoleCode } from '@/types';
-
-export const mockPickupRequests: PickupRequest[] = [
-  {
-    id: 'PCK-001',
-    customer: 'Budi Santoso',
-    address: 'Jl. Mawar No. 10',
-    time: '10:00 AM',
-    status: 'DRIVER_ARRIVED'
-  }
-];
-
-export const mockOrders: Order[] = [
-  {
-    id: 'ORD-2026-001',
-    customer: 'Siti Aminah',
-    weight: 3.5,
-    itemsCount: 7,
-    status: 'SEDANG_DICUCI',
-    date: '2026-01-27'
-  },
-  {
-    id: 'ORD-2026-002',
-    customer: 'Rudi Hartono',
-    weight: 5.0,
-    itemsCount: 12,
-    status: 'LAUNDRY_DI_OUTLET',
-    date: '2026-01-27'
-  },
-]; 
+import { useState } from "react";
+import Navbar from "@/components/admin/Navbar";
+import DashboardView from "@/components/admin/DashboardView";
+import { OrderListView } from "@/components/admin/OrderListView";
+import ReportSection from "@/components/admin/ReportSection";
+import MasterDataSection from "@/components/admin/MasterDataSection";
+import CreateOrderModal from "@/components/admin/modal/CreateOrderModal";
+// import BypassModal from "@/components/admin/modal/BypassModal";
+import { useAdminAuth } from "./hooks/useAdminAuth";
+import { useOrderData } from "./hooks/useOrderData";
 
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState<TabType>('DASHBOARD');
+  const { roleCode, userOutletId, isAuthLoading } = useAdminAuth();
+
+  const [activeTab, setActiveTab] = useState<
+    "DASHBOARD" | "ORDERS" | "PICKUP" | "REPORT" | "MASTER"
+  >("DASHBOARD");
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBypassModal, setShowBypassModal] = useState(false);
-  const [page, setPage] = useState(1);
-  
-  const roleCode: RoleCode = 'SUPER_ADMIN'; 
-  const TAKE = 5;
+  const [selectedPickupId, setSelectedPickupId] = useState<string | null>(null);
 
-  useEffect(() => setPage(1), [activeTab]);
+  const {
+    dataList,
+    loading,
+    page,
+    setPage,
+    limit,
+    totalData,
+    selectedOutletId,
+    setSelectedOutletId,
+    selectedStatus,
+    setSelectedStatus,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
+    refreshData,
+  } = useOrderData({ activeTab, roleCode, userOutletId });
 
-  const currentDataList = activeTab === 'ORDERS' ? mockOrders : mockPickupRequests;
-  const startIndex = (page - 1) * TAKE;
-  const endIndex = startIndex + TAKE;
-  const paginatedData = currentDataList.slice(startIndex, endIndex);
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Memuat data pengguna...
+      </div>
+    );
+  }
+
+  if (!roleCode) return null;
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pt-16 font-sans">
-      <Navbar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onOpenBypass={() => setShowBypassModal(true)} 
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenBypass={() => setShowBypassModal(true)}
         roleCode={roleCode}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === 'DASHBOARD' && (
-          <DashboardView 
+        {activeTab === "DASHBOARD" && (
+          <DashboardView
             roleCode={roleCode}
-            onNavigate={setActiveTab}
-            onProcessPickup={() => setShowCreateModal(true)}
+            onNavigate={(tab) => setActiveTab(tab as any)}
+            onProcessPickup={() => setActiveTab("PICKUP")}
           />
         )}
 
-        {(activeTab === 'ORDERS' || activeTab === 'PICKUP') && (
-          <OrderListView 
-            title={activeTab === 'ORDERS' ? 'Order Management' : 'Pickup Requests'}
-            isPickupTab={activeTab === 'PICKUP'}
-            data={paginatedData}
+        {(activeTab === "ORDERS" || activeTab === "PICKUP") && (
+          <OrderListView
+            title={
+              activeTab === "ORDERS" ? "Order Management" : "Pickup Requests"
+            }
+            isPickupTab={activeTab === "PICKUP"}
+            data={dataList}
+            loading={loading}
             page={page}
-            totalData={currentDataList.length}
-            startIndex={startIndex}
-            endIndex={endIndex}
+            limit={limit}
+            totalData={totalData}
             onPageChange={setPage}
-            onCreateOrder={() => setShowCreateModal(true)}
+            roleCode={roleCode}
+            selectedOutletId={selectedOutletId}
+            onOutletChange={
+              roleCode === "SUPER_ADMIN" ? setSelectedOutletId : undefined
+            }
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+            sortBy={sortBy}
+            onSortByChange={setSortBy}
+            sortOrder={sortOrder}
+            onSortOrderChange={setSortOrder}
+            onCreateOrder={
+              activeTab === "PICKUP"
+                ? (id) => {
+                    setSelectedPickupId(id);
+                    setShowCreateModal(true);
+                  }
+                : undefined
+            }
+            onRefresh={refreshData}
           />
         )}
 
-        {activeTab === 'REPORT' && <ReportSection />}
-        
-        {activeTab === 'MASTER' && roleCode === 'SUPER_ADMIN' && <MasterDataSection />}
+        {activeTab === "REPORT" && <ReportSection />}
+        {activeTab === "MASTER" && roleCode === "SUPER_ADMIN" && (
+          <MasterDataSection />
+        )}
       </main>
 
-      <CreateOrderModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
-      <BypassModal isOpen={showBypassModal} onClose={() => setShowBypassModal(false)} />
+      <CreateOrderModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        pickupId={selectedPickupId}
+        onSuccess={() => {
+          refreshData();
+          setActiveTab("ORDERS");
+        }}
+      />
+
+      {/* <BypassModal
+        isOpen={showBypassModal}
+        onClose={() => setShowBypassModal(false)}
+        outletId={selectedOutletId?.toString()}
+      /> */}
     </div>
   );
 }
