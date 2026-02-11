@@ -1,14 +1,14 @@
 "use client";
 
-import * as React from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { useClockOutMutation } from "@/hooks/api/useAttendanceMutations";
 import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
 import { useProfileQuery } from "@/hooks/api/useProfile";
+import { useWorkerStationStatsQuery } from "@/hooks/api/useWorkerStations";
 import type { StationType } from "@/types";
 import WorkerHeader, { type WorkerHeaderTheme } from "./WorkerHeader";
-import WorkerStats from "./WorkerStats";
 import WorkerLists from "./WorkerLists";
+import WorkerStats from "./WorkerStats";
 
 function formatTime(d?: Date | string | null) {
   if (!d) return "-";
@@ -48,9 +48,7 @@ export type WorkerDashboardTheme = WorkerHeaderTheme;
 
 type Props = {
   station: StationType;
-  /** override teks (tulisan) */
   copy?: Partial<WorkerDashboardCopy>;
-  /** override warna (via Tailwind class) */
   theme?: WorkerDashboardTheme;
 };
 
@@ -71,12 +69,13 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
 
   const sinceText = formatTime(today?.log?.clockInAt ?? null);
 
-  // sementara: backend belum disambung -> tetap 0
-  const incoming = 0;
-  const inProgress = 0;
-  const completed = 0;
-
   const isAllowed = isCheckedIn && !isCompleted;
+
+  const statsQ = useWorkerStationStatsQuery(station, { enabled: isAllowed });
+
+  const incoming = statsQ.data?.incoming ?? 0;
+  const inProgress = statsQ.data?.inProgress ?? 0;
+  const completed = statsQ.data?.completed ?? 0;
 
   const onClockOut = async () => {
     await clockOutM.mutateAsync();
@@ -133,10 +132,14 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
           completed={completed}
           labels={mergedCopy.statsLabels}
         />
-        <WorkerLists isAllowed={isAllowed} labels={mergedCopy.listsLabels} />
+
+        <WorkerLists
+          station={station}
+          isAllowed={isAllowed}
+          labels={mergedCopy.listsLabels}
+        />
       </div>
 
-      {/* role dikunci WORKER, jadi BottomNav gak perlu query /me */}
       <BottomNav role="WORKER" workerHomePath={workerHomePath} />
     </div>
   );

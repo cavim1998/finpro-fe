@@ -1,7 +1,7 @@
-"use client";
+// "use client";
 
-import { DriverPickups } from "@/components/driver/DriverPickups";
+// import { DriverPickups } from "@/components/driver/DriverPickups";
 
-export default function DriverPickupsPage() {
-  return <DriverPickups />;
-}
+// export default function DriverPickupsPage() {
+//   return <DriverPickups />;
+// }

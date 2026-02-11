@@ -1,14 +1,16 @@
-export const TOKEN_KEY = "access_token";
+import { api } from "@/lib/api";
 
-export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
-}
+const KEY = "access_token";
 
 export function setToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(KEY, token);
+  api.defaults.headers.common.Authorization = `Bearer ${token}`;
+}
+
+export function getToken() {
+  return localStorage.getItem(KEY);
 }
 
 export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(KEY);
 }

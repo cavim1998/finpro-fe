@@ -1,7 +1,7 @@
-"use client";
+// "use client";
 
-import { DriverHistory } from "@/components/driver/DriverHistory";
+// import { DriverHistory } from "@/components/driver/DriverHistory";
 
-export default function DriverHistoryPage() {
-  return <DriverHistory />;
-}
+// export default function DriverHistoryPage() {
+//   return <DriverHistory />;
+// }
