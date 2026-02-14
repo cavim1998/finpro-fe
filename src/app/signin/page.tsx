@@ -33,7 +33,7 @@ const page = () => {
     const routeByRole = (role: string) => {
         if (role === 'SUPER_ADMIN' || role === 'OUTLET_ADMIN') return '/admin';
         if (role === 'DRIVER') return '/attendance?next=/driver';
-        if (role === 'WORKER') return '/attendance?next=/worker';
+        if (role === 'WORKER') return '/attendance?next=/worker/washing';
         return '/profile'; // CUSTOMER default
     };
 

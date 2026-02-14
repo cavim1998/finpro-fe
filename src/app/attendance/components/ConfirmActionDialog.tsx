@@ -51,15 +51,14 @@ export default function ConfirmActionDialog({
             <div className="text-2xl">{title}</div>
           </AlertDialogTitle>
           {description ? (
-            <AlertDialogDescription>
-              <div className="text-xl">{description} </div>
-            </AlertDialogDescription>
+            <AlertDialogDescription>{description}</AlertDialogDescription>
           ) : null}
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}><div className="text-xl text-red-500">{cancelText}
-            </div></AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>
+            <div className="text-xl text-red-500">{cancelText}</div>
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={loading}

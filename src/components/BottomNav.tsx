@@ -1,8 +1,9 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useMe } from "@/features/auth/useMe";
 import {
   Home,
   Truck,
@@ -13,6 +14,7 @@ import {
   AlertTriangle,
   BarChart3,
 } from "lucide-react";
+import type { RoleCode } from "@/types/auth";
 
 type NavItem = {
   path: string;
@@ -20,55 +22,73 @@ type NavItem = {
   label: string;
 };
 
-export function BottomNav() {
-  const { user } = useAuth();
-  const pathname = usePathname();
-    console.log("[BottomNav] pathname:", pathname);
-  console.log("[BottomNav] user:", user);
-  console.log("[BottomNav] user.role:", user?.role, "type:", typeof user?.role);
+type GetNavItemsOptions = {
+  /**
+   * Kalau worker punya dashboard per-station (mis. /worker/washing),
+   * home path bisa di-override dari page.
+   */
+  workerHomePath?: string;
+};
 
-  if (!user) return null;
+function getNavItems(role: RoleCode, opts?: GetNavItemsOptions): NavItem[] {
+  switch (role) {
+    case "DRIVER":
+      return [
+        { path: "/driver", icon: Home, label: "Home" },
+        { path: "/driver/pickups", icon: Truck, label: "Tasks" },
+        { path: "/driver/history", icon: Clock, label: "History" },
+        { path: "/driver/profile", icon: User, label: "Profile" },
+      ];
 
-  const getNavItems = (): NavItem[] => {
-    switch (user.role) {
-      case "DRIVER":
-        return [
-          { path: "/driver", icon: Home, label: "Home" },
-          { path: "/driver/pickups", icon: Truck, label: "Tasks" },
-          { path: "/driver/history", icon: Clock, label: "History" },
-          { path: "/driver/profile", icon: User, label: "Profile" },
-        ];
-      case "WORKER":
-        return [
-          { path: "/worker", icon: Home, label: "Home" },
-          { path: "/worker/orders", icon: ClipboardList, label: "Orders" },
-          { path: "/worker/history", icon: Clock, label: "History" },
-          { path: "/worker/profile", icon: User, label: "Profile" },
-        ];
-      case "OUTLET_ADMIN":
-        return [
-          { path: "/admin", icon: Home, label: "Home" },
-          { path: "/admin/staff", icon: Users, label: "Staff" },
-          { path: "/admin/bypass", icon: AlertTriangle, label: "Bypass" },
-          { path: "/admin/reports", icon: BarChart3, label: "Reports" },
-        ];
-      default:
-        return [
-          { path: "/customer", icon: Home, label: "Home" },
-          { path: "/customer/orders", icon: ClipboardList, label: "Orders" },
-          { path: "/customer/profile", icon: User, label: "Profile" },
-        ];
+    case "WORKER": {
+      const base = opts?.workerHomePath ?? "/worker";
+      return [
+        { path: base, icon: Home, label: "Home" },
+        { path: `${base}/orders`, icon: ClipboardList, label: "Orders" },
+        { path: `${base}/history`, icon: Clock, label: "History" },
+        { path: `${base}/profile`, icon: User, label: "Profile" },
+      ];
     }
-  };
 
-  const navItems = getNavItems();
-  console.log("[BottomNav] navItems:", navItems);
+    case "OUTLET_ADMIN":
+      return [
+        { path: "/admin", icon: Home, label: "Home" },
+        { path: "/admin/staff", icon: Users, label: "Staff" },
+        { path: "/admin/bypass", icon: AlertTriangle, label: "Bypass" },
+        { path: "/admin/reports", icon: BarChart3, label: "Reports" },
+      ];
+
+    default:
+      return [
+        { path: "/customer", icon: Home, label: "Home" },
+        { path: "/customer/orders", icon: ClipboardList, label: "Orders" },
+        { path: "/customer/profile", icon: User, label: "Profile" },
+      ];
+  }
+}
+
+type BottomNavProps = {
+  /** Kalau kamu sudah tahu role dari page, isi ini supaya BottomNav gak perlu query /me */
+  role?: RoleCode;
+  /** khusus worker: base path home, mis. /worker/washing */
+  workerHomePath?: string;
+};
+
+export function BottomNav({ role, workerHomePath }: BottomNavProps) {
+  const pathname = usePathname();
+
+  // tetap panggil hook tapi bisa dimatikan
+  const meQ = useMe({ enabled: !role });
+  const effectiveRole = role ?? (meQ.data?.role as RoleCode | undefined);
+
+  if (!effectiveRole) return null;
+
+  const navItems = getNavItems(effectiveRole, { workerHomePath });
 
   const isActivePath = (target: string) =>
     pathname === target || pathname.startsWith(target + "/");
 
   return (
-    
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 safe-bottom">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {navItems.map((item) => {
@@ -96,10 +116,7 @@ export function BottomNav() {
             </Link>
           );
         })}
-        
       </div>
-      
     </nav>
-    
   );
 }
