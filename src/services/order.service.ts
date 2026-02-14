@@ -37,6 +37,6 @@ export const getOrders = async (params: GetParams) => {
 };
 
 export const getPickups = async (params: GetParams) => {
-  const response = await axiosInstance.get("/pickup-requests", { params });
+  const response = await axiosInstance.get("/admin-pickup", { params });
   return response.data;
 };

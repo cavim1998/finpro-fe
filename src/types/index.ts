@@ -1,51 +1,79 @@
-
-
-export type TabType = 'DASHBOARD' | 'PICKUP' | 'ORDERS' | 'REPORT' | 'MASTER';
+export type TabType =
+  | "DASHBOARD"
+  | "ORDERS"
+  | "PICKUP"
+  | "BYPASS"
+  | "REPORT"
+  | "MASTER";
 
 // =========================
 // ENUMS
 // =========================
 
-export type RoleCode = 'CUSTOMER' | 'SUPER_ADMIN' | 'OUTLET_ADMIN' | 'WORKER' | 'DRIVER';
+export type RoleCode =
+  | "CUSTOMER"
+  | "SUPER_ADMIN"
+  | "OUTLET_ADMIN"
+  | "WORKER"
+  | "DRIVER";
 
-export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'DELETED';
+export type UserStatus = "ACTIVE" | "SUSPENDED" | "DELETED";
 
-export type IdentityProvider = 'EMAIL' | 'GOOGLE' | 'FACEBOOK' | 'TWITTER';
+export type IdentityProvider = "EMAIL" | "GOOGLE" | "FACEBOOK" | "TWITTER";
 
-export type StationType = 'WASHING' | 'IRONING' | 'PACKING';
+export type StationType = "WASHING" | "IRONING" | "PACKING";
 
-export type StationStatus = 'PENDING' | 'IN_PROGRESS' | 'WAITING_BYPASS' | 'COMPLETED';
+export type StationStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "WAITING_BYPASS"
+  | "COMPLETED";
 
-export type PickupStatus = 'WAITING_DRIVER' | 'DRIVER_ASSIGNED' | 'PICKED_UP' | 'ARRIVED_OUTLET' | 'CANCELED';
+export type PickupStatus =
+  | "WAITING_DRIVER"
+  | "DRIVER_ASSIGNED"
+  | "PICKED_UP"
+  | "ARRIVED_OUTLET"
+  | "CANCELED";
 
 export type OrderStatus =
-  | 'WAITING_DRIVER_PICKUP'
-  | 'ON_THE_WAY_TO_OUTLET'
-  | 'ARRIVED_AT_OUTLET'
-  | 'WASHING'
-  | 'IRONING'
-  | 'PACKING'
-  | 'WAITING_PAYMENT'
-  | 'READY_TO_DELIVER'
-  | 'DELIVERING_TO_CUSTOMER'
-  | 'RECEIVED_BY_CUSTOMER'
-  | 'CANCELED';
+  | "WAITING_DRIVER_PICKUP"
+  | "ON_THE_WAY_TO_OUTLET"
+  | "ARRIVED_AT_OUTLET"
+  | "WASHING"
+  | "IRONING"
+  | "PACKING"
+  | "WAITING_PAYMENT"
+  | "READY_TO_DELIVER"
+  | "DELIVERING_TO_CUSTOMER"
+  | "RECEIVED_BY_CUSTOMER"
+  | "CANCELED";
 
-export type TaskType = 'PICKUP' | 'DELIVERY';
+export type TaskType = "PICKUP" | "DELIVERY";
 
-export type TaskStatus = 'AVAILABLE' | 'ASSIGNED' | 'IN_PROGRESS' | 'DONE' | 'CANCELED';
+export type TaskStatus =
+  | "AVAILABLE"
+  | "ASSIGNED"
+  | "IN_PROGRESS"
+  | "DONE"
+  | "CANCELED";
 
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'REFUNDED';
+export type PaymentStatus =
+  | "PENDING"
+  | "PAID"
+  | "FAILED"
+  | "EXPIRED"
+  | "REFUNDED";
 
-export type NotificationType = 'PAYMENT_REMINDER' | 'ORDER_STATUS' | 'GENERAL';
+export type NotificationType = "PAYMENT_REMINDER" | "ORDER_STATUS" | "GENERAL";
 
-export type ComplaintType = 'DAMAGED' | 'MISSING' | 'NOT_MATCH' | 'OTHER';
+export type ComplaintType = "DAMAGED" | "MISSING" | "NOT_MATCH" | "OTHER";
 
-export type ComplaintStatus = 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';
+export type ComplaintStatus = "OPEN" | "IN_REVIEW" | "RESOLVED" | "REJECTED";
 
-export type BypassStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED';
+export type BypassStatus = "REQUESTED" | "APPROVED" | "REJECTED";
 
-export type ShiftAssignmentStatus = 'SCHEDULED' | 'ON_DUTY' | 'OFF_DUTY';
+export type ShiftAssignmentStatus = "SCHEDULED" | "ON_DUTY" | "OFF_DUTY";
 
 // =========================
 // USERS & AUTH
@@ -383,4 +411,3 @@ export interface ComplaintAttachment {
   createdAt: Date;
   complaint?: Complaint;
 }
-
