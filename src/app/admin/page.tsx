@@ -7,7 +7,7 @@ import { OrderListView } from "@/components/admin/OrderListView";
 import ReportSection from "@/components/admin/ReportSection";
 import MasterDataSection from "@/components/admin/MasterDataSection";
 import CreateOrderModal from "@/components/admin/modal/CreateOrderModal";
-// import BypassModal from "@/components/admin/modal/BypassModal";
+import BypassListView from "@/components/admin/BypassListView";
 import { useAdminAuth } from "./hooks/useAdminAuth";
 import { useOrderData } from "./hooks/useOrderData";
 
@@ -15,11 +15,10 @@ export default function AdminDashboardPage() {
   const { roleCode, userOutletId, isAuthLoading } = useAdminAuth();
 
   const [activeTab, setActiveTab] = useState<
-    "DASHBOARD" | "ORDERS" | "PICKUP" | "REPORT" | "MASTER"
+    "DASHBOARD" | "ORDERS" | "PICKUP" | "BYPASS" | "REPORT" | "MASTER"
   >("DASHBOARD");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showBypassModal, setShowBypassModal] = useState(false);
   const [selectedPickupId, setSelectedPickupId] = useState<string | null>(null);
 
   const {
@@ -55,7 +54,6 @@ export default function AdminDashboardPage() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenBypass={() => setShowBypassModal(true)}
         roleCode={roleCode}
       />
 
@@ -65,6 +63,7 @@ export default function AdminDashboardPage() {
             roleCode={roleCode}
             onNavigate={(tab) => setActiveTab(tab as any)}
             onProcessPickup={() => setActiveTab("PICKUP")}
+            onProcessBypass={() => setActiveTab("BYPASS")}
           />
         )}
 
@@ -103,6 +102,25 @@ export default function AdminDashboardPage() {
           />
         )}
 
+        {activeTab === "BYPASS" && (
+          <BypassListView
+            data={dataList}
+            loading={loading}
+            page={page}
+            limit={limit}
+            totalData={totalData}
+            onPageChange={setPage}
+            onRefresh={refreshData}
+            roleCode={roleCode}
+            selectedOutletId={selectedOutletId}
+            onOutletChange={
+              roleCode === "SUPER_ADMIN" ? setSelectedOutletId : undefined
+            }
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+          />
+        )}
+
         {activeTab === "REPORT" && <ReportSection />}
         {activeTab === "MASTER" && roleCode === "SUPER_ADMIN" && (
           <MasterDataSection />
@@ -118,12 +136,6 @@ export default function AdminDashboardPage() {
           setActiveTab("ORDERS");
         }}
       />
-
-      {/* <BypassModal
-        isOpen={showBypassModal}
-        onClose={() => setShowBypassModal(false)}
-        outletId={selectedOutletId?.toString()}
-      /> */}
     </div>
   );
 }
