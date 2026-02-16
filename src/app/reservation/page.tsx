@@ -458,9 +458,7 @@ export default function ReservationPage() {
                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
                                     >
                                         <option value="regular">Regular Wash (2-3 days)</option>
-                                        <option value="express">Express Wash (1 day)</option>
-                                        <option value="premium">Premium Care (3-4 days)</option>
-                                        <option value="dry-clean">Dry Clean (4-5 days)</option>
+                                        <option value="express">Premium Wash (1 day)</option>
                                     </select>
                                 </div>
                             </div>

@@ -20,21 +20,44 @@ declare global {
 
 interface Order {
     id: string;
-    orderNumber: string;
+    orderNumber?: string;
+    orderNo?: string;
     status: string;
     createdAt: string;
     totalAmount: number;
     pickupDate?: string;
     deliveryDate?: string;
+    deliveredAt?: string;
+    paymentDueAt?: string;
+    receivedConfirmedAt?: string;
     outlet?: {
         name: string;
-        address: string;
+        address?: string;
+        addressText?: string;
+        phone?: string;
     };
     items?: Array<{
-        laundryItemId: string;
-        laundryItemName: string;
-        quantity: number;
-        pricePerItem: number;
+        laundryItemId?: string;
+        laundryItemName?: string;
+        quantity?: number;
+        pricePerItem?: number;
+        qty?: number;
+        price?: number;
+        item?: {
+            name?: string;
+        };
+    }>;
+    stations?: Array<{
+        id: string;
+        stationType: string;
+        status: string;
+        startedAt?: string | null;
+        completedAt?: string | null;
+        worker?: {
+            profile?: {
+                fullName?: string;
+            };
+        };
     }>;
 }
 
@@ -68,6 +91,17 @@ type OrderListItem = {
     deliveredAt?: string;
     receivedConfirmedAt?: string;
     isPaid?: boolean;
+    items?: Array<{
+        laundryItemId?: string;
+        laundryItemName?: string;
+        quantity?: number;
+        pricePerItem?: number;
+        qty?: number;
+        price?: number;
+        item?: {
+            name?: string;
+        };
+    }>;
 };
 
 export default function CheckStatusPage() {
@@ -103,63 +137,80 @@ export default function CheckStatusPage() {
         loadOrders();
     }, []);
 
+    // Sync filtered arrays whenever orders or pickups load
     useEffect(() => {
-        // Filter orders based on date range
-        const filtered = orders.filter(order => {
-            if (!filterDateFrom && !filterDateTo) return true;
-            
-            // Parse order date (handle both timezone-aware and simple dates)
-            const orderDate = new Date(order.createdAt);
-            const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
-            
-            if (filterDateFrom) {
-                // Parse input date and create date at start of day
-                const [year, month, day] = filterDateFrom.split('-');
-                const fromDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                if (orderDateOnly < fromDate) return false;
-            }
-            
-            if (filterDateTo) {
-                // Parse input date and create date at end of day
-                const [year, month, day] = filterDateTo.split('-');
-                const toDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59, 999);
-                if (orderDateOnly > toDate) return false;
-            }
-            
-            return true;
-        });
-        
-        setFilteredOrders(filtered);
-    }, [orders, filterDateFrom, filterDateTo]);
+        setFilteredOrders(orders);
+    }, [orders]);
 
     useEffect(() => {
-        // Filter pickup requests based on scheduled date range
-        const filtered = pickupRequests.filter(request => {
-            if (!filterDateFrom && !filterDateTo) return true;
-            
-            // Parse scheduled pickup date (not createdAt - user filters by when pickup is scheduled)
-            const scheduledDate = new Date(request.scheduledPickupAt);
-            const scheduledDateOnly = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
-            
-            if (filterDateFrom) {
-                // Parse input date and create date at start of day
-                const [year, month, day] = filterDateFrom.split('-');
-                const fromDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                if (scheduledDateOnly < fromDate) return false;
-            }
-            
-            if (filterDateTo) {
-                // Parse input date and create date at end of day
-                const [year, month, day] = filterDateTo.split('-');
-                const toDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 23, 59, 59, 999);
-                if (scheduledDateOnly > toDate) return false;
-            }
-            
-            return true;
-        });
-        
-        setFilteredPickupRequests(filtered);
-    }, [pickupRequests, filterDateFrom, filterDateTo]);
+        setFilteredPickupRequests(pickupRequests);
+    }, [pickupRequests]);
+
+    // Pickup status priority (active statuses first)
+    const getPickupPriority = (status: string) => {
+        switch (status?.toUpperCase()) {
+            case 'WAITING_DRIVER':
+                return 0;
+            case 'ARRIVED_OUTLET':
+                return 1;
+            case 'CANCELED':
+                return 2;
+            default:
+                return 999;
+        }
+    };
+
+    // Order status priority (active statuses first)
+    const getOrderPriority = (status: string) => {
+        switch (status?.toUpperCase()) {
+            case 'WAITING_DRIVER_PICKUP':
+                return 0;
+            case 'ON_THE_WAY_TO_OUTLET':
+                return 1;
+            case 'ARRIVED_AT_OUTLET':
+                return 2;
+            case 'WASHING':
+                return 3;
+            case 'IRONING':
+                return 4;
+            case 'PACKING':
+                return 5;
+            case 'WAITING_PAYMENT':
+                return 6;
+            case 'READY_TO_DELIVER':
+                return 7;
+            case 'DELIVERING_TO_CUSTOMER':
+                return 8;
+            case 'RECEIVED_BY_CUSTOMER':
+                return 9;
+            case 'CANCELED':
+                return 10;
+            default:
+                return 999;
+        }
+    };
+
+    // Get top 5 most recent + active pickup requests
+    const getTopPickupRequests = () => {
+        return [...pickupRequests]
+            .sort((a, b) => {
+                const priorityDiff = getPickupPriority(a.status) - getPickupPriority(b.status);
+                if (priorityDiff !== 0) return priorityDiff;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            })
+            .slice(0, 5);
+    };
+
+    // Get top 5 most recent + active orders
+    const getTopOrders = () => {
+        return [...orders]
+            .sort((a, b) => {
+                const priorityDiff = getOrderPriority(a.status) - getOrderPriority(b.status);
+                if (priorityDiff !== 0) return priorityDiff;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            })
+            .slice(0, 5);
+    };
 
     // Calculate payment deadlines for each order
     useEffect(() => {
@@ -247,85 +298,63 @@ export default function CheckStatusPage() {
         return () => clearInterval(interval);
     }, [orders]);
 
-    const handleSearch = async () => {
-        const query = orderNumber.trim().toUpperCase();
-        if (!query) {
-            toast.error('Please enter an order number');
-            return;
+    const fetchOrderById = async (orderId: string, { silent }: { silent?: boolean } = {}) => {
+        if (!silent) {
+            setLoading(true);
+        } else {
+            setLoadingOrders(true);
         }
-
-        setLoading(true);
         setSearched(false);
         setOrder(null);
         setPickupDetail(null);
         setSearchType(null);
 
         try {
-            // Search from loaded orders first
-            const foundOrder = orders.find(o => (o.orderNumber ?? '').toUpperCase() === query);
-            
-            if (foundOrder) {
-                // Fetch full order details
-                const response = await axiosInstance.get(`/orders/${foundOrder.id}`);
-                const orderData = response?.data?.data;
-                if (orderData) {
-                    setOrder(orderData);
-                    setSearchType('order');
-                    setSearched(true);
-                    return;
-                }
+            const response = await axiosInstance.get(`/orders/${orderId}`);
+            const orderData = response?.data?.data;
+            if (!orderData) {
+                throw new Error('Order not found');
             }
-            
-            throw new Error('Order not found');
+
+            setOrder(orderData);
+            setSearchType('order');
+            setSearched(true);
         } catch (err: any) {
-            const message = err?.response?.data?.message || 'Order not found. Please check the order number.';
+            const message = err?.response?.data?.message || 'Order not found. Please check the order ID.';
             toast.error(message);
             setOrder(null);
             setPickupDetail(null);
             setSearched(true);
         } finally {
             setLoading(false);
+            setLoadingOrders(false);
         }
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status?.toLowerCase()) {
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'awaiting_pickup':
-                return 'bg-blue-100 text-blue-800';
-            case 'picked_up':
-                return 'bg-indigo-100 text-indigo-800';
-            case 'washing':
-                return 'bg-purple-100 text-purple-800';
-            case 'ironing':
-                return 'bg-pink-100 text-pink-800';
-            case 'ready_for_delivery':
-                return 'bg-cyan-100 text-cyan-800';
-            case 'on_delivery':
-                return 'bg-teal-100 text-teal-800';
-            case 'delivered':
-                return 'bg-green-100 text-green-800';
-            case 'completed':
-                return 'bg-green-200 text-green-900';
-            case 'cancelled':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
+    const handleSearch = async () => {
+        const query = orderNumber.trim();
+        if (!query) {
+            toast.error('Please enter an order ID');
+            return;
         }
+
+        await fetchOrderById(query);
+    };
+
+    const handleClearSearch = () => {
+        setOrderNumber('');
+        setOrder(null);
+        setSearched(false);
+        setSearchType(null);
     };
 
     const getPickupRequestStatusColor = (status: string) => {
         switch (status?.toUpperCase()) {
             case 'WAITING_DRIVER':
                 return 'bg-yellow-50 text-yellow-700 border border-yellow-300';
-            case 'DRIVER_ASSIGNED':
-                return 'bg-blue-50 text-blue-700 border border-blue-300';
-            case 'PICKED_UP':
-                return 'bg-purple-50 text-purple-700 border border-purple-300';
             case 'ARRIVED_OUTLET':
                 return 'bg-green-50 text-green-700 border border-green-300';
-            case 'CANCELLED':
+            case 'CANCELED':
                 return 'bg-red-50 text-red-700 border border-red-300';
             default:
                 return 'bg-gray-50 text-gray-700 border border-gray-300';
@@ -334,9 +363,9 @@ export default function CheckStatusPage() {
 
     const getOrderStatusColor = (status: string) => {
         switch (status?.toUpperCase()) {
-            case 'PENDING':
+            case 'WAITING_DRIVER_PICKUP':
                 return 'bg-yellow-50 text-yellow-700 border border-yellow-300';
-            case 'AWAITING_PICKUP':
+            case 'ON_THE_WAY_TO_OUTLET':
                 return 'bg-orange-50 text-orange-700 border border-orange-300';
             case 'ARRIVED_AT_OUTLET':
                 return 'bg-blue-50 text-blue-700 border border-blue-300';
@@ -346,15 +375,15 @@ export default function CheckStatusPage() {
                 return 'bg-pink-50 text-pink-700 border border-pink-300';
             case 'PACKING':
                 return 'bg-purple-50 text-purple-700 border border-purple-300';
-            case 'READY_FOR_DELIVERY':
+            case 'WAITING_PAYMENT':
+                return 'bg-amber-50 text-amber-700 border border-amber-300';
+            case 'READY_TO_DELIVER':
                 return 'bg-cyan-50 text-cyan-700 border border-cyan-300';
-            case 'ON_DELIVERY':
+            case 'DELIVERING_TO_CUSTOMER':
                 return 'bg-teal-50 text-teal-700 border border-teal-300';
-            case 'RECEIVING_BY_CUSTOMER':
-                return 'bg-blue-50 text-blue-700 border border-blue-300';
-            case 'COMPLETED':
+            case 'RECEIVED_BY_CUSTOMER':
                 return 'bg-green-50 text-green-700 border border-green-300';
-            case 'CANCELLED':
+            case 'CANCELED':
                 return 'bg-red-50 text-red-700 border border-red-300';
             default:
                 return 'bg-gray-50 text-gray-700 border border-gray-300';
@@ -393,23 +422,50 @@ export default function CheckStatusPage() {
     const loadOrders = async () => {
         setLoadingOrders(true);
         try {
-            const response = await axiosInstance.get('/orders');
-            const payload = response?.data?.data ?? response?.data ?? [];
-            const list = Array.isArray(payload) ? payload : [];
-            const normalized = list.map((item: any) => ({
-                ...item,
-                orderNumber: item.orderNumber || item.orderNo || item.invoiceNumber || item.id,
-                // Support both deliveryDate dan deliveredAt from backend
-                deliveryDate: item.deliveryDate || item.deliveredAt,
-                // Include payment status from backend
-                isPaid: item.isPaid ?? false,
-            }));
-            setOrders(normalized);
+            // Step 1: Fetch all pickup requests
+            const pickupResponse = await axiosInstance.get('/pickup-requests');
+            const pickupData = pickupResponse?.data?.data ?? [];
+
+            // Step 2: Filter pickups with ARRIVED_OUTLET status that have orders
+            const pickupsWithOrders = Array.isArray(pickupData)
+                ? pickupData.filter((p: any) => p.status === 'ARRIVED_OUTLET' && p.order?.id)
+                : [];
+
+            // Step 3: Fetch each order detail
+            const orderIds = pickupsWithOrders.map((p: any) => p.order.id);
+            const ordersData: OrderListItem[] = [];
+
+            for (const orderId of orderIds) {
+                try {
+                    const orderResponse = await axiosInstance.get(`/orders/${orderId}`);
+                    const orderData = orderResponse?.data?.data;
+                    if (orderData) {
+                        ordersData.push({
+                            ...orderData,
+                            orderNumber: orderData.orderNumber || orderData.orderNo || orderData.invoiceNumber || orderData.id,
+                            status: orderData.orderStatus || orderData.status,
+                            deliveryDate: orderData.deliveryDate || orderData.deliveredAt,
+                            isPaid: orderData.isPaid ?? false,
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Failed to fetch order ${orderId}:`, error);
+                }
+            }
+
+            setOrders(ordersData);
         } catch (error: any) {
             console.error('Failed to load orders:', error);
         } finally {
             setLoadingOrders(false);
         }
+    };
+
+    const refreshTrackedOrder = async () => {
+        if (!order?.id) {
+            return;
+        }
+        await fetchOrderById(order.id, { silent: true });
     };
 
     const formatStatusLabel = (status?: string) => {
@@ -431,6 +487,46 @@ export default function CheckStatusPage() {
             dateStyle: 'medium',
             timeStyle: 'short',
         });
+    };
+
+    const getOrderTrackingSteps = () => [
+        'WAITING_DRIVER_PICKUP',
+        'ON_THE_WAY_TO_OUTLET',
+        'ARRIVED_AT_OUTLET',
+        'WASHING',
+        'IRONING',
+        'PACKING',
+        'WAITING_PAYMENT',
+        'READY_TO_DELIVER',
+        'DELIVERING_TO_CUSTOMER',
+        'RECEIVED_BY_CUSTOMER',
+    ];
+
+    const getStepState = (currentStatus: string, step: string) => {
+        const steps = getOrderTrackingSteps();
+        const currentIndex = steps.indexOf(currentStatus);
+        const stepIndex = steps.indexOf(step);
+        if (currentIndex === -1 || stepIndex === -1) {
+            return 'upcoming';
+        }
+        if (stepIndex < currentIndex) {
+            return 'completed';
+        }
+        if (stepIndex === currentIndex) {
+            return 'current';
+        }
+        return 'upcoming';
+    };
+
+    const getStepClasses = (state: 'completed' | 'current' | 'upcoming') => {
+        switch (state) {
+            case 'completed':
+                return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+            case 'current':
+                return 'bg-[#1dacbc] text-white border border-[#1dacbc]';
+            default:
+                return 'bg-gray-100 text-gray-500 border border-gray-200';
+        }
     };
 
     const canPayOrder = (status: string) => {
@@ -464,7 +560,7 @@ export default function CheckStatusPage() {
             toast.success(response?.data?.message || 'Order received successfully');
             
             // Reload orders to get updated status and receivedConfirmedAt
-            loadOrders();
+            refreshTrackedOrder();
         } catch (error: any) {
             const message = error?.response?.data?.message || 'Failed to confirm receipt';
             toast.error(message);
@@ -506,14 +602,14 @@ export default function CheckStatusPage() {
                                 <div className="space-y-3">
                                     <div>
                                         <label className="block text-gray-700 text-xs font-semibold mb-1">
-                                            Search Order Number
+                                            Search Order ID
                                         </label>
-                                        <input
+                                            <input
                                             type="text"
                                             value={orderNumber}
                                             onChange={(e) => setOrderNumber(e.target.value)}
                                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                            placeholder="Enter order number"
+                                                placeholder="Enter order ID"
                                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
                                         />
                                     </div>
@@ -525,75 +621,206 @@ export default function CheckStatusPage() {
                                         {loading ? 'Searching...' : 'Search'}
                                     </button>
 
-                                    {/* Date Range Filter */}
-                                    <div className="pt-3 border-t border-gray-200">
-                                        <p className="text-gray-700 text-xs font-semibold mb-2">Filter by Date</p>
-                                        <div>
-                                            <label className="block text-gray-600 text-xs mb-1">From</label>
-                                            <input
-                                                type="date"
-                                                value={filterDateFrom}
-                                                onChange={(e) => setFilterDateFrom(e.target.value)}
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
-                                            />
-                                        </div>
-                                        <div className="mt-2">
-                                            <label className="block text-gray-600 text-xs mb-1">To</label>
-                                            <input
-                                                type="date"
-                                                value={filterDateTo}
-                                                onChange={(e) => setFilterDateTo(e.target.value)}
-                                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
-                                            />
-                                        </div>
-                                        {(filterDateFrom || filterDateTo) && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setFilterDateFrom('');
-                                                    setFilterDateTo('');
-                                                }}
-                                                className="w-full mt-2 px-3 py-1 text-xs bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition font-semibold"
-                                            >
-                                                Clear Date Filter
-                                            </button>
+                                    {order && (
+                                        <button
+                                            onClick={handleClearSearch}
+                                            className="w-full bg-red-50 text-red-700 text-sm py-2 px-3 rounded-md hover:bg-red-100 transition font-semibold border border-red-200"
+                                        >
+                                            Clear Search
+                                        </button>
+                                    )}
+
+                                    {/* Search Result */}
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                        {!searched && (
+                                            <p className="text-gray-500 text-xs">Enter order ID above to search</p>
+                                        )}
+                                        {searched && !order && !loading && (
+                                            <p className="text-red-500 text-xs">Order not found</p>
+                                        )}
+                                        {order && searchType === 'order' && (
+                                            <div className="space-y-2 text-xs">
+                                                <div className="text-xs font-semibold text-[#1dacbc] mb-2">📦 Order Found</div>
+                                                <div>
+                                                    <p className="text-gray-500">Order Number</p>
+                                                    <p className="font-semibold text-gray-800">{order.orderNumber || order.orderNo}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-500">Amount</p>
+                                                    <p className="font-semibold text-[#1dacbc]">{formatCurrency(order.totalAmount)}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-500">Status</p>
+                                                    <span className={`inline-block mt-1 px-2 py-1 rounded text-xs font-semibold ${getOrderStatusColor(order.status)}`}>
+                                                        {formatStatus(order.status)}
+                                                    </span>
+                                                </div>
+
+                                                {/* Items */}
+                                                {order.items && order.items.length > 0 && (
+                                                    <div className="pt-2 border-t border-gray-100">
+                                                        <p className="text-gray-500 mb-1 font-medium text-xs">Items:</p>
+                                                        <div className="space-y-1">
+                                                            {order.items.map((item, idx) => {
+                                                                const itemName = item.laundryItemName || item.item?.name || 'Unknown Item';
+                                                                const qty = item.quantity || item.qty || 0;
+                                                                return (
+                                                                    <p key={idx} className="text-xs text-gray-600">
+                                                                        • {itemName} <span className="text-gray-500">x{qty}</span>
+                                                                    </p>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
-                                </div>
-
-                                {/* Search Result */}
-                                <div className="mt-4 pt-4 border-t border-gray-200">
-                                    {!searched && (
-                                        <p className="text-gray-500 text-xs">Enter order number above to search</p>
-                                    )}
-                                    {searched && !order && !loading && (
-                                        <p className="text-red-500 text-xs">Order not found</p>
-                                    )}
-                                    {order && searchType === 'order' && (
-                                        <div className="space-y-2 text-xs">
-                                            <div className="text-xs font-semibold text-[#1dacbc] mb-2">📦 Order Found</div>
-                                            <div>
-                                                <p className="text-gray-500">Order Number</p>
-                                                <p className="font-semibold text-gray-800">{order.orderNumber}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-500">Amount</p>
-                                                <p className="font-semibold text-[#1dacbc]">{formatCurrency(order.totalAmount)}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-500">Status</p>
-                                                <span className={`inline-block mt-1 px-2 py-1 rounded text-xs font-semibold ${getStatusColor(order.status)}`}>
-                                                    {formatStatus(order.status)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
+                                    <div className="pt-3 border-t border-gray-200">
+                                        <p className="text-gray-700 text-xs font-semibold mb-2">View All</p>
+                                        <p className="text-gray-600 text-xs mb-3">Use the history page for advanced filtering.</p>
+                                        <a
+                                            href="/check-status/history"
+                                            className="w-full inline-block px-3 py-2 text-xs bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition font-semibold text-center"
+                                        >
+                                            View Full History
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Main Content - History */}
                         <div className="lg:col-span-3 space-y-6">
+                            {/* Orders Section */}
+                            <div className="bg-white rounded-lg shadow-sm p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                                        <svg className="w-5 h-5 mr-2 text-[#1dacbc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                        Orders
+                                    </h2>
+                                    {showAccountSection && (
+                                        <button
+                                            type="button"
+                                            onClick={refreshTrackedOrder}
+                                            disabled={loadingOrders || !order}
+                                            className="text-lg text-[#1dacbc] hover:text-[#14939e] transition disabled:opacity-50"
+                                            title="Refresh orders"
+                                        >
+                                            <IoRefresh className={loadingOrders ? 'animate-spin' : ''} />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {!showAccountSection ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-500 text-sm">Sign in to view your orders</p>
+                                    </div>
+                                ) : loadingOrders ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-500 text-sm">Loading...</p>
+                                    </div>
+                                ) : orders.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                        <p className="text-gray-500 text-sm">No orders to display</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {getTopOrders().map((orderItem) => (
+                                            <div key={orderItem.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 mb-1">Order Number</p>
+                                                        <p className="text-sm text-gray-800">{orderItem.orderNumber}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-xs text-gray-500 mb-1">Amount</p>
+                                                        <p className="text-sm font-semibold text-[#1dacbc]">{formatRupiah(orderItem.totalAmount)}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs text-gray-600 mb-3">
+                                                    <p><span className="font-medium">Order ID:</span> {orderItem.id}</p>
+                                                </div>
+                                                <div className="mb-3 pb-3 border-b border-gray-100">
+                                                    <span className={`px-2 py-1 text-xs font-semibold rounded inline-block ${getOrderStatusColor(orderItem.status)}`}>
+                                                        {formatStatusLabel(orderItem.status)}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-gray-600 space-y-1 mb-4">
+                                                    {orderItem.outletName && <p><span className="font-medium">Outlet:</span> {orderItem.outletName}</p>}
+                                                    <p><span className="font-medium">Date:</span> {formatDateTime(orderItem.createdAt)}</p>
+                                                </div>
+
+                                                {/* Laundry Items */}
+                                                {orderItem.items && orderItem.items.length > 0 && (
+                                                    <div className="mb-4 pb-4 border-b border-gray-100">
+                                                        <p className="text-xs text-gray-500 mb-2 font-medium">Items:</p>
+                                                        <div className="space-y-1">
+                                                            {orderItem.items.map((item, idx) => {
+                                                                const itemName = item.laundryItemName || item.item?.name || 'Unknown Item';
+                                                                const qty = item.quantity || item.qty || 0;
+                                                                return (
+                                                                    <p key={idx} className="text-xs text-gray-600">
+                                                                        • {itemName} <span className="text-gray-500">x{qty}</span>
+                                                                    </p>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center gap-2">
+                                                    {isPaidOrder(orderItem.isPaid ?? false) ? (
+                                                        <div className="text-xs font-semibold px-3 py-1 rounded bg-green-100 text-green-700">
+                                                            ✅ PAID
+                                                            </div>
+                                                        ) : canPayOrder(orderItem.status) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handlePayOrder(orderItem.id)}
+                                                                disabled={payingOrderId === orderItem.id}
+                                                                className="px-3 py-1 bg-[#1dacbc] text-white text-xs rounded-md font-semibold hover:bg-[#14939e] transition disabled:bg-gray-400 whitespace-nowrap"
+                                                            >
+                                                                {payingOrderId === orderItem.id ? 'Processing...' : 'Pay Here'}
+                                                            </button>
+                                                        )}
+                                                        {orderItem.status === 'DELIVERING_TO_CUSTOMER' && (
+                                                            <>
+                                                                {confirmationDeadlines[orderItem.id] && (
+                                                                    <div className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700">
+                                                                        🕐 Auto-confirm in {confirmationDeadlines[orderItem.id].timeRemaining}
+                                                                    </div>
+                                                                )}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleConfirmReceipt(orderItem.id)}
+                                                                    disabled={confirmingOrderId === orderItem.id}
+                                                                    className="px-3 py-1 bg-green-600 text-white text-xs rounded-md font-semibold hover:bg-green-700 transition disabled:bg-gray-400 whitespace-nowrap"
+                                                                >
+                                                                    {confirmingOrderId === orderItem.id ? 'Confirming...' : 'I Received It'}
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {orders.length > 5 && (
+                                                <a
+                                                    href="/check-status/history"
+                                                    className="w-full block px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-semibold text-center"
+                                                >
+                                                    See All Orders ({orders.length})
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+                            </div>
+
                             {/* Pickup Requests Section */}
                             <div className="bg-white rounded-lg shadow-sm p-6">
                                 <div className="flex items-center justify-between mb-4">
@@ -640,7 +867,7 @@ export default function CheckStatusPage() {
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {filteredPickupRequests.map((request) => (
+                                        {getTopPickupRequests().map((request) => (
                                             <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                                                 <div className="grid grid-cols-2 gap-4 mb-3">
                                                     <div>
@@ -670,115 +897,19 @@ export default function CheckStatusPage() {
                                                 )}
                                             </div>
                                         ))}
+                                        {pickupRequests.length > 5 && (
+                                            <a
+                                                href="/check-status/history"
+                                                className="w-full block px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-semibold text-center"
+                                            >
+                                                See All Pickups ({pickupRequests.length})
+                                            </a>
+                                        )}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Orders Section */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-bold text-gray-800 flex items-center">
-                                        <svg className="w-5 h-5 mr-2 text-[#1dacbc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                        </svg>
-                                        Orders
-                                    </h2>
-                                    {showAccountSection && (
-                                        <button
-                                            type="button"
-                                            onClick={loadOrders}
-                                            disabled={loadingOrders}
-                                            className="text-lg text-[#1dacbc] hover:text-[#14939e] transition disabled:opacity-50"
-                                            title="Refresh orders"
-                                        >
-                                            <IoRefresh className={loadingOrders ? 'animate-spin' : ''} />
-                                        </button>
-                                    )}
-                                </div>
 
-                                {!showAccountSection ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-500 text-sm">Sign in to view your orders</p>
-                                    </div>
-                                ) : loadingOrders ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-500 text-sm">Loading...</p>
-                                    </div>
-                                ) : orders.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                        </svg>
-                                        <p className="text-gray-500 text-sm">No orders yet</p>
-                                    </div>
-                                ) : filteredOrders.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                        </svg>
-                                        <p className="text-gray-500 text-sm">No orders found for the selected date range</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {filteredOrders.map((orderItem) => (
-                                            <div key={orderItem.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-                                                <div className="grid grid-cols-2 gap-4 mb-3">
-                                                    <div>
-                                                        <p className="text-xs text-gray-500 mb-1">Order Number</p>
-                                                        <p className="text-sm font-semibold text-gray-800">{orderItem.orderNumber}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-xs text-gray-500 mb-1">Amount</p>
-                                                        <p className="text-sm font-semibold text-[#1dacbc]">{formatRupiah(orderItem.totalAmount)}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="mb-3 pb-3 border-b border-gray-100">
-                                                    <span className={`px-2 py-1 text-xs font-semibold rounded inline-block ${getOrderStatusColor(orderItem.status)}`}>
-                                                        {formatStatusLabel(orderItem.status)}
-                                                    </span>
-                                                </div>
-                                                <div className="text-xs text-gray-600 space-y-1 mb-4">
-                                                    {orderItem.outletName && <p><span className="font-medium">Outlet:</span> {orderItem.outletName}</p>}
-                                                    <p><span className="font-medium">Date:</span> {formatDateTime(orderItem.createdAt)}</p>
-                                                </div>
-                                                <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center gap-2">
-                                                    {isPaidOrder(orderItem.isPaid ?? false) ? (
-                                                        <div className="text-xs font-semibold px-3 py-1 rounded bg-green-100 text-green-700">
-                                                            ✅ PAID
-                                                        </div>
-                                                    ) : canPayOrder(orderItem.status) && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handlePayOrder(orderItem.id)}
-                                                            disabled={payingOrderId === orderItem.id}
-                                                            className="px-3 py-1 bg-[#1dacbc] text-white text-xs rounded-md font-semibold hover:bg-[#14939e] transition disabled:bg-gray-400 whitespace-nowrap"
-                                                        >
-                                                            {payingOrderId === orderItem.id ? 'Processing...' : 'Pay Here'}
-                                                        </button>
-                                                    )}
-                                                    {orderItem.status === 'DELIVERING_TO_CUSTOMER' && (
-                                                        <>
-                                                            {confirmationDeadlines[orderItem.id] && (
-                                                                <div className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700">
-                                                                    🕐 Auto-confirm in {confirmationDeadlines[orderItem.id].timeRemaining}
-                                                                </div>
-                                                            )}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleConfirmReceipt(orderItem.id)}
-                                                                disabled={confirmingOrderId === orderItem.id}
-                                                                className="px-3 py-1 bg-green-600 text-white text-xs rounded-md font-semibold hover:bg-green-700 transition disabled:bg-gray-400 whitespace-nowrap"
-                                                            >
-                                                                {confirmingOrderId === orderItem.id ? 'Confirming...' : 'I Received It'}
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
                         </div>
                     </div>
                 </div>

@@ -9,6 +9,7 @@ export interface CreateOrderPayload {
   pickupRequestId: string;
   serviceType: "REGULAR" | "PREMIUM";
   totalWeightKg: number;
+  deliveryFee: number;
   items: OrderItemInput[];
 }
 
@@ -27,7 +28,7 @@ export const createOrder = async (payload: CreateOrderPayload) => {
 };
 
 export const getLaundryItems = async () => {
-  const response = await axiosInstance.get("/items");
+  const response = await axiosInstance.get("/laundry-items");
   return response.data;
 };
 

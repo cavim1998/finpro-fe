@@ -21,11 +21,11 @@ export const useAdminAuth = () => {
   };
 
   useEffect(() => {
-    const token = getCookie("token");
+    const token = getCookie("auth_token");
 
     if (!token) {
       toast.error("Sesi habis, silakan login kembali");
-      router.push("/auth/login");
+      router.push("/signin");
       return;
     }
 
@@ -39,7 +39,7 @@ export const useAdminAuth = () => {
     } catch (error) {
       console.error("Token invalid", error);
       toast.error("Gagal memverifikasi sesi");
-      router.push("/auth/login");
+      router.push("/signin");
     } finally {
       setIsAuthLoading(false);
     }
