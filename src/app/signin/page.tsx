@@ -15,7 +15,7 @@ const page = () => {
 
     // RoleCode: CUSTOMER | SUPER_ADMIN | OUTLET_ADMIN | WORKER | DRIVER
     const getRoleFromUser = (user: any) => {
-        return user?.role ?? user?.roleCode ?? user?.role?.code ?? 'CUSTOMER';
+        return user?.role?.code ?? user?.roleCode ?? user?.role ?? 'CUSTOMER';
     };
 
     const routeByRole = (role: string) => {
@@ -52,7 +52,7 @@ const page = () => {
             setTimeout(async () => {
                 const response = await fetch('/api/auth/session');
                 const session = await response.json();
-                const role = session?.user?.role || session?.user?.roleCode || 'CUSTOMER';
+                const role = getRoleFromUser(session?.user);
 
                 router.push(routeByRole(role));
             }, 100);
@@ -106,7 +106,7 @@ const page = () => {
                 // Fetch session to get role
                 const response = await fetch('/api/auth/session');
                 const session = await response.json();
-                const role = session?.user?.role || session?.user?.roleCode || 'CUSTOMER';
+                const role = getRoleFromUser(session?.user);
                 
                 router.push(routeByRole(role));
                 setLoading(false);

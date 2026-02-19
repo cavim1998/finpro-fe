@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import { jwtDecode } from "jwt-decode";
 
 declare module "next-auth" {
   interface Session {
@@ -35,6 +36,16 @@ const baseUrl =
   process.env.NEXT_PUBLIC_BASE_URL_API ||
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:8000";
+
+const getRoleFromAccessToken = (accessToken?: string) => {
+  if (!accessToken) return null;
+  try {
+    const decoded: any = jwtDecode(accessToken);
+    return decoded?.role ?? decoded?.roleCode ?? null;
+  } catch {
+    return null;
+  }
+};
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -83,14 +94,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return null;
           }
 
+          const roleValue =
+            user?.role?.code || user?.roleCode || user?.role || null;
+          const tokenRole = roleValue ?? getRoleFromAccessToken(accessToken);
+
           return {
             id: user.id || user.userId || "unknown",
             name: user.name || user.username || "",
             email: user.email || "",
             image: user.profileImage || user.image || null,
             accessToken,
-            role: user.role || user.roleCode || null,
-            roleCode: user.roleCode || user.role || null,
+            role: tokenRole,
+            roleCode: tokenRole,
             station: user.station || null,
             ...user,
           };
@@ -136,14 +151,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           // Return user with ALL backend data
+          const roleValue =
+            user?.role?.code || user?.roleCode || user?.role || null;
+          const tokenRole = roleValue ?? getRoleFromAccessToken(accessToken);
+
           return {
             id: user.id || user.userId || "unknown",
             name: user.name || user.username || "",
             email: user.email || credentials.email,
             image: user.profileImage || user.image || null,
             accessToken,
-            role: user.role || user.roleCode || null,
-            roleCode: user.roleCode || user.role || null,
+            role: tokenRole,
+            roleCode: tokenRole,
             station: user.station || null,
             // Spread all other user data
             ...user,
@@ -184,6 +203,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // OAuth provider - save access token
       if (account?.access_token) {
         token.accessToken = account.access_token;
+      }
+
+      const tokenUser = token.user as any;
+      if (tokenUser && !tokenUser.role) {
+        const derivedRole = getRoleFromAccessToken(token.accessToken as string);
+        if (derivedRole) {
+          tokenUser.role = derivedRole;
+          tokenUser.roleCode = derivedRole;
+        }
       }
 
       return token;
