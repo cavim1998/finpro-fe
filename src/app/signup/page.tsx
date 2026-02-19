@@ -4,9 +4,9 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { axiosInstance } from '@/lib/axios';
-import Cookies from 'js-cookie';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
+import { signIn } from 'next-auth/react';
 
 const page = () => {
     const router = useRouter();
@@ -43,15 +43,16 @@ const page = () => {
             console.log('Google signup response:', { accessToken, user });
 
             if (accessToken) {
-                const isProduction = window.location.protocol === 'https:';
-                Cookies.set('auth_token', accessToken, { expires: 7, secure: isProduction, sameSite: 'strict' });
-                if (user) {
-                    Cookies.set('user_data', JSON.stringify(user), { expires: 7, secure: isProduction, sameSite: 'strict' });
+                const result = await signIn('google-id-token', {
+                    idToken: credential,
+                    redirect: false,
+                });
+
+                if (result?.error) {
+                    toast.error('Failed to create session. Please try again.');
+                    return;
                 }
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new Event('user-data-updated'));
-                }
-                
+
                 // Google signup berhasil, user sudah auto-verified
                 toast.success('Sign up successful');
                 router.push('/profile');

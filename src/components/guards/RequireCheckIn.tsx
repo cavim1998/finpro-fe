@@ -1,12 +1,10 @@
 "use client";
 
 import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
-import { useProfileQuery } from "@/hooks/api/useProfile";
 import { RoleCode } from "@/types";
-import Cookies from "js-cookie";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
-import { getRoleFromToken } from "@/lib/auth";
+import { useSession } from "next-auth/react";
 
 type Props = {
   children: React.ReactNode;
@@ -21,46 +19,31 @@ export default function RequireCheckInRQ({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: session, status } = useSession();
 
-  const token = Cookies.get("auth_token");
-  const roleFromToken = getRoleFromToken(token ?? undefined) as RoleCode | null;
-
-  const profileQ = useProfileQuery();
+  const role = (session?.user?.role || session?.user?.roleCode) as RoleCode | undefined;
+  
   const attendanceQ = useAttendanceTodayQuery();
 
-  const role = (profileQ.data?.role as RoleCode | undefined) ?? roleFromToken ?? undefined;
   const isCheckedIn = !!attendanceQ.data?.isCheckedIn;
   const isLockedToday = !!attendanceQ.data?.isCompleted;
 
-  const profileStatus = (profileQ.error as any)?.response?.status;
-
-const shouldGoSignin = useMemo(() => {
-  if (!token) return true;
-  if (profileQ.isLoading) return false;
-  if (profileQ.isError) return profileStatus === 401;
-  if (!role) return true;
-  if (!roles.includes(role)) return true;
-  return false;
-}, [token, profileQ.isLoading, profileQ.isError, profileStatus, role, roles]);
+  const shouldGoSignin = useMemo(() => {
+    if (status === "loading") return false;
+    if (status === "unauthenticated") return true;
+    if (!role) return true;
+    if (!roles.includes(role)) return true;
+    return false;
+  }, [status, role, roles]);
 
   const shouldGoAttendance = useMemo(() => {
-    if (!token) return false;
-    if (profileQ.isLoading || attendanceQ.isLoading) return false;
-    if (profileQ.isError) return false;
+    if (status !== "authenticated") return false;
+    if (attendanceQ.isLoading) return false;
     if (!role || !roles.includes(role)) return false;
 
     const allowAccess = isCheckedIn && !isLockedToday;
     return !allowAccess;
-  }, [
-    token,
-    profileQ.isLoading,
-    attendanceQ.isLoading,
-    profileQ.isError,
-    role,
-    roles,
-    isCheckedIn,
-    isLockedToday,
-  ]);
+  }, [status, attendanceQ.isLoading, role, roles, isCheckedIn, isLockedToday]);
 
   useEffect(() => {
     if (shouldGoSignin) {
@@ -74,8 +57,8 @@ const shouldGoSignin = useMemo(() => {
     }
   }, [shouldGoSignin, shouldGoAttendance, pathname, redirectTo, router]);
 
-  if (!token) return null;
-  if (profileQ.isLoading || attendanceQ.isLoading) return null;
+  if (status === "loading") return null;
+  if (attendanceQ.isLoading) return null;
   if (shouldGoSignin) return null;
   if (shouldGoAttendance) return null;
 
