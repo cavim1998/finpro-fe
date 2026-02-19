@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import { useSession, signOut } from "next-auth/react";
 import { FaCalendarDays } from "react-icons/fa6";
 
 interface UserData {
@@ -10,48 +10,24 @@ interface UserData {
   name: string;
   email: string;
   profileImage?: string | null;
+  image?: string | null;
 }
 
 const NavbarWorker = () => {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const { data: session, status } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const loadUserData = useCallback(() => {
-    if (typeof window === "undefined") return;
-
-    const token = Cookies.get("auth_token");
-    const userDataStr = Cookies.get("user_data");
-
-    setIsLoggedIn(!!token);
-
-    if (userDataStr) {
-      try {
-        setUserData(JSON.parse(userDataStr));
-      } catch (e) {
-        console.error("Failed to parse user data");
-      }
-    } else {
-      setUserData(null);
-    }
-
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    loadUserData();
-
-    if (typeof window === "undefined") return;
-    const handleUserDataUpdated = () => loadUserData();
-
-    window.addEventListener("user-data-updated", handleUserDataUpdated);
-    return () => {
-      window.removeEventListener("user-data-updated", handleUserDataUpdated);
-    };
-  }, [loadUserData]);
+  const isLoggedIn = status === "authenticated";
+  const loading = status === "loading";
+  const userData: UserData | null = session?.user ? {
+    id: session.user.id,
+    name: session.user.name || '',
+    email: session.user.email || '',
+    profileImage: session.user.profileImage || session.user.image || null,
+    image: session.user.image || session.user.profileImage || null,
+  } : null;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -68,15 +44,8 @@ const NavbarWorker = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    Cookies.remove("auth_token");
-    Cookies.remove("user_data");
-    setIsLoggedIn(false);
-    setUserData(null);
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("user-data-updated"));
-    }
-    router.push("/signin");
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/signin" });
   };
 
   // Generate avatar from name

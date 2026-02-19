@@ -1,5 +1,5 @@
 import axios from "axios";
-import Cookies from "js-cookie";
+import { getSession, signOut } from "next-auth/react";
 
 const rawBaseUrl =
   process.env.NEXT_PUBLIC_BASE_URL_API ||
@@ -16,17 +16,19 @@ export const axiosInstance = axios.create({
   baseURL,
 });
 
-axiosInstance.interceptors.request.use((config) => {
+axiosInstance.interceptors.request.use(async (config) => {
   if (typeof window !== "undefined") {
-    const token = Cookies.get("auth_token");
+    const session = await getSession();
+    const token = session?.user?.accessToken;
+    
     if (token) {
       config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
-      console.log(`Request to ${config.url} with auth token (${token.substring(0, 20)}...)`);
+      console.log(`Request to ${config.url} with auth token`);
     } else {
       // Don't warn for auth endpoints (they don't need existing token)
       if (!config.url?.includes('/auth/')) {
-        console.warn("No auth token found in cookies for request:", config.url);
+        console.warn("No auth token found in session for request:", config.url);
       }
     }
   }
@@ -36,12 +38,11 @@ axiosInstance.interceptors.request.use((config) => {
 // Response interceptor untuk handle 401
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      console.warn("Unauthorized - clearing token");
+      console.warn("Unauthorized - signing out");
       if (typeof window !== "undefined") {
-        Cookies.remove("auth_token");
-        Cookies.remove("user_data");
+        await signOut({ callbackUrl: "/signin" });
       }
     }
     return Promise.reject(error);
