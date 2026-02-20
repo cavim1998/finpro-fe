@@ -4,26 +4,26 @@ import RequireCheckInRQ from "@/components/guards/RequireCheckIn";
 import NavbarWorker from "@/components/Navbarworker";
 import WorkerDashboard from "@/components/worker/WorkerDashboard";
 
-export default function WorkerWashingPage() {
+export default function WorkerPackingPage() {
   return (
     <RequireCheckInRQ
       roles={["WORKER"]}
-      redirectTo="/attendance?next=/worker/washing"
+      redirectTo="/attendance?next=/worker/packing"
     >
       <div className="border-b-1">
         <NavbarWorker />
       </div>
 
       <WorkerDashboard
-        station="WASHING"
+        station="PACKING"
         theme={{
           headerBgClass:
             "bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-500/20 via-cyan-500/10 to-transparent",
           badgeClass: "text-sky-600",
         }}
         copy={{
-          headerTitle: "Washing Station",
-          headerSubtitle: "Fokus cuci & sortir order hari ini.",
+          headerTitle: "Packing Station",
+          headerSubtitle: "Fokus packing & pengemasan order hari ini.",
           clockOutLabel: "Check Out",
           statsLabels: {
             incoming: "Incoming",

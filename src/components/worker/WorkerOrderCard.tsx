@@ -1,29 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Clock, Package } from "lucide-react";
+import type { WorkerOrderCard as WorkerOrderCardType } from "@/types/worker-station";
 
-type WorkerOrderCardProps = {
-  orderId: string | number;
-  customerName: string;
-
-  clothesCount: number;
-  totalKg: number;
-  enteredAt: string | Date;
-  statusLabel: string;
-
-  onClick?: () => void;
-
-  accentClassName?: string; 
-};
-
-
-
-function formatTime(d: string | Date) {
-  const dt = typeof d === "string" ? new Date(d) : d;
-  if (Number.isNaN(dt.getTime())) return "-";
-  return dt.toLocaleString("id-ID", {
+function formatDateTime(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleString("id-ID", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -31,70 +17,55 @@ function formatTime(d: string | Date) {
   });
 }
 
-function formatKg(kg: number) {
-  if (typeof kg !== "number" || Number.isNaN(kg)) return "-";
-  // contoh: 3.5 => "3,5"
-  return `${kg.toLocaleString("id-ID", { maximumFractionDigits: 2 })} kg`;
-}
+type Props = {
+  item: WorkerOrderCardType;
+  rightSlot?: React.ReactNode; 
+  onClick?: () => void;
+};
 
-export function WorkerOrderCard({
-  orderId,
-  customerName,
-  clothesCount,
-  totalKg,
-  enteredAt,
-  statusLabel,
-  onClick,
-  accentClassName,
-}: WorkerOrderCardProps) {
+export default function WorkerOrderCard({ item, rightSlot, onClick }: Props) {
   return (
-    <Card
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (!onClick) return;
-        if (e.key === "Enter" || e.key === " ") onClick();
-      }}
-      className={cn(
-        "rounded-2xl border p-4 transition-colors",
-        onClick && "cursor-pointer hover:bg-muted/40 active:scale-[0.99]"
-      )}
-    >
-      {/* Row 1: Order + Customer */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-semibold truncate">
-            Order #{String(orderId)} • {customerName}
+    <Card className="shadow-card">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm text-muted-foreground">
+              Order <span className="font-semibold text-foreground">{item.orderNo}</span>
+            </p>
+            <p className="text-lg font-bold truncate">{item.customerName}</p>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Masuk: {formatTime(enteredAt)}
+
+          {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            <span>{item.clothesCount} pcs</span>
+          </div>
+
+          <div className="text-right font-medium">{item.totalKg} kg</div>
+
+          <div className="col-span-2 flex items-center gap-2 text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>Masuk: {formatDateTime(item.enteredAt)}</span>
+          </div>
+
+          <div className="col-span-2">
+            <span className="text-xs rounded-md border px-2 py-1">
+              Status: {item.stationStatus}
+            </span>
           </div>
         </div>
 
-        {/* Status pill */}
-        <div
-          className={cn(
-            "shrink-0 rounded-full border px-3 py-1 text-xs font-medium",
-            accentClassName ?? "text-sky-600"
-          )}
-        >
-          {statusLabel}
-        </div>
-      </div>
-
-      {/* Row 2: stats */}
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className="rounded-xl border bg-card p-3">
-          <div className="text-[11px] text-muted-foreground">Jumlah pakaian</div>
-          <div className="text-sm font-semibold">{clothesCount} pcs</div>
-        </div>
-
-        <div className="rounded-xl border bg-card p-3">
-          <div className="text-[11px] text-muted-foreground">Total</div>
-          <div className="text-sm font-semibold">{formatKg(totalKg)}</div>
-        </div>
-      </div>
+        {onClick ? (
+          <div className="mt-3">
+            <Button variant="ghost" className="w-full" onClick={onClick}>
+              Lihat detail
+            </Button>
+          </div>
+        ) : null}
+      </CardContent>
     </Card>
   );
 }

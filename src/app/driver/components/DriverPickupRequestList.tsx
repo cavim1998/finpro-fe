@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import * as React from "react";
+import DriverPickupRequestCard from "./DriverPickupRequestCard";
 
 type Props = {
   isAllowed: boolean;
@@ -51,10 +52,13 @@ export default function DriverPickupRequestList({
           </p>
         ) : pickupPageItems.length > 0 ? (
           <div className="space-y-2">
-            {pickupPageItems.map((p, idx) => (
-              <div key={idx} className="rounded-lg border p-3 text-sm">
-                Pickup request item
-              </div>
+            {pickupPageItems.map((p) => (
+              <DriverPickupRequestCard
+  key={p.id}
+  pickup={p}
+  dashboardParams={{ pageSize, taskPage: 1, pickupPage }}
+  disabled={!isAllowed}
+/>
             ))}
           </div>
         ) : (

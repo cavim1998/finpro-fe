@@ -1,14 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ClipboardList, Inbox } from "lucide-react";
-import type { StationType, Order } from "@/types";
 import { useWorkerStationOrders } from "@/features/workers/useWorkerStationOrders";
-import { WorkerOrderCard } from "./WorkerOrderCard";
-import type { WorkerOrderListItem } from "@/types/worker-order";
+import type { StationType } from "@/types";
+import { ClipboardList, Inbox } from "lucide-react";
+import WorkerOrderCard from "./WorkerOrderCard";
 
 type Labels = {
   myTasksTitle: string;
@@ -42,11 +38,11 @@ function MiniList({
   statusLabel,
   accentClassName,
 }: {
-  items: any[] | undefined; // nanti kita rapihin type-nya ke Order beneran
+  items: any[] | undefined;
   emptyText: string;
   onItemClick?: (orderId: string | number) => void;
 
-  statusLabel: string; // ex: "Washing"
+  statusLabel: string; 
   accentClassName?: string;
 }) {
   if (!items || items.length === 0) {
@@ -62,7 +58,7 @@ function MiniList({
       {items.slice(0, 5).map((o) => (
         <WorkerOrderCard
           key={o.id}
-          orderId={o.id}
+          orderNo={o.id}
           customerName={o.customerName ?? o.customer?.name ?? "-"}
           clothesCount={o.clothesCount ?? o.itemsCount ?? 0}
           totalKg={o.totalKg ?? o.weightKg ?? 0}
@@ -131,7 +127,6 @@ export function WorkerStationOrders({
                 statusLabel="Washing"
                 accentClassName={theme?.badgeClass}
                 onItemClick={(id) => {
-                  // step selanjutnya: buka modal konfirmasi jumlah selesai
                   console.log("clicked order:", id);
                 }}
               />

@@ -1,20 +1,31 @@
-import type { Order, StationType } from "@/types";
-// nanti kalau backend sudah ada, pakai axiosInstance:
-// import { axiosInstance } from "@/lib/axios";
+import { api } from "@/lib/api";
 
-export type WorkerOrderKind = "MY_TASKS" | "INCOMING";
+export type StationTypeCode = "WASHING" | "IRONING" | "PACKING";
 
-export async function getWorkerStationOrders(
-  stationType: StationType,
-  kind: WorkerOrderKind
-): Promise<Order[]> {
-  // TODO (backend):
-  // const res = await axiosInstance.get("/worker/orders", {
-  //   params: { stationType, kind },
-  // });
-  // return res.data?.data ?? res.data;
+export type WorkerOrdersScope = "incoming" | "my" | "completed";
 
-  // sementara FE dulu:
-  console.log("[getWorkerStationOrders] stub:", { stationType, kind });
-  return [];
+export type GetStationOrdersParams = {
+  stationType: StationTypeCode;
+  scope: WorkerOrdersScope;
+  page: number;
+  limit: number;
+};
+
+export async function getStationStatsApi(stationType: StationTypeCode) {
+  const res = await api.get(`/worker/stations/${stationType}/stats`);
+  return res.data;
+}
+
+export async function getStationOrdersApi(params: GetStationOrdersParams) {
+  const { stationType, ...query } = params;
+
+  const res = await api.get(`/worker/stations/${stationType}/orders`, {
+    params: query,
+  });
+  return res.data;
+}
+
+export async function claimOrderApi(stationType: StationTypeCode, orderId: number) {
+  const res = await api.post(`/worker/stations/${stationType}/${orderId}/claim`);
+  return res.data;
 }
