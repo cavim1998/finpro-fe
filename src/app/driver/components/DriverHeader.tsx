@@ -18,6 +18,14 @@ type Props = {
 
   onClockOut: () => Promise<void>;
   clockOutLoading: boolean;
+
+  stats: {
+    incoming: number;
+    inProgress: number;
+    completed: number;
+  };
+
+  dashboardLoading?: boolean;
 };
 
 export default function DriverHeader({
@@ -28,6 +36,8 @@ export default function DriverHeader({
   sinceText,
   onClockOut,
   clockOutLoading,
+  stats,
+  dashboardLoading,
 }: Props) {
   const [openClockOut, setOpenClockOut] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
@@ -49,10 +59,6 @@ export default function DriverHeader({
     }
   };
 
-  const incoming = 0;
-  const inProgress = 0;
-  const completed = 0;
-
   return (
     <div>
       <div className="p-4 pt-6 pb-8 rounded-b-3xl bg-gradient-to-r from-[#1dacbc] to-[#0b6c75]">
@@ -71,10 +77,11 @@ export default function DriverHeader({
             <Bell className="text-white" />
           </Button>
         </div>
+
         <DriverStats
-          incoming={incoming}
-          inProgress={inProgress}
-          completed={completed}
+          incoming={dashboardLoading ? 0 : stats.incoming}
+          inProgress={dashboardLoading ? 0 : stats.inProgress}
+          completed={dashboardLoading ? 0 : stats.completed}
         />
       </div>
 
@@ -84,9 +91,7 @@ export default function DriverHeader({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="font-semibold text-xl">Attendance</p>
-                <p className="text-2xl font-bold text-green-500">
-                  {statusText}
-                </p>
+                <p className="text-2xl font-bold text-green-500">{statusText}</p>
                 <p className="text-xl">
                   Clock in: {isCheckedIn ? sinceText : "-"}
                 </p>

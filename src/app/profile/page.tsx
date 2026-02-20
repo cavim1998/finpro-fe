@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import Cookies from 'js-cookie';
+import { useSession } from 'next-auth/react';
 import UploadPhotoModal from '@/components/modals/UploadPhotoModal';
 import ChangeEmailModal from '@/components/modals/ChangeEmailModal';
 import ChangePasswordModal from '@/components/modals/ChangePasswordModal';
@@ -26,6 +26,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+    const { data: session, update } = useSession();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -37,6 +38,16 @@ export default function ProfilePage() {
     const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
     const [isEditPersonalDataOpen, setIsEditPersonalDataOpen] = useState(false);
+
+    useEffect(() => {
+        if (session?.user && !profile) {
+            const sessionUser = session.user as any;
+            setProfile(sessionUser);
+            setName(sessionUser.name || '');
+            setPhone(sessionUser.phone || '');
+            setAddress(sessionUser.address || '');
+        }
+    }, [session, profile]);
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -73,16 +84,14 @@ export default function ProfilePage() {
                 setProfile(user);
                 setName(user.name || '');
                 setPhone(user.phone || '');
-                // Update cookie so navbar reflects new name
-                const isProduction = window.location.protocol === 'https:';
-                Cookies.set('user_data', JSON.stringify(user), { 
-                    expires: 7, 
-                    secure: isProduction, 
-                    sameSite: 'strict' 
+                await update({
+                    user: {
+                        ...session?.user,
+                        ...user,
+                        image: user.profileImage || user.image || session?.user?.image,
+                        profileImage: user.profileImage || user.image || session?.user?.profileImage,
+                    },
                 });
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new Event('user-data-updated'));
-                }
                 toast.success('Profile updated successfully');
             }
         } catch (err: any) {
@@ -103,19 +112,16 @@ export default function ProfilePage() {
             const photoUrl = response?.data?.data?.url;
             // Update only profileImage, preserve all other fields
             if (photoUrl && profile) {
-                const updatedProfile = { ...profile, profileImage: photoUrl };
+                const updatedProfile = { ...profile, profileImage: photoUrl, image: photoUrl };
                 setProfile(updatedProfile);
-                
-                // Update cookie so navbar reflects new photo
-                const isProduction = window.location.protocol === 'https:';
-                Cookies.set('user_data', JSON.stringify(updatedProfile), { 
-                    expires: 7, 
-                    secure: isProduction, 
-                    sameSite: 'strict' 
+                await update({
+                    user: {
+                        ...session?.user,
+                        ...updatedProfile,
+                        image: photoUrl,
+                        profileImage: photoUrl,
+                    },
                 });
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new Event('user-data-updated'));
-                }
                 toast.success('Profile photo updated successfully');
             }
         } catch (err: any) {

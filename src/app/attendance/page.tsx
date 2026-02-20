@@ -3,7 +3,7 @@
 import NavbarWorker from "@/components/Navbarworker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import Cookies from "js-cookie";
+import { useSession } from "next-auth/react";
 
 import AttendanceHeader from "./components/AttendanceHeader";
 import AttendanceCard from "./components/AttendanceCard";
@@ -25,14 +25,16 @@ export default function AttendancePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
-
-  const token = Cookies.get("auth_token");
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (!token) router.replace("/signin");
-  }, [token, router]);
+    if (status === "unauthenticated") {
+      router.replace("/signin");
+    }
+  }, [status, router]);
 
-  if (!token) return null;
+  if (status === "loading") return null;
+  if (status === "unauthenticated") return null;
 
   const profileQ = useProfileQuery();
   const attendanceQ = useAttendanceTodayQuery();
@@ -53,7 +55,7 @@ export default function AttendancePage() {
       ? "out"
       : null;
 
-  const role = profileQ.data?.role;
+  const role = session?.user?.role || profileQ.data?.role;
 
   const fallbackNext = useMemo(() => {
     if (role === "DRIVER") return "/driver";

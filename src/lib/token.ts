@@ -1,14 +1,33 @@
-export const TOKEN_KEY = "access_token";
+"use client";
 
-export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
-}
+import Cookies from "js-cookie";
+
+const LS_KEY = "access_token";
+const COOKIE_KEY = "auth_token";
 
 export function setToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LS_KEY, token);
+  }
+
+  Cookies.set(COOKIE_KEY, token, {
+    sameSite: "lax",
+  });
+}
+
+export function getToken() {
+  const fromCookie = Cookies.get(COOKIE_KEY);
+  if (fromCookie) return fromCookie;
+
+  if (typeof window !== "undefined") {
+    return localStorage.getItem(LS_KEY);
+  }
+  return null;
 }
 
 export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY);
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(LS_KEY);
+  }
+  Cookies.remove(COOKIE_KEY);
 }
