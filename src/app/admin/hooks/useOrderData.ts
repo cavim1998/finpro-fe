@@ -18,7 +18,7 @@ export const useOrderData = ({
   const [loading, setLoading] = useState(false);
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(5);
+  const [limit] = useState(10);
   const [totalData, setTotalData] = useState(0);
 
   const [selectedOutletId, setSelectedOutletId] = useState<number | undefined>(

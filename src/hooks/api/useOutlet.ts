@@ -1,11 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axios";
+import { PageableResponse } from "@/types/pagination";
+import { OutletListTypes } from "@/types/outlet";
 
-export const useOutlets = () => {
-  return useQuery({
-    queryKey: ["outlets"],
+interface GetOutletsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+export const useOutlets = (params?: GetOutletsParams) => {
+  return useQuery<PageableResponse<OutletListTypes>>({
+    queryKey: ["outlets", params],
     queryFn: async () => {
-      const { data } = await axiosInstance.get("/outlets");
+      const { data } = await axiosInstance.get("/outlets", { params });
       return data;
     },
   });

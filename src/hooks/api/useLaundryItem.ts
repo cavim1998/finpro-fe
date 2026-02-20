@@ -2,12 +2,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axios";
 import { LaundryItemFormData } from "@/lib/schema/laundry-item.schema";
 import { LaundryItemTypes } from "@/types/laundry-item";
+import { PageableResponse } from "@/types/pagination";
 
-export const useLaundryItems = () => {
-  return useQuery<LaundryItemTypes[]>({
-    queryKey: ["laundry-items"],
+interface GetItemsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  outletId?: number | string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+export const useLaundryItems = (params?: GetItemsParams) => {
+  return useQuery<PageableResponse<LaundryItemTypes>>({
+    queryKey: ["laundry-items", params],
     queryFn: async () => {
-      const { data } = await axiosInstance.get("/laundry-items");
+      const { data } = await axiosInstance.get("/laundry-items", { params });
       return data;
     },
   });
