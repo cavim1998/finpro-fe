@@ -130,7 +130,6 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
           incoming={incoming}
           inProgress={inProgress}
           completed={completed}
-          labels={mergedCopy.statsLabels}
         />
 
         <WorkerLists

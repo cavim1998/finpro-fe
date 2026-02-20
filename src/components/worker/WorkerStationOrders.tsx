@@ -38,11 +38,11 @@ function MiniList({
   statusLabel,
   accentClassName,
 }: {
-  items: any[] | undefined; // nanti kita rapihin type-nya ke Order beneran
+  items: any[] | undefined;
   emptyText: string;
   onItemClick?: (orderId: string | number) => void;
 
-  statusLabel: string; // ex: "Washing"
+  statusLabel: string; 
   accentClassName?: string;
 }) {
   if (!items || items.length === 0) {
@@ -58,7 +58,7 @@ function MiniList({
       {items.slice(0, 5).map((o) => (
         <WorkerOrderCard
           key={o.id}
-          orderID={o.id}
+          orderNo={o.id}
           customerName={o.customerName ?? o.customer?.name ?? "-"}
           clothesCount={o.clothesCount ?? o.itemsCount ?? 0}
           totalKg={o.totalKg ?? o.weightKg ?? 0}

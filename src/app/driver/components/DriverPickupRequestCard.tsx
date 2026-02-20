@@ -70,7 +70,7 @@ export default function DriverPickupRequestCard({
   const onClaim = async () => {
     if (!Number.isFinite(pickupId)) return;
     await claimM.mutateAsync(pickupId);
-    setOpen(false); // optional: tutup setelah sukses
+    setOpen(false);
   };
 
   const errorMsg =
@@ -100,7 +100,7 @@ export default function DriverPickupRequestCard({
 
           <Button
             className="w-full"
-            disabled={disabled || claimM.isPending || !Number.isFinite(pickupId)}
+            disabled={ claimM.isPending || !Number.isFinite(pickupId)}
             onClick={onClaim}
           >
             {claimM.isPending ? "Memproses..." : "Pickup"}

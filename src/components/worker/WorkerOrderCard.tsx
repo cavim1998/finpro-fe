@@ -19,7 +19,7 @@ function formatDateTime(iso: string) {
 
 type Props = {
   item: WorkerOrderCardType;
-  rightSlot?: React.ReactNode; // tombol Claim / dsb
+  rightSlot?: React.ReactNode; 
   onClick?: () => void;
 };
 
@@ -58,7 +58,6 @@ export default function WorkerOrderCard({ item, rightSlot, onClick }: Props) {
           </div>
         </div>
 
-        {/* optional click area */}
         {onClick ? (
           <div className="mt-3">
             <Button variant="ghost" className="w-full" onClick={onClick}>
