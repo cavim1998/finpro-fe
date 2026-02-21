@@ -5,6 +5,7 @@ import { ReportFilters } from "./report/ReportFilters";
 import { SalesView } from "./report/SalesView";
 import { PerformanceView } from "./report/PerformanceView";
 import { RoleCode } from "@/types";
+import { useOutlets } from "@/hooks/api/useOutlet";
 
 interface ReportProps {
   roleCode: RoleCode | null;
@@ -13,6 +14,7 @@ interface ReportProps {
 
 export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
   const hook = useReportData(roleCode, userOutletId);
+  const outlets = useOutlets();
 
   return (
     <div className="space-y-6 animate-in fade-in zoom-in duration-300">
@@ -26,6 +28,7 @@ export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
         setSDate={hook.setStartDate}
         eDate={hook.endDate}
         setEDate={hook.setEndDate}
+        outlets={outlets}
       />
 
       {hook.loading ? (

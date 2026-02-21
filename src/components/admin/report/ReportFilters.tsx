@@ -10,6 +10,7 @@ export const ReportFilters = ({
   setSDate,
   eDate,
   setEDate,
+  outlets,
 }: any) => (
   <div className="bg-white p-4 rounded-xl shadow-sm border flex flex-col xl:flex-row justify-between gap-4">
     <div className="flex bg-gray-100 p-1 rounded-lg w-fit">
@@ -34,8 +35,11 @@ export const ReportFilters = ({
           className="border p-2 rounded-lg text-sm outline-none"
         >
           <option value="">Semua Outlet</option>
-          <option value="1">Outlet Jakarta Pusat</option>
-          <option value="2">Outlet Tangerang</option>
+          {outlets?.map((outlet: any) => (
+            <option key={outlet.id} value={outlet.id}>
+              {outlet.name}
+            </option>
+          ))}
         </select>
       )}
       <input
