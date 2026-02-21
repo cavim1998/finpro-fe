@@ -41,3 +41,8 @@ export const getPickups = async (params: GetParams) => {
   const response = await axiosInstance.get("/admin-pickup", { params });
   return response.data;
 };
+
+export const getAdminOrderById = async (id: string) => {
+  const response = await axiosInstance.get(`/orders/admin/${id}`);
+  return response.data;
+};

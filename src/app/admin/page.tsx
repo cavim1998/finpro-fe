@@ -10,6 +10,8 @@ import CreateOrderModal from "@/components/admin/modal/CreateOrderModal";
 import BypassListView from "@/components/admin/BypassListView";
 import { useAdminAuth } from "./hooks/useAdminAuth";
 import { useOrderData } from "./hooks/useOrderData";
+import OrderDetailModal from "@/components/admin/modal/OrderDetailModal";
+import { useDashboardStats } from "@/components/admin/dashboard/useDashboardStats";
 
 export default function AdminDashboardPage() {
   const { roleCode, userOutletId, isAuthLoading } = useAdminAuth();
@@ -20,6 +22,9 @@ export default function AdminDashboardPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPickupId, setSelectedPickupId] = useState<string | null>(null);
+
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   const {
     dataList,
@@ -39,6 +44,8 @@ export default function AdminDashboardPage() {
     refreshData,
   } = useOrderData({ activeTab, roleCode, userOutletId });
 
+  const dashboardStats = useDashboardStats(roleCode, selectedOutletId);
+
   if (isAuthLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
@@ -48,6 +55,11 @@ export default function AdminDashboardPage() {
   }
 
   if (!roleCode) return null;
+
+  const handleViewDetail = (id: string) => {
+    setSelectedOrderId(id);
+    setShowDetailModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pt-16 font-sans">
@@ -64,6 +76,7 @@ export default function AdminDashboardPage() {
             onNavigate={(tab) => setActiveTab(tab as any)}
             onProcessPickup={() => setActiveTab("PICKUP")}
             onProcessBypass={() => setActiveTab("BYPASS")}
+            stats={dashboardStats}
           />
         )}
 
@@ -99,6 +112,7 @@ export default function AdminDashboardPage() {
                 : undefined
             }
             onRefresh={refreshData}
+            onViewDetail={handleViewDetail}
           />
         )}
 
@@ -121,7 +135,9 @@ export default function AdminDashboardPage() {
           />
         )}
 
-        {activeTab === "REPORT" && <ReportSection />}
+        {activeTab === "REPORT" && (
+          <ReportSection roleCode={roleCode} userOutletId={userOutletId} />
+        )}
         {activeTab === "MASTER" && roleCode === "SUPER_ADMIN" && (
           <MasterDataSection />
         )}
@@ -135,6 +151,12 @@ export default function AdminDashboardPage() {
           refreshData();
           setActiveTab("ORDERS");
         }}
+      />
+
+      <OrderDetailModal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        orderId={selectedOrderId}
       />
     </div>
   );

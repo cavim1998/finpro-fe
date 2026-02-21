@@ -18,6 +18,7 @@ export const OrderListView = (props: OrderListViewProps) => {
     roleCode,
     onCreateOrder,
     selectedOutletId,
+    onViewDetail,
   } = props;
 
   return (
@@ -49,7 +50,11 @@ export const OrderListView = (props: OrderListViewProps) => {
                 onCreateOrder={onCreateOrder}
               />
             ) : (
-              <OrderCard key={item.id} order={item} />
+              <OrderCard
+                key={item.id}
+                order={item}
+                onViewDetail={onViewDetail}
+              />
             ),
           )
         )}
