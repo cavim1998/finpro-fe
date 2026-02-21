@@ -1,0 +1,63 @@
+import { Download } from "lucide-react";
+
+export const ReportFilters = ({
+  role,
+  type,
+  setType,
+  outId,
+  setOut,
+  sDate,
+  setSDate,
+  eDate,
+  setEDate,
+  outlets,
+}: any) => (
+  <div className="bg-white p-4 rounded-xl shadow-sm border flex flex-col xl:flex-row justify-between gap-4">
+    <div className="flex bg-gray-100 p-1 rounded-lg w-fit">
+      <button
+        onClick={() => setType("SALES")}
+        className={`px-4 py-2 text-sm font-medium rounded-md ${type === "SALES" ? "bg-white text-[#17A2B8] shadow-sm" : "text-gray-500"}`}
+      >
+        Sales Report
+      </button>
+      <button
+        onClick={() => setType("PERFORMANCE")}
+        className={`px-4 py-2 text-sm font-medium rounded-md ${type === "PERFORMANCE" ? "bg-white text-[#17A2B8] shadow-sm" : "text-gray-500"}`}
+      >
+        Employee Performance
+      </button>
+    </div>
+    <div className="flex flex-wrap gap-2 items-center">
+      {role === "SUPER_ADMIN" && (
+        <select
+          value={outId || ""}
+          onChange={(e) => setOut(Number(e.target.value) || undefined)}
+          className="border p-2 rounded-lg text-sm outline-none"
+        >
+          <option value="">Semua Outlet</option>
+          {outlets?.map((outlet: any) => (
+            <option key={outlet.id} value={outlet.id}>
+              {outlet.name}
+            </option>
+          ))}
+        </select>
+      )}
+      <input
+        type="date"
+        value={sDate}
+        onChange={(e) => setSDate(e.target.value)}
+        className="border p-2 rounded-lg text-sm outline-none"
+      />
+      <span className="text-gray-400">-</span>
+      <input
+        type="date"
+        value={eDate}
+        onChange={(e) => setEDate(e.target.value)}
+        className="border p-2 rounded-lg text-sm outline-none"
+      />
+      <button className="flex items-center gap-2 px-4 py-2 border border-[#17A2B8] text-[#17A2B8] rounded-lg text-sm">
+        <Download size={16} /> Export
+      </button>
+    </div>
+  </div>
+);

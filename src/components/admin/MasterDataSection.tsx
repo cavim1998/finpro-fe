@@ -1,7 +1,5 @@
 "use client";
-import { UsersTable } from "./MasterDataSection/UsersTable";
-import { OutletsGrid } from "./MasterDataSection/OutletsGrid";
-import { ItemsGrid } from "./MasterDataSection/ItemsGrid";
+
 import { ShiftsGrid } from "./MasterDataSection/ShiftsGrid";
 import { MasterDataNav } from "./MasterDataSection/MasterDataNav";
 import { ErrorState } from "@/components/ErrorState";
@@ -12,6 +10,9 @@ import AssignEmployeeModal from "@/components/admin/modal/AssignEmployeeModal";
 import CreateShiftModal from "@/components/admin/modal/CreateShiftModal";
 import DeleteConfirmationModal from "@/components/admin/modal/DeleteConfirmationModal";
 import { useMasterData } from "./MasterDataSection/useMasterData";
+import MasterOutletView from "./MasterDataSection/MasterOutletView";
+import MasterItemView from "./MasterDataSection/MasterItemView";
+import MasterEmployeeView from "./MasterDataSection/MasterUserView";
 
 export default function MasterDataSection() {
   const { state, actions } = useMasterData();
@@ -27,14 +28,7 @@ export default function MasterDataSection() {
           ) : state.isErrorEmployees ? (
             <ErrorState text="Gagal memuat pegawai." />
           ) : (
-            <UsersTable
-              data={state.employees}
-              onAdd={() => actions.openModal("employee")}
-              onEdit={(u) => actions.openModal("employee", u)}
-              onDelete={(id, name) =>
-                actions.handleDeleteTrigger(id, name, "USERS")
-              }
-            />
+            <MasterEmployeeView actions={actions} />
           ))}
 
         {state.subTab === "OUTLETS" &&
@@ -43,14 +37,7 @@ export default function MasterDataSection() {
           ) : state.isErrorOutlets ? (
             <ErrorState text="Gagal memuat outlet." />
           ) : (
-            <OutletsGrid
-              data={state.outlets}
-              onCreate={() => actions.openModal("outlet")}
-              onEdit={(o) => actions.openModal("outlet", o)}
-              onDelete={(id) =>
-                actions.handleDeleteTrigger(id, "Outlet", "OUTLETS")
-              }
-            />
+            <MasterOutletView actions={actions} />
           ))}
 
         {state.subTab === "ITEMS" &&
@@ -59,14 +46,7 @@ export default function MasterDataSection() {
           ) : state.isErrorItems ? (
             <ErrorState text="Gagal memuat items." />
           ) : (
-            <ItemsGrid
-              data={state.items}
-              onCreate={() => actions.openModal("item")}
-              onEdit={(i) => actions.openModal("item", i)}
-              onDelete={(id) =>
-                actions.handleDeleteTrigger(id, "Item", "ITEMS")
-              }
-            />
+            <MasterItemView actions={actions} />
           ))}
 
         {state.subTab === "SHIFTS" &&

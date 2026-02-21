@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axios";
 import { Employee } from "@/types/employee";
+import { PageableResponse } from "@/types/pagination";
+
+interface GetUsersParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  outletId?: number | string;
+  role?: string;
+}
 
 export const useAvailableUsers = () => {
   return useQuery({
@@ -12,11 +21,11 @@ export const useAvailableUsers = () => {
   });
 };
 
-export const useEmployees = () => {
-  return useQuery<Employee[]>({
-    queryKey: ["employees"],
+export const useEmployees = (params?: GetUsersParams) => {
+  return useQuery<PageableResponse<Employee>>({
+    queryKey: ["employees", params],
     queryFn: async () => {
-      const { data } = await axiosInstance.get("/employees");
+      const { data } = await axiosInstance.get("/employees", { params });
       return data;
     },
   });

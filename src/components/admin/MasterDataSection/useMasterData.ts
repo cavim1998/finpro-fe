@@ -33,7 +33,7 @@ export const useMasterData = () => {
   const itemsQuery = useLaundryItems();
   const deleteItemMutation = useDeleteItem();
 
-  const shiftsQuery = useShiftTemplates(outletsQuery.data?.[0]?.id);
+  const shiftsQuery = useShiftTemplates(outletsQuery.data?.data[0].id);
   const deleteShiftMutation = useDeleteShift();
 
   const openModal = (type: keyof typeof modals, data: any = null) => {

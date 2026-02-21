@@ -1,40 +1,32 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { jwtDecode } from "jwt-decode";
 import { RoleCode } from "@/types";
+import { useSession } from "next-auth/react";
 
 export const useAdminAuth = () => {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [roleCode, setRoleCode] = useState<RoleCode | null>(null);
   const [userOutletId, setUserOutletId] = useState<number | undefined>(
     undefined,
   );
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
-  const getCookie = (name: string) => {
-    if (typeof document === "undefined") return null;
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-    return null;
-  };
-
   useEffect(() => {
-    const token = getCookie("auth_token");
-
-    if (!token) {
+    if (status === "unauthenticated") {
       toast.error("Sesi habis, silakan login kembali");
       router.push("/signin");
       return;
     }
 
     try {
-      const decoded: any = jwtDecode(token);
-      setRoleCode(decoded.role as RoleCode);
+      const role = session?.user.role;
+      const outletId = session?.user.outletId;
+      setRoleCode(role as RoleCode);
 
-      if (decoded.role === "OUTLET_ADMIN") {
-        setUserOutletId(decoded.outletId);
+      if (role === "OUTLET_ADMIN") {
+        setUserOutletId(outletId);
       }
     } catch (error) {
       console.error("Token invalid", error);

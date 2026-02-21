@@ -4,9 +4,10 @@ import React from "react";
 
 interface OrderCardProps {
   order: Order;
+  onViewDetail?: (id: string) => void;
 }
 
-const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ order, onViewDetail }) => {
   const statusColor =
     order.status === "WASHING"
       ? "bg-blue-100 text-blue-700"
@@ -37,16 +38,17 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
           Items
         </div>
         <div className="flex items-center gap-1">
-          <MoreVertical size={16} className="text-gray-400" /> {order.totalWeightKg} Kg
+          <MoreVertical size={16} className="text-gray-400" />{" "}
+          {order.totalWeightKg} Kg
         </div>
       </div>
 
       <div className="mt-4 flex gap-2">
-        <button className="flex-1 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">
-          Track
-        </button>
-        <button className="flex-1 py-2 text-sm bg-[#17A2B8] text-white rounded-lg hover:bg-[#138496]">
-          Detail
+        <button
+          onClick={() => onViewDetail && onViewDetail(order.id)}
+          className="flex-1 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+        >
+          Track & Detail
         </button>
       </div>
     </div>

@@ -15,6 +15,7 @@ declare module "next-auth" {
       role?: string;
       roleCode?: string;
       station?: string;
+      outletId?: number;
       [key: string]: any; // Allow other backend fields
     };
   }
@@ -28,6 +29,7 @@ declare module "next-auth" {
     role?: string;
     roleCode?: string;
     station?: string;
+    outletId?: number;
     [key: string]: any;
   }
 }
@@ -224,7 +226,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           ...(token.user as any),
         };
       }
-      
+
       if (token.accessToken) {
         session.user.accessToken = token.accessToken as string;
       }

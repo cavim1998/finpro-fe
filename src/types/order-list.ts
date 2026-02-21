@@ -22,4 +22,6 @@ export interface OrderListViewProps {
 
   onCreateOrder?: (pickupId: string) => void;
   onRefresh?: () => void;
+
+  onViewDetail?: (id: string) => void;
 }
