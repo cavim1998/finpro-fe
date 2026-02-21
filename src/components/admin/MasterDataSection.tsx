@@ -28,7 +28,7 @@ export default function MasterDataSection() {
           ) : state.isErrorEmployees ? (
             <ErrorState text="Gagal memuat pegawai." />
           ) : (
-            <MasterEmployeeView />
+            <MasterEmployeeView actions={actions} />
           ))}
 
         {state.subTab === "OUTLETS" &&
@@ -37,7 +37,7 @@ export default function MasterDataSection() {
           ) : state.isErrorOutlets ? (
             <ErrorState text="Gagal memuat outlet." />
           ) : (
-            <MasterOutletView />
+            <MasterOutletView actions={actions} />
           ))}
 
         {state.subTab === "ITEMS" &&
@@ -46,7 +46,7 @@ export default function MasterDataSection() {
           ) : state.isErrorItems ? (
             <ErrorState text="Gagal memuat items." />
           ) : (
-            <MasterItemView />
+            <MasterItemView actions={actions} />
           ))}
 
         {state.subTab === "SHIFTS" &&

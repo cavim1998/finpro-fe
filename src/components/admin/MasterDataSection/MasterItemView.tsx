@@ -7,10 +7,9 @@ import { ItemsGrid } from "./ItemsGrid";
 import { MasterToolbar } from "./MasterToolbar";
 import PaginationSection from "@/components/PaginationSection";
 import { Layers, Shirt } from "lucide-react";
-import { useMasterData } from "./useMasterData";
+import { MasterItemViewProps } from "@/types/master-data-admin";
 
-export default function MasterItemView() {
-  const { state, actions } = useMasterData();
+export default function MasterItemView({ actions }: MasterItemViewProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filterOutlet, setFilterOutlet] = useState("");

@@ -5,10 +5,9 @@ import { useOutlets } from "@/hooks/api/useOutlet";
 import { OutletsGrid } from "./OutletsGrid";
 import { MasterToolbar } from "./MasterToolbar";
 import PaginationSection from "@/components/PaginationSection";
-import { useMasterData } from "./useMasterData";
+import { MasterItemViewProps } from "@/types/master-data-admin";
 
-export default function MasterOutletView() {
-  const { state, actions } = useMasterData();
+export default function MasterOutletView({ actions }: MasterItemViewProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");

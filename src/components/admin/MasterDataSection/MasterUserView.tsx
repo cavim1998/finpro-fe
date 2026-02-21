@@ -6,10 +6,9 @@ import { useOutlets } from "@/hooks/api/useOutlet";
 import { UsersTable } from "./UsersTable";
 import { MasterToolbar } from "./MasterToolbar";
 import PaginationSection from "@/components/PaginationSection";
-import { useMasterData } from "./useMasterData";
+import { MasterItemViewProps } from "@/types/master-data-admin";
 
-export default function MasterUserView() {
-  const { state, actions } = useMasterData();
+export default function MasterUserView({ actions }: MasterItemViewProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filterOutlet, setFilterOutlet] = useState("");
