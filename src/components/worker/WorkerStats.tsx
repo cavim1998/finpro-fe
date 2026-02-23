@@ -7,12 +7,14 @@ type Props = {
   incoming: number;
   inProgress: number;
   completed: number;
+  onCompletedClick?: () => void;
 };
 
 export default function WorkerStats({
   incoming,
   inProgress,
   completed,
+  onCompletedClick,
 }: Props) {
 
   return (
@@ -33,7 +35,22 @@ export default function WorkerStats({
         </div>
       </Card>
 
-      <Card className="p-4 rounded-2xl">
+      <Card
+        className={`p-4 rounded-2xl ${onCompletedClick ? "cursor-pointer hover:bg-accent/40 transition-colors" : ""}`}
+        onClick={onCompletedClick}
+        role={onCompletedClick ? "button" : undefined}
+        tabIndex={onCompletedClick ? 0 : undefined}
+        onKeyDown={
+          onCompletedClick
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onCompletedClick();
+                }
+              }
+            : undefined
+        }
+      >
         <div className="flex flex-col items-center gap-2">
           <CheckCircle2 className="h-5 w-5" />
           <div className="text-2xl font-bold">{completed}</div>

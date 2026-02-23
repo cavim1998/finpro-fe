@@ -18,10 +18,24 @@ const page = () => {
         return user?.role?.code ?? user?.roleCode ?? user?.role ?? 'CUSTOMER';
     };
 
-    const routeByRole = (role: string) => {
+    const getWorkerHomePathFromUser = (user: any) => {
+        const rawStation =
+            user?.station ??
+            user?.workerStation ??
+            user?.outletStaff?.workerStation ??
+            user?.staff?.workerStation ??
+            'WASHING';
+
+        const station = String(rawStation).toUpperCase();
+        if (station.includes('IRONING')) return '/worker/ironing';
+        if (station.includes('PACKING')) return '/worker/packing';
+        return '/worker/washing';
+    };
+
+    const routeByRole = (role: string, user: any) => {
         if (role === 'SUPER_ADMIN' || role === 'OUTLET_ADMIN') return '/admin';
         if (role === 'DRIVER') return '/attendance?next=/driver';
-        if (role === 'WORKER') return '/attendance?next=/worker/washing';
+        if (role === 'WORKER') return `/attendance?next=${getWorkerHomePathFromUser(user)}`;
         return '/profile'; // CUSTOMER default
     };
 
@@ -54,7 +68,7 @@ const page = () => {
                 const session = await response.json();
                 const role = getRoleFromUser(session?.user);
 
-                router.push(routeByRole(role));
+                router.push(routeByRole(role, session?.user));
             }, 100);
         } catch (err: any) {
             const message = err?.response?.data?.message || '';
@@ -108,7 +122,7 @@ const page = () => {
                 const session = await response.json();
                 const role = getRoleFromUser(session?.user);
                 
-                router.push(routeByRole(role));
+                router.push(routeByRole(role, session?.user));
                 setLoading(false);
             }, 100);
         } catch (err: any) {

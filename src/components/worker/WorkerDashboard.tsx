@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { useClockOutMutation } from "@/hooks/api/useAttendanceMutations";
 import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
 import { useProfileQuery } from "@/hooks/api/useProfile";
 import { useWorkerStationStatsQuery } from "@/hooks/api/useWorkerStations";
+import { useRouter } from "next/navigation";
 import type { StationType } from "@/types";
 import WorkerHeader, { type WorkerHeaderTheme } from "./WorkerHeader";
 import WorkerLists from "./WorkerLists";
@@ -53,6 +55,7 @@ type Props = {
 };
 
 export default function WorkerDashboard({ station, copy, theme }: Props) {
+  const router = useRouter();
   const profileQ = useProfileQuery();
   const attendanceQ = useAttendanceTodayQuery();
   const clockOutM = useClockOutMutation();
@@ -70,6 +73,34 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
   const sinceText = formatTime(today?.log?.clockInAt ?? null);
 
   const isAllowed = isCheckedIn && !isCompleted;
+
+  const normalizeStation = (raw?: unknown): StationType | null => {
+    if (!raw) return null;
+    const value = String(raw).toUpperCase();
+    if (value.includes("WASHING")) return "WASHING";
+    if (value.includes("IRONING")) return "IRONING";
+    if (value.includes("PACKING")) return "PACKING";
+    return null;
+  };
+
+  const workerStation =
+    normalizeStation(profileQ.data?.station) ||
+    normalizeStation(profileQ.data?.workerStation) ||
+    normalizeStation(profileQ.data?.outletStaff?.workerStation) ||
+    normalizeStation(profileQ.data?.staff?.workerStation);
+
+  const expectedWorkerPath = workerStation
+    ? `/worker/${workerStation.toLowerCase()}`
+    : null;
+
+  const shouldRedirectToOwnStation = !!expectedWorkerPath && workerStation !== station;
+
+  // Worker should only access their own station dashboard.
+  useEffect(() => {
+    if (shouldRedirectToOwnStation && expectedWorkerPath) {
+      router.replace(expectedWorkerPath);
+    }
+  }, [shouldRedirectToOwnStation, expectedWorkerPath, router]);
 
   const statsQ = useWorkerStationStatsQuery(station, { enabled: isAllowed });
 
@@ -109,6 +140,8 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
 
   const workerHomePath = `/worker/${station.toLowerCase()}`;
 
+  if (shouldRedirectToOwnStation) return null;
+
   return (
     <div className="container mx-auto space-y-6 pb-24">
       <WorkerHeader
@@ -130,6 +163,7 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
           incoming={incoming}
           inProgress={inProgress}
           completed={completed}
+          onCompletedClick={() => router.push(`/worker/${station.toLowerCase()}/orders`)}
         />
 
         <WorkerLists

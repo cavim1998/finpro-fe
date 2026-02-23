@@ -2,11 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bell } from "lucide-react";
+import { Bell, Clock3 } from "lucide-react";
 import * as React from "react";
 
 import ConfirmActionDialog from "@/app/attendance/components/ConfirmActionDialog";
-import DriverStats from "./DriverStats";
 
 type Props = {
   displayName: string;
@@ -18,14 +17,6 @@ type Props = {
 
   onClockOut: () => Promise<void>;
   clockOutLoading: boolean;
-
-  stats: {
-    incoming: number;
-    inProgress: number;
-    completed: number;
-  };
-
-  dashboardLoading?: boolean;
 };
 
 export default function DriverHeader({
@@ -36,96 +27,97 @@ export default function DriverHeader({
   sinceText,
   onClockOut,
   clockOutLoading,
-  stats,
-  dashboardLoading,
 }: Props) {
   const [openClockOut, setOpenClockOut] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
-  const statusText = React.useMemo(() => {
-    if (loadingToday) return "Memuat status...";
-    if (isCompleted) return "Shift selesai (locked sampai besok)";
-    if (isCheckedIn) return "Sedang shift";
-    return "Belum clock-in";
-  }, [loadingToday, isCheckedIn, isCompleted]);
+  const badgeText = loadingToday
+    ? "Loading..."
+    : isCompleted
+      ? "Selesai"
+      : isCheckedIn
+        ? "Sedang shift"
+        : "Belum shift";
+
+  const badgeClass = isCompleted
+    ? "text-emerald-600"
+    : isCheckedIn
+      ? "text-green-600"
+      : "text-muted-foreground";
 
   const handleConfirmClockOut = async () => {
     setErrorMsg(null);
     try {
       await onClockOut();
       setOpenClockOut(false);
-    } catch (e: any) {
-      setErrorMsg(e?.response?.data?.message ?? "Clock-out gagal.");
+    } catch (e: unknown) {
+      const msg =
+        typeof e === "object" &&
+        e !== null &&
+        "response" in e &&
+        typeof (e as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
+          ? (e as { response?: { data?: { message?: string } } }).response?.data?.message
+          : "Clock-out gagal.";
+      setErrorMsg(msg);
     }
   };
 
   return (
-    <div>
-      <div className="p-4 pt-6 pb-8 rounded-b-3xl bg-gradient-to-r from-[#1dacbc] to-[#0b6c75]">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-white font-bold text-4xl">Selamat bekerja,</p>
-            <h1 className="text-2xl font-bold">{displayName}!</h1>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="notifications"
-            className="border rounded-4xl"
-          >
-            <Bell className="text-white" />
-          </Button>
+    <div className="p-4 pt-6 pb-8 rounded-b-3xl bg-gradient-to-r from-[#1dacbc] to-[#0b6c75]">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-xl font-bold text-[#ffffff]">
+            Selamat bekerja,
+            <span className="ml-1 font-semibold text-foreground">{displayName}!</span>
+          </h1>
+          <h2 className="text-xl font-bold">Driver Station</h2>
         </div>
 
-        <DriverStats
-          incoming={dashboardLoading ? 0 : stats.incoming}
-          inProgress={dashboardLoading ? 0 : stats.inProgress}
-          completed={dashboardLoading ? 0 : stats.completed}
-        />
+        <Button variant="ghost" size="icon" className="rounded-full" aria-label="notifications">
+          <Bell className="h-5 w-5" />
+        </Button>
       </div>
 
-      <div className="p-4">
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold text-xl">Attendance</p>
-                <p className="text-2xl font-bold text-green-500">{statusText}</p>
-                <p className="text-xl">
-                  Clock in: {isCheckedIn ? sinceText : "-"}
-                </p>
+      <Card className="p-4 rounded-2xl border bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-primary/5 to-transparent">
+        <CardContent className="p-0">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Attendance</p>
+              <p className={["font-semibold", badgeClass].join(" ")}>{badgeText}</p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock3 className="h-4 w-4" />
+                <span>Clock in: {sinceText}</span>
               </div>
-
-              <Button
-                variant="outline"
-                className="min-w-[140px]"
-                disabled={!isCheckedIn || isCompleted || clockOutLoading}
-                onClick={() => setOpenClockOut(true)}
-              >
-                {clockOutLoading ? "Clocking Out..." : "Check Out"}
-              </Button>
             </div>
 
-            {errorMsg && (
-              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                {errorMsg}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              disabled={!isCheckedIn || isCompleted || clockOutLoading}
+              onClick={() => setOpenClockOut(true)}
+            >
+              {clockOutLoading ? "Clocking Out..." : "Check Out"}
+            </Button>
+          </div>
 
-        <ConfirmActionDialog
-          open={openClockOut}
-          onOpenChange={setOpenClockOut}
-          title="Konfirmasi Check Out"
-          description="Apakah kamu yakin ingin check-out sekarang? Setelah check-out, shift akan terkunci sampai besok."
-          confirmText="Ya, Check Out"
-          cancelText="Batal"
-          loading={clockOutLoading}
-          onConfirm={handleConfirmClockOut}
-        />
-      </div>
+          {errorMsg && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <ConfirmActionDialog
+        open={openClockOut}
+        onOpenChange={setOpenClockOut}
+        title="Konfirmasi Check Out"
+        description="Apakah kamu yakin ingin check-out sekarang? Setelah check-out, shift akan terkunci sampai besok."
+        confirmText="Ya, Check Out"
+        cancelText="Batal"
+        loading={clockOutLoading}
+        onConfirm={handleConfirmClockOut}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { useClockOutMutation } from "@/hooks/api/useAttendanceMutations";
 import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
@@ -8,6 +9,7 @@ import { useDriverDashboard } from "@/features/driver/useDriverDashboard";
 
 import DriverHeader from "./DriverHeader";
 import DriverLists from "./DriverLists";
+import DriverStats from "./DriverStats";
 
 function formatTime(d?: Date | string | null) {
   if (!d) return "-";
@@ -21,10 +23,9 @@ export default function DriverDashboard() {
   const attendanceQ = useAttendanceTodayQuery();
   const clockOutM = useClockOutMutation();
 
-  // pagination backend dashboard
   const pageSize = 5;
-  const taskPage = 1;
-  const pickupPage = 1;
+  const [taskPage, setTaskPage] = useState(1);
+  const [pickupPage, setPickupPage] = useState(1);
 
   const dashboardQ = useDriverDashboard({ pageSize, taskPage, pickupPage });
 
@@ -58,6 +59,13 @@ export default function DriverDashboard() {
 
   const tasks = dashboardQ.data?.tasks?.items ?? [];
   const pickupRequests = dashboardQ.data?.pickupRequests?.items ?? [];
+  const taskTotalPages = Number(dashboardQ.data?.tasks?.totalPages ?? 0);
+  const pickupTotalPages = Number(dashboardQ.data?.pickupRequests?.totalPages ?? 0);
+
+  const taskHasNextPage =
+    (taskTotalPages > 0 && taskPage < taskTotalPages) || tasks.length === pageSize;
+  const pickupHasNextPage =
+    (pickupTotalPages > 0 && pickupPage < pickupTotalPages) || pickupRequests.length === pageSize;
 
   return (
     <div className="container mx-auto space-y-6 pb-24">
@@ -69,15 +77,26 @@ export default function DriverDashboard() {
         sinceText={sinceText}
         onClockOut={onClockOut}
         clockOutLoading={clockOutM.isPending}
-        stats={stats}
-        dashboardLoading={dashboardQ.isFetching}
       />
 
       <div className="p-1 space-y-5 -mt-4 pr-4 pl-4">
+        <DriverStats
+          incoming={dashboardQ.isFetching ? 0 : stats.incoming}
+          inProgress={dashboardQ.isFetching ? 0 : stats.inProgress}
+          completed={dashboardQ.isFetching ? 0 : stats.completed}
+        />
+
         <DriverLists
           isAllowed={isAllowed}
           myTasks={tasks}
           pickupRequests={pickupRequests}
+          dashboardParams={{ pageSize, taskPage, pickupPage }}
+          onTaskPrev={() => setTaskPage((p) => Math.max(1, p - 1))}
+          onTaskNext={() => setTaskPage((p) => p + 1)}
+          onPickupPrev={() => setPickupPage((p) => Math.max(1, p - 1))}
+          onPickupNext={() => setPickupPage((p) => p + 1)}
+          taskHasNextPage={taskHasNextPage}
+          pickupHasNextPage={pickupHasNextPage}
           dashboardLoading={dashboardQ.isFetching}
           dashboardError={dashboardQ.isError}
         />
