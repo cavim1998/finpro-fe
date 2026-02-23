@@ -5,8 +5,19 @@ import DriverTaskList from "./DriverTaskList";
 
 type Props = {
   isAllowed: boolean;
-  myTasks: any[];
-  pickupRequests: any[];
+  myTasks: unknown[];
+  pickupRequests: unknown[];
+  dashboardParams: {
+    pageSize: number;
+    taskPage: number;
+    pickupPage: number;
+  };
+  onTaskPrev: () => void;
+  onTaskNext: () => void;
+  onPickupPrev: () => void;
+  onPickupNext: () => void;
+  taskHasNextPage: boolean;
+  pickupHasNextPage: boolean;
   dashboardLoading?: boolean;
   dashboardError?: boolean;
 };
@@ -15,6 +26,13 @@ export default function DriverLists({
   isAllowed,
   myTasks,
   pickupRequests,
+  dashboardParams,
+  onTaskPrev,
+  onTaskNext,
+  onPickupPrev,
+  onPickupNext,
+  taskHasNextPage,
+  pickupHasNextPage,
   dashboardLoading,
   dashboardError,
 }: Props) {
@@ -31,10 +49,21 @@ export default function DriverLists({
       <DriverTaskList
         isAllowed={isAllowed}
         myTasks={dashboardLoading ? [] : myTasks}
+        page={dashboardParams.taskPage}
+        hasNextPage={taskHasNextPage}
+        loading={dashboardLoading}
+        onPrev={onTaskPrev}
+        onNext={onTaskNext}
       />
       <DriverPickupRequestList
         isAllowed={isAllowed}
         pickupRequests={dashboardLoading ? [] : pickupRequests}
+        dashboardParams={dashboardParams}
+        page={dashboardParams.pickupPage}
+        hasNextPage={pickupHasNextPage}
+        loading={dashboardLoading}
+        onPrev={onPickupPrev}
+        onNext={onPickupNext}
       />
     </div>
   );

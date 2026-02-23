@@ -31,8 +31,8 @@ export default function WorkerIroningPage() {
             completed: "Done",
           },
           listsLabels: {
-            myTasksTitle: "My Tasks / Washing",
-            incomingTitle: "Incoming to Washing",
+            myTasksTitle: "My Tasks / Ironing",
+            incomingTitle: "Incoming to Ironing",
             viewAll: "View all",
             emptyMyTasks: "Belum ada task.",
             emptyIncoming: "Belum ada order masuk.",

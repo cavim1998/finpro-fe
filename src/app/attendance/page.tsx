@@ -19,6 +19,10 @@ type UserProfile = {
   name?: string;
   fullName?: string;
   email?: string;
+  station?: string;
+  workerStation?: string;
+  outletStaff?: { workerStation?: string };
+  staff?: { workerStation?: string };
 };
 
 export default function AttendancePage() {
@@ -56,13 +60,26 @@ export default function AttendancePage() {
       : null;
 
   const role = session?.user?.role || profileQ.data?.role;
+  const workerStationRaw =
+    session?.user?.station ||
+    session?.user?.workerStation ||
+    profileQ.data?.station ||
+    profileQ.data?.workerStation ||
+    profileQ.data?.outletStaff?.workerStation ||
+    profileQ.data?.staff?.workerStation ||
+    "WASHING";
+  const workerStation = String(workerStationRaw).toUpperCase();
 
   const fallbackNext = useMemo(() => {
     if (role === "DRIVER") return "/driver";
-    if (role === "WORKER") return "/worker/washing";
+    if (role === "WORKER") {
+      if (workerStation.includes("IRONING")) return "/worker/ironing";
+      if (workerStation.includes("PACKING")) return "/worker/packing";
+      return "/worker/washing";
+    }
     if (role === "SUPER_ADMIN" || role === "OUTLET_ADMIN") return "/admin";
     return "/profile";
-  }, [role]);
+  }, [role, workerStation]);
 
   const dashboardTarget = next ?? fallbackNext;
 

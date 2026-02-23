@@ -5,20 +5,20 @@ import NavbarWorker from "@/components/Navbarworker";
 import { BottomNav } from "@/components/BottomNav";
 import WorkerCompletedOrders from "@/components/worker/WorkerCompletedOrders";
 
-export default function WorkerWashingOrderPage() {
+export default function WorkerPackingOrdersPage() {
   return (
     <RequireCheckInRQ
       roles={["WORKER"]}
-      redirectTo="/attendance?next=/worker/washing/order"
+      redirectTo="/attendance?next=/worker/packing/order"
     >
       <NavbarWorker />
 
       <WorkerCompletedOrders
-        station="WASHING"
-        title="Completed Orders / Washing"
-        subtitle="Semua order yang pernah kamu selesaikan di Washing."
+        station="PACKING"
+        title="Completed Orders / Packing"
+        subtitle="Semua order yang pernah kamu selesaikan di Packing."
       />
-      <BottomNav role="WORKER" workerHomePath="/worker/washing" />
+      <BottomNav role="WORKER" workerHomePath="/worker/packing" />
     </RequireCheckInRQ>
   );
 }

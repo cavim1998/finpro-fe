@@ -1,16 +1,17 @@
 import axios, { AxiosHeaders } from "axios";
-import { getToken } from "@/lib/token";
+import { getSession, signOut } from "next-auth/react";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL_API ?? "http://localhost:8000",
 });
 
-api.interceptors.request.use((config) => {
-  const token = getToken();
-  console.log("[API] attach token?", !!token, config.url);
+api.interceptors.request.use(async (config) => {
+  // NextAuth v5 session token is the primary source of truth.
+  const session = typeof window !== "undefined" ? await getSession() : null;
+  const sessionToken = session?.user?.accessToken;
+  const token = sessionToken;
 
   if (token) {
-    // axios v1: headers bisa AxiosHeaders
     if (!config.headers) {
       config.headers = new AxiosHeaders();
     }
@@ -24,3 +25,14 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      await signOut({ callbackUrl: "/signin" });
+    }
+
+    return Promise.reject(error);
+  },
+);
