@@ -1,5 +1,6 @@
 "use client";
 
+import { formatTime } from "@/lib/datetime";
 import { ShiftListTypes } from "@/types/shift";
 import { Clock, Trash2, Plus, Store } from "lucide-react";
 
@@ -45,11 +46,15 @@ export const ShiftsGrid = ({ data, onCreate, onDelete }: ShiftsGridProps) => {
             <div className="space-y-2 text-sm text-gray-600">
               <div className="flex justify-between border-b pb-2">
                 <span>Jam Masuk:</span>
-                <span className="font-mono font-bold">{shift.startTime}</span>
+                <span className="font-mono font-bold">
+                  {formatTime(shift.startTime)}
+                </span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span>Jam Keluar:</span>
-                <span className="font-mono font-bold">{shift.endTime}</span>
+                <span className="font-mono font-bold">
+                  {formatTime(shift.endTime)}
+                </span>
               </div>
               <div className="flex items-center gap-2 text-gray-400 pt-1">
                 <Store size={14} /> <span>Outlet: {shift.outlet.name}</span>

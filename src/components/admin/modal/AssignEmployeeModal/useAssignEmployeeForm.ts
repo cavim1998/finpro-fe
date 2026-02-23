@@ -30,7 +30,7 @@ export const useAssignEmployeeForm = ({
   const isEditMode = !!initialData;
 
   const assignMutation = useAssignEmployee();
-  const { data: outlets = [] } = useOutlets();
+  const { data: outlets } = useOutlets({ limit: 1000 });
   const { data: availableUsers = [] } = useAvailableUsers();
 
   const form = useForm({
@@ -46,8 +46,10 @@ export const useAssignEmployeeForm = ({
   const selectedOutletId = form.watch("outletId");
   const outletIdParam = selectedOutletId ? Number(selectedOutletId) : undefined;
 
-  const { data: shifts = [], isLoading: isLoadingShifts } =
-    useShiftTemplates(outletIdParam);
+  const { data: shifts, isLoading: isLoadingShifts } = useShiftTemplates({
+    limit: 1000,
+    outletId: Number(form.getValues("outletId")),
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -70,9 +72,12 @@ export const useAssignEmployeeForm = ({
   }, [isOpen, initialData, form]);
 
   useEffect(() => {
-    if (isOpen && initialData && shifts.length > 0) {
+    if (!shifts) return;
+    if (isOpen && initialData && shifts.data.length > 0) {
       const targetShiftId = initialData.shiftTemplateId;
-      const isShiftExists = shifts.some((s: any) => s.id === targetShiftId);
+      const isShiftExists = shifts.data.some(
+        (s: any) => s.id === targetShiftId,
+      );
 
       if (isShiftExists) {
         form.setValue("shiftTemplateId", targetShiftId);
@@ -118,7 +123,7 @@ export const useAssignEmployeeForm = ({
     uiState: {
       isLoadingShifts,
       hasOutletButNoShift:
-        !isLoadingShifts && outletIdParam && shifts.length === 0,
+        !isLoadingShifts && outletIdParam && shifts && shifts.data.length === 0,
     },
   };
 };

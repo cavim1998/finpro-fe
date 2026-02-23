@@ -8,7 +8,7 @@ import { X, Clock } from "lucide-react";
 export default function CreateShiftModal({ isOpen, onClose }: any) {
   const { register, handleSubmit, reset } = useForm();
   const createMutation = useCreateShift();
-  const { data: outlets = [] } = useOutlets();
+  const { data: outlets } = useOutlets();
 
   const onSubmit = (data: any) => {
     const mapData = {
@@ -48,7 +48,7 @@ export default function CreateShiftModal({ isOpen, onClose }: any) {
               {...register("outletId")}
               className="w-full border p-2 rounded-lg"
             >
-              {outlets.map((o: any) => (
+              {outlets?.data.map((o: any) => (
                 <option key={o.id} value={o.id}>
                   {o.name}
                 </option>
