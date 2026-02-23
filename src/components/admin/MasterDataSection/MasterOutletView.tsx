@@ -6,16 +6,18 @@ import { OutletsGrid } from "./OutletsGrid";
 import { MasterToolbar } from "./MasterToolbar";
 import PaginationSection from "@/components/PaginationSection";
 import { MasterItemViewProps } from "@/types/master-data-admin";
+import { useDebounce } from "@/hooks/use-debunce";
 
 export default function MasterOutletView({ actions }: MasterItemViewProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const { data: outletData } = useOutlets({
     page,
     limit: 6,
-    search,
+    search: debouncedSearch,
     sortBy: "name",
     sortOrder,
   });

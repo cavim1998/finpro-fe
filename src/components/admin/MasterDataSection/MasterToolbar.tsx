@@ -11,6 +11,9 @@ interface MasterToolbarProps {
   filterOptions?: { id: string | number; name: string }[];
   sortOrder: "asc" | "desc";
   onSortToggle: () => void;
+  outlets?: any[];
+  selectedOutletId?: number;
+  onOutletChange?: (id: number | undefined) => void;
 }
 
 export const MasterToolbar = ({
@@ -22,6 +25,9 @@ export const MasterToolbar = ({
   filterOptions,
   sortOrder,
   onSortToggle,
+  outlets,
+  selectedOutletId,
+  onOutletChange,
 }: MasterToolbarProps) => {
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
@@ -55,13 +61,33 @@ export const MasterToolbar = ({
           </div>
         )}
 
-        <button
-          onClick={onSortToggle}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
-        >
-          Sort: {sortOrder === "asc" ? "A-Z" : "Z-A"}
-          <ArrowUpDown size={14} />
-        </button>
+        <div className="flex gap-2 w-full md:w-auto">
+          {outlets && onOutletChange && (
+            <select
+              value={selectedOutletId || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                onOutletChange(val ? Number(val) : undefined);
+              }}
+              className="w-full md:w-auto border p-2 rounded-lg text-sm outline-none bg-white cursor-pointer hover:border-[#17A2B8] transition-colors"
+            >
+              <option value="">Semua Outlet</option>
+              {outlets.map((outlet: any) => (
+                <option key={outlet.id} value={outlet.id}>
+                  {outlet.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <button
+            onClick={onSortToggle}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+          >
+            Sort: {sortOrder === "asc" ? "A-Z" : "Z-A"}
+            <ArrowUpDown size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );

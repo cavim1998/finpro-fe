@@ -14,7 +14,7 @@ interface ReportProps {
 
 export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
   const hook = useReportData(roleCode, userOutletId);
-  const outlets = useOutlets();
+  const { data: outlets } = useOutlets();
 
   return (
     <div className="space-y-6 animate-in fade-in zoom-in duration-300">

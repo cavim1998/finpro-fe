@@ -3,6 +3,7 @@
 import { X, Briefcase, Loader2, UserPlus } from "lucide-react";
 import { useAssignEmployeeForm } from "./AssignEmployeeModal/useAssignEmployeeForm";
 import { Employee } from "@/types/employee";
+import { formatTime } from "@/lib/datetime";
 
 interface AssignEmployeeModalProps {
   isOpen: boolean;
@@ -115,11 +116,12 @@ export default function AssignEmployeeModal(props: AssignEmployeeModalProps) {
                 className="w-full border border-gray-300 p-2 rounded-lg bg-white focus:ring-2 focus:ring-[#17A2B8] outline-none"
               >
                 <option value="0">-- Pilih Outlet --</option>
-                {data.outlets.map((o: any) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
+                {data.outlets &&
+                  data.outlets.data.map((o: any) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
               </select>
               {errors.outletId && (
                 <p className="text-red-500 text-xs mt-1">Wajib pilih outlet</p>
@@ -133,15 +135,17 @@ export default function AssignEmployeeModal(props: AssignEmployeeModalProps) {
             </label>
             <select
               {...register("shiftTemplateId")}
-              disabled={!data.shifts.length}
+              disabled={data.shifts && !data.shifts.data.length}
               className="w-full border border-gray-300 p-2 rounded-lg bg-white disabled:bg-gray-100 focus:ring-2 focus:ring-[#17A2B8] outline-none"
             >
               <option value="0">-- Pilih Shift --</option>
-              {data.shifts.map((s: any) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.startTime} - {s.endTime})
-                </option>
-              ))}
+              {data.shifts &&
+                data.shifts.data.map((s: any) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({formatTime(s.startTime)} -{" "}
+                    {formatTime(s.endTime)})
+                  </option>
+                ))}
             </select>
 
             {uiState.isLoadingShifts && (

@@ -1,6 +1,5 @@
 "use client";
 
-import { ShiftsGrid } from "./MasterDataSection/ShiftsGrid";
 import { MasterDataNav } from "./MasterDataSection/MasterDataNav";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -13,6 +12,7 @@ import { useMasterData } from "./MasterDataSection/useMasterData";
 import MasterOutletView from "./MasterDataSection/MasterOutletView";
 import MasterItemView from "./MasterDataSection/MasterItemView";
 import MasterEmployeeView from "./MasterDataSection/MasterUserView";
+import MasterShiftView from "./MasterDataSection/MasterShiftView";
 
 export default function MasterDataSection() {
   const { state, actions } = useMasterData();
@@ -55,13 +55,7 @@ export default function MasterDataSection() {
           ) : state.isErrorShifts ? (
             <ErrorState text="Gagal memuat shifts." />
           ) : (
-            <ShiftsGrid
-              data={state.shifts}
-              onCreate={() => actions.openModal("shift")}
-              onDelete={(id) =>
-                actions.handleDeleteTrigger(id, "Shift", "SHIFTS")
-              }
-            />
+            <MasterShiftView actions={actions} />
           ))}
       </div>
 

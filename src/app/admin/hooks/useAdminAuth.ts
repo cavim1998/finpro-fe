@@ -35,7 +35,7 @@ export const useAdminAuth = () => {
     } finally {
       setIsAuthLoading(false);
     }
-  }, [router]);
+  }, [router, session]);
 
   return { roleCode, userOutletId, isAuthLoading };
 };

@@ -7,17 +7,19 @@ import { UsersTable } from "./UsersTable";
 import { MasterToolbar } from "./MasterToolbar";
 import PaginationSection from "@/components/PaginationSection";
 import { MasterItemViewProps } from "@/types/master-data-admin";
+import { useDebounce } from "@/hooks/use-debunce";
 
 export default function MasterUserView({ actions }: MasterItemViewProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [filterOutlet, setFilterOutlet] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const { data: outletData } = useOutlets({ limit: 100 });
   const { data: userData } = useEmployees({
     page,
-    search,
+    search: debouncedSearch,
     outletId: filterOutlet || undefined,
   });
 

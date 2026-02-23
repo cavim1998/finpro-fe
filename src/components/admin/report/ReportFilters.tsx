@@ -35,7 +35,7 @@ export const ReportFilters = ({
           className="border p-2 rounded-lg text-sm outline-none"
         >
           <option value="">Semua Outlet</option>
-          {outlets?.map((outlet: any) => (
+          {outlets?.data.map((outlet: any) => (
             <option key={outlet.id} value={outlet.id}>
               {outlet.name}
             </option>
