@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { useClaimPickupMutation } from "@/features/driver/driver.hooks";
+import { useClaimDeliveryMutation, useClaimPickupMutation } from "@/features/driver/driver.hooks";
 import type { DriverDashboardParams } from "@/features/driver/driver.api";
 
 type Props = {
@@ -44,9 +44,25 @@ function getAddressText(pickup: Record<string, unknown>) {
 export default function DriverPickupRequestCard({ pickup, dashboardParams, disabled }: Props) {
   const [open, setOpen] = React.useState(false);
   const p = getObj(pickup);
-  const claimM = useClaimPickupMutation(dashboardParams);
+  const claimPickupM = useClaimPickupMutation(dashboardParams);
+  const claimDeliveryM = useClaimDeliveryMutation(dashboardParams);
 
-  const pickupId = Number(p.id);
+  const pickupIdRaw = p.id ?? p.pickupId ?? p.pickup_id;
+  const pickupId =
+    typeof pickupIdRaw === "string" || typeof pickupIdRaw === "number"
+      ? String(pickupIdRaw)
+      : "";
+  const orderIdRaw = p.orderId ?? p.order_id;
+  const orderId =
+    typeof orderIdRaw === "string" || typeof orderIdRaw === "number"
+      ? String(orderIdRaw)
+      : "";
+  const driverAction = String(p.driverAction ?? "PICKUP").toUpperCase();
+  const hasPickupId = pickupId.trim().length > 0;
+  const hasOrderId = orderId.trim().length > 0;
+  const isDelivery = driverAction === "DELIVERY";
+  const canClaim = isDelivery ? hasOrderId : hasPickupId;
+  const actionLoading = claimPickupM.isPending || claimDeliveryM.isPending;
   const customer = getObj(p.customer);
   const profile = getObj(customer.profile);
 
@@ -54,13 +70,18 @@ export default function DriverPickupRequestCard({ pickup, dashboardParams, disab
     String(profile.fullName ?? profile.name ?? p.customerName ?? customer.email ?? "Pelanggan");
   const address = getAddressText(p);
   const createdAt = formatDateTime((p.createdAt as string | undefined) ?? undefined);
+  const activeError = isDelivery ? claimDeliveryM.error : claimPickupM.error;
   const errorMsg =
-    (claimM.error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-    "Gagal claim pickup.";
+    (activeError as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+    (isDelivery ? "Gagal claim delivery." : "Gagal claim pickup.");
 
   const onClaim = async () => {
-    if (!Number.isFinite(pickupId)) return;
-    await claimM.mutateAsync(pickupId);
+    if (!canClaim) return;
+    if (isDelivery) {
+      await claimDeliveryM.mutateAsync(orderId);
+    } else {
+      await claimPickupM.mutateAsync(pickupId);
+    }
     setOpen(false);
   };
 
@@ -89,13 +110,13 @@ export default function DriverPickupRequestCard({ pickup, dashboardParams, disab
 
           <Button
             className="w-full"
-            disabled={disabled || claimM.isPending || !Number.isFinite(pickupId)}
+            disabled={disabled || actionLoading || !canClaim}
             onClick={onClaim}
           >
-            {claimM.isPending ? "Memproses..." : "Pickup"}
+            {actionLoading ? "Memproses..." : isDelivery ? "Deliver" : "Pickup"}
           </Button>
 
-          {claimM.isError ? (
+          {(claimPickupM.isError || claimDeliveryM.isError) ? (
             <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-700">
               {errorMsg}
             </div>

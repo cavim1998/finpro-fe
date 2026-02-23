@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axios";
 
-export function useAttendanceTodayQuery() {
+export function useAttendanceTodayQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["attendance", "today"],
     queryFn: async () => {
@@ -10,5 +10,6 @@ export function useAttendanceTodayQuery() {
     },
     retry: false,
     staleTime: 2_000,
+    enabled: options?.enabled ?? true,
   });
 }

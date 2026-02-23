@@ -9,7 +9,11 @@ import NavbarWorker from "@/components/Navbarworker";
 import ConfirmActionDialog from "@/app/attendance/components/ConfirmActionDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDriverOrderDetailQuery, usePickupArrivedDirectMutation } from "@/features/driver/driver.hooks";
+import {
+  useCompleteDeliveryDirectMutation,
+  useDriverOrderDetailQuery,
+  usePickupArrivedDirectMutation,
+} from "@/features/driver/driver.hooks";
 import { ArrowLeft, ExternalLink, Loader2, MapPin, Phone, User } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,6 +45,7 @@ export default function DriverOrderDetailPage() {
 
   const detailQ = useDriverOrderDetailQuery({ id, type }, { enabled: Number.isFinite(id) });
   const arrivedM = usePickupArrivedDirectMutation();
+  const completeDeliveryM = useCompleteDeliveryDirectMutation();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const payload = detailQ.data;
@@ -59,6 +64,8 @@ export default function DriverOrderDetailPage() {
     Object.keys(asObj(effective.pickupRequest)).length > 0
       ? asObj(effective.pickupRequest)
       : effective;
+  const taskType = String(task.taskType ?? effective.taskType ?? "").toUpperCase();
+  const isDeliveryTask = taskType === "DELIVERY";
 
   const customer = asObj(effectivePickup.customer);
   const profile = asObj(customer.profile);
@@ -92,11 +99,25 @@ export default function DriverOrderDetailPage() {
   const embedSrc = hasCoords
     ? `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`
     : `https://maps.google.com/maps?q=${encodeURIComponent(addressText)}&z=15&output=embed`;
+  const actionLoading = arrivedM.isPending || completeDeliveryM.isPending;
+  const actionButtonText = isDeliveryTask ? "Arrived at Client Address" : "Arrived at Outlet";
+  const confirmTitle = isDeliveryTask
+    ? "Konfirmasi Arrived at Client Address"
+    : "Konfirmasi Arrived at Outlet";
+  const confirmDescription = isDeliveryTask
+    ? "Apakah kamu yakin sudah tiba di alamat client untuk order ini?"
+    : "Apakah kamu yakin sudah tiba di outlet untuk order ini?";
+  const confirmText = isDeliveryTask ? "Ya, Arrived at Client" : "Ya, Arrived";
 
   const onConfirmArrived = async () => {
     try {
-      await arrivedM.mutateAsync(id);
-      toast.success("Status berhasil diupdate: Arrived at Outlet");
+      if (isDeliveryTask) {
+        await completeDeliveryM.mutateAsync(id);
+        toast.success("Status berhasil diupdate: Arrived at Client Address");
+      } else {
+        await arrivedM.mutateAsync(id);
+        toast.success("Status berhasil diupdate: Arrived at Outlet");
+      }
       router.push("/driver");
     } catch (error: unknown) {
       const message =
@@ -105,7 +126,9 @@ export default function DriverOrderDetailPage() {
         "response" in error &&
         typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
           ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
-          : "Gagal update status arrived.";
+          : isDeliveryTask
+            ? "Gagal update status arrived di alamat client."
+            : "Gagal update status arrived di outlet.";
       toast.error(message);
     }
   };
@@ -181,15 +204,15 @@ export default function DriverOrderDetailPage() {
 
                 <Button
                   className="w-full rounded-xl"
-                  disabled={arrivedM.isPending}
+                  disabled={actionLoading}
                   onClick={() => setConfirmOpen(true)}
                 >
-                  {arrivedM.isPending ? (
+                  {actionLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" /> Memproses...
                     </>
                   ) : (
-                    "Arrived at Outlet"
+                    actionButtonText
                   )}
                 </Button>
               </>
@@ -201,11 +224,11 @@ export default function DriverOrderDetailPage() {
       <ConfirmActionDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Konfirmasi Arrived at Outlet"
-        description="Apakah kamu yakin sudah tiba di outlet untuk order ini?"
-        confirmText="Ya, Arrived"
+        title={confirmTitle}
+        description={confirmDescription}
+        confirmText={confirmText}
         cancelText="Batal"
-        loading={arrivedM.isPending}
+        loading={actionLoading}
         onConfirm={onConfirmArrived}
       />
 

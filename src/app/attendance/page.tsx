@@ -30,18 +30,19 @@ export default function AttendancePage() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
   const { data: session, status } = useSession();
+  const isSessionLoading = status === "loading";
+  const isUnauthenticated = status === "unauthenticated";
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (isUnauthenticated) {
       router.replace("/signin");
     }
-  }, [status, router]);
-
-  if (status === "loading") return null;
-  if (status === "unauthenticated") return null;
+  }, [isUnauthenticated, router]);
 
   const profileQ = useProfileQuery();
-  const attendanceQ = useAttendanceTodayQuery();
+  const attendanceQ = useAttendanceTodayQuery({
+    enabled: status === "authenticated",
+  });
   const clockInM = useClockInMutation();
   const clockOutM = useClockOutMutation();
 
@@ -104,8 +105,15 @@ export default function AttendancePage() {
     try {
       await clockInM.mutateAsync();
       await attendanceQ.refetch();
-    } catch (e: any) {
-      setActionError(e?.response?.data?.message ?? "Clock-in gagal.");
+    } catch (e: unknown) {
+      const message =
+        typeof e === "object" &&
+        e !== null &&
+        "response" in e &&
+        typeof (e as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
+          ? (e as { response?: { data?: { message?: string } } }).response?.data?.message
+          : "Clock-in gagal.";
+      setActionError(message);
     }
   };
 
@@ -114,10 +122,20 @@ export default function AttendancePage() {
     try {
       await clockOutM.mutateAsync();
       await attendanceQ.refetch();
-    } catch (e: any) {
-      setActionError(e?.response?.data?.message ?? "Clock-out gagal.");
+    } catch (e: unknown) {
+      const message =
+        typeof e === "object" &&
+        e !== null &&
+        "response" in e &&
+        typeof (e as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
+          ? (e as { response?: { data?: { message?: string } } }).response?.data?.message
+          : "Clock-out gagal.";
+      setActionError(message);
     }
   };
+
+  if (isSessionLoading) return null;
+  if (isUnauthenticated) return null;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">

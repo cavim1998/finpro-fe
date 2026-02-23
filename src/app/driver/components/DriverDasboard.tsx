@@ -11,6 +11,12 @@ import DriverHeader from "./DriverHeader";
 import DriverLists from "./DriverLists";
 import DriverStats from "./DriverStats";
 
+function isActiveTask(task: unknown) {
+  if (typeof task !== "object" || task === null) return false;
+  const status = String((task as { status?: unknown }).status ?? "").toUpperCase();
+  return status === "ASSIGNED" || status === "IN_PROGRESS";
+}
+
 function formatTime(d?: Date | string | null) {
   if (!d) return "-";
   const dt = typeof d === "string" ? new Date(d) : d;
@@ -57,7 +63,7 @@ export default function DriverDashboard() {
     completed: 0,
   };
 
-  const tasks = dashboardQ.data?.tasks?.items ?? [];
+  const tasks = (dashboardQ.data?.tasks?.items ?? []).filter(isActiveTask);
   const pickupRequests = dashboardQ.data?.pickupRequests?.items ?? [];
   const taskTotalPages = Number(dashboardQ.data?.tasks?.totalPages ?? 0);
   const pickupTotalPages = Number(dashboardQ.data?.pickupRequests?.totalPages ?? 0);

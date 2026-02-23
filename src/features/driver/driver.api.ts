@@ -114,6 +114,11 @@ export async function claimPickupApi(pickupId: string) {
   return res.data;
 }
 
+export async function claimDeliveryApi(orderId: string) {
+  const res = await api.post(`/driver/orders/${orderId}/claim`);
+  return res.data;
+}
+
 export async function startTaskApi(taskId: number) {
   const res = await api.post(`/driver/tasks/${taskId}/start`);
   return res.data;
@@ -126,6 +131,11 @@ export async function pickupPickedUpApi(taskId: number) {
 
 export async function pickupArrivedApi(taskId: number) {
   const res = await api.post(`/driver/pickups/${taskId}/arrived`);
+  return res.data;
+}
+
+export async function completeDeliveryApi(taskId: number) {
+  const res = await api.post(`/driver/deliveries/${taskId}/complete`);
   return res.data;
 }
 
