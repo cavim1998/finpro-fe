@@ -28,6 +28,53 @@ export type WorkerOrderListItem = {
   stationStatus: StationStatus;
 };
 
+export type WorkerOrderDetail = {
+  id: string;
+  orderNo?: string;
+  orderNumber?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  totalAmount?: number;
+  totalKg?: number;
+  clothesCount?: number;
+  customer?: {
+    id?: string;
+    name?: string;
+    fullName?: string;
+    email?: string;
+  };
+  outlet?: {
+    id?: number;
+    name?: string;
+  };
+  items?: Array<{
+    id?: number;
+    itemId?: number;
+    qty?: number;
+    price?: number;
+    item?: {
+      id?: number;
+      name?: string;
+      price?: number;
+    };
+    name?: string;
+  }>;
+  stations?: Array<{
+    id?: number;
+    stationType?: StationType;
+    status?: string;
+    startedAt?: string;
+    completedAt?: string;
+    worker?: {
+      id?: string;
+      name?: string;
+      fullName?: string;
+      email?: string;
+    };
+  }>;
+};
+
 async function getStationStats(stationType: StationType) {
   const res = await axiosInstance.get(`/worker/stations/${stationType}/stats`);
   return res.data?.data as WorkerStationStats;
@@ -46,9 +93,40 @@ async function getStationOrders(params: {
   return res.data?.data as WorkerOrderListItem[];
 }
 
-async function claimOrder(params: { stationType: StationType; orderId: string }) {
-  const { stationType, orderId } = params;
-  const res = await axiosInstance.post(`/worker/stations/${stationType}/${orderId}/claim`);
+async function claimOrder(params: { stationType: StationType; orderStationId: number }) {
+  const { stationType, orderStationId } = params;
+  const res = await axiosInstance.post(`/worker/stations/${stationType}/${orderStationId}/claim`);
+  return res.data?.data;
+}
+
+async function getWorkerOrderDetail(orderId: string) {
+  const res = await axiosInstance.get(`/worker/orders/${orderId}`);
+  return (res.data?.data ?? res.data) as WorkerOrderDetail;
+}
+
+async function completeOrderStation(params: {
+  stationType: StationType;
+  orderId: string;
+  itemCounts: Array<{ itemId: number; qty: number }>;
+}) {
+  const { stationType, orderId, itemCounts } = params;
+  const res = await axiosInstance.post(`/worker/stations/${stationType}/${orderId}/complete`, {
+    itemCounts,
+  });
+  return res.data?.data;
+}
+
+async function bypassOrderStation(params: {
+  stationType: StationType;
+  orderId: string;
+  reason: string;
+  itemCounts: Array<{ itemId: number; qty: number }>;
+}) {
+  const { stationType, orderId, reason, itemCounts } = params;
+  const res = await axiosInstance.post(`/worker/stations/${stationType}/${orderId}/bypass`, {
+    reason,
+    itemCounts,
+  });
   return res.data?.data;
 }
 
@@ -94,6 +172,45 @@ export function useClaimWorkerOrderMutation() {
         qc.invalidateQueries({ queryKey: ["worker", "station-stats", vars.stationType] }),
         qc.invalidateQueries({ queryKey: ["worker", "station-orders", vars.stationType, "incoming"] }),
         qc.invalidateQueries({ queryKey: ["worker", "station-orders", vars.stationType, "my"] }),
+      ]);
+    },
+  });
+}
+
+export function useWorkerOrderDetailQuery(orderId: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ["worker", "order-detail", orderId],
+    queryFn: () => getWorkerOrderDetail(orderId),
+    enabled: (options?.enabled ?? true) && !!orderId,
+    staleTime: 3_000,
+  });
+}
+
+export function useCompleteWorkerOrderMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: completeOrderStation,
+    onSuccess: async (_data, vars) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["worker", "order-detail", vars.orderId] }),
+        qc.invalidateQueries({ queryKey: ["worker", "station-stats", vars.stationType] }),
+        qc.invalidateQueries({ queryKey: ["worker", "station-orders", vars.stationType] }),
+      ]);
+    },
+  });
+}
+
+export function useBypassWorkerOrderMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: bypassOrderStation,
+    onSuccess: async (_data, vars) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["worker", "order-detail", vars.orderId] }),
+        qc.invalidateQueries({ queryKey: ["worker", "station-stats", vars.stationType] }),
+        qc.invalidateQueries({ queryKey: ["worker", "station-orders", vars.stationType] }),
       ]);
     },
   });

@@ -8,9 +8,7 @@ import NavbarWorker from "@/components/Navbarworker";
 export default function DriverPage() {
   return (
     <RequireCheckInRQ roles={["DRIVER"]} redirectTo="/attendance?next=/driver">
-      <div className="border-b-1">
-        <NavbarWorker />
-      </div>
+      <NavbarWorker />
       <DriverDashboard />
     </RequireCheckInRQ>
   );

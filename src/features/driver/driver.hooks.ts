@@ -1,8 +1,10 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   claimPickupApi,
+  getDriverOrderDetailApi,
+  type DriverOrderDetailParams,
   startTaskApi,
   pickupPickedUpApi,
   pickupArrivedApi,
@@ -11,11 +13,25 @@ import {
 
 export const driverDashboardKey = (params: DriverDashboardParams) =>
   ["driverDashboard", params] as const;
+export const driverOrderDetailKey = (params: DriverOrderDetailParams) =>
+  ["driverOrderDetail", params] as const;
+
+export function useDriverOrderDetailQuery(params: DriverOrderDetailParams, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: driverOrderDetailKey(params),
+    queryFn: async () => {
+      const payload = await getDriverOrderDetailApi(params);
+      return payload?.data ?? payload;
+    },
+    enabled: (options?.enabled ?? true) && Number.isFinite(params.id),
+    retry: 1,
+  });
+}
 
 export function useClaimPickupMutation(params: DriverDashboardParams) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (pickupId: number) => claimPickupApi(pickupId),
+    mutationFn: (pickupId: string) => claimPickupApi(pickupId),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: driverDashboardKey(params) });
     },
@@ -48,6 +64,16 @@ export function usePickupArrivedMutation(params: DriverDashboardParams) {
     mutationFn: (taskId: number) => pickupArrivedApi(taskId),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: driverDashboardKey(params) });
+    },
+  });
+}
+
+export function usePickupArrivedDirectMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskOrPickupId: number) => pickupArrivedApi(taskOrPickupId),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["driverDashboard"] });
     },
   });
 }

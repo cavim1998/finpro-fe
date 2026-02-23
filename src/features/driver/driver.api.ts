@@ -67,7 +67,7 @@
 //   return res.data; 
 // }
 
-// export async function claimPickupApi(pickupId: number) {
+// export async function claimPickupApi(pickupId: string) {
 //   const res = await api.post(`/driver/pickups/${pickupId}/claim`);
 //   return res.data;
 // }
@@ -90,12 +90,26 @@ export type DriverDashboardParams = {
   pickupPage: number;
 };
 
+export type DriverOrderDetailParams = {
+  id: number;
+  type?: "task" | "pickup";
+};
+
+function sanitizePageSize(pageSize: number) {
+  const size = Number.isFinite(pageSize) ? Math.floor(pageSize) : 10;
+  return Math.min(50, Math.max(1, size));
+}
+
 export async function getDriverDashboardApi(params: DriverDashboardParams) {
-  const res = await api.get("/driver/dashboard", { params });
+  const safeParams: DriverDashboardParams = {
+    ...params,
+    pageSize: sanitizePageSize(params.pageSize),
+  };
+  const res = await api.get("/driver/dashboard", { params: safeParams });
   return res.data;
 }
 
-export async function claimPickupApi(pickupId: number) {
+export async function claimPickupApi(pickupId: string) {
   const res = await api.post(`/driver/pickups/${pickupId}/claim`);
   return res.data;
 }
@@ -113,4 +127,52 @@ export async function pickupPickedUpApi(taskId: number) {
 export async function pickupArrivedApi(taskId: number) {
   const res = await api.post(`/driver/pickups/${taskId}/arrived`);
   return res.data;
+}
+
+export async function getDriverOrderDetailApi(params: DriverOrderDetailParams) {
+  const { id, type } = params;
+  const pageSize = 50;
+
+  const findById = (arr: unknown[]) =>
+    arr.find((it) => {
+      if (typeof it !== "object" || it === null) return false;
+      return Number((it as { id?: unknown }).id) === id;
+    });
+
+  // Search across dashboard pages because detail endpoint may not be available on BE.
+  let page = 1;
+  let maxPages = 1;
+  while (page <= maxPages) {
+    const res = await getDriverDashboardApi({
+      pageSize,
+      taskPage: page,
+      pickupPage: page,
+    });
+    const root = res?.data ?? res;
+    const tasks = Array.isArray(root?.tasks?.items) ? root.tasks.items : [];
+    const pickups = Array.isArray(root?.pickupRequests?.items) ? root.pickupRequests.items : [];
+
+    const task = findById(tasks);
+    const pickup = findById(pickups);
+
+    if (type === "task" && task) {
+      return { data: { task, pickupRequest: (task as { pickupRequest?: unknown }).pickupRequest ?? null } };
+    }
+    if (type === "pickup" && pickup) {
+      return { data: { pickupRequest: pickup } };
+    }
+    if (!type && task) {
+      return { data: { task, pickupRequest: (task as { pickupRequest?: unknown }).pickupRequest ?? null } };
+    }
+    if (!type && pickup) {
+      return { data: { pickupRequest: pickup } };
+    }
+
+    const taskTotalPages = Number(root?.tasks?.totalPages ?? 1);
+    const pickupTotalPages = Number(root?.pickupRequests?.totalPages ?? 1);
+    maxPages = Math.max(taskTotalPages || 1, pickupTotalPages || 1);
+    page += 1;
+  }
+
+  throw new Error(type === "pickup" ? "Pickup detail not found" : "Task detail not found");
 }
