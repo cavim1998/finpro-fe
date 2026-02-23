@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { CheckCircle2, ClipboardList, Truck } from "lucide-react";
+import Link from "next/link";
 
 type Props = {
   incoming: number;
@@ -32,13 +33,15 @@ export default function DriverStats({
         </div>
       </Card>
 
-      <Card className="p-4 rounded-2xl">
-        <div className="flex flex-col items-center gap-2">
-          <CheckCircle2 className="h-5 w-5" />
-          <div className="text-2xl font-bold">{completed}</div>
-          <div className="text-xs text-muted-foreground">Completed</div>
-        </div>
-      </Card>
+      <Link href="/driver/history" className="block">
+        <Card className="p-4 rounded-2xl cursor-pointer hover:bg-muted/30 transition-colors">
+          <div className="flex flex-col items-center gap-2">
+            <CheckCircle2 className="h-5 w-5" />
+            <div className="text-2xl font-bold">{completed}</div>
+            <div className="text-xs text-muted-foreground">Completed</div>
+          </div>
+        </Card>
+      </Link>
     </div>
   );
 }

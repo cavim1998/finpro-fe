@@ -9,6 +9,7 @@ import {
   Truck,
   ClipboardList,
   Clock,
+  CalendarDays,
   User,
   Users,
   AlertTriangle,
@@ -37,7 +38,8 @@ function getNavItems(role: RoleCode, opts?: GetNavItemsOptions): NavItem[] {
         { path: "/driver", icon: Home, label: "Home" },
         { path: "/driver/pickups", icon: Truck, label: "Tasks" },
         { path: "/driver/history", icon: Clock, label: "History" },
-        { path: "/driver/profile", icon: User, label: "Profile" },
+        { path: "/driver/attendance-history", icon: CalendarDays, label: "Attendance" },
+        { path: "/profile", icon: User, label: "Profile" },
       ];
 
     case "WORKER": {
@@ -46,7 +48,8 @@ function getNavItems(role: RoleCode, opts?: GetNavItemsOptions): NavItem[] {
         { path: base, icon: Home, label: "Home" },
         { path: `${base}/orders`, icon: ClipboardList, label: "Orders" },
         { path: `${base}/history`, icon: Clock, label: "History" },
-        { path: `${base}/profile`, icon: User, label: "Profile" },
+        { path: `${base}/attendance-history`, icon: CalendarDays, label: "Attendance" },
+        { path: "/profile", icon: User, label: "Profile" },
       ];
     }
 
@@ -90,7 +93,7 @@ export function BottomNav({ role, workerHomePath }: BottomNavProps) {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 safe-bottom">
-      <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+      <div className="flex items-center h-16 max-w-2xl mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = isActivePath(item.path);
@@ -99,7 +102,7 @@ export function BottomNav({ role, workerHomePath }: BottomNavProps) {
             <Link
               key={item.path}
               href={item.path}
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-lg transition-colors ${
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"

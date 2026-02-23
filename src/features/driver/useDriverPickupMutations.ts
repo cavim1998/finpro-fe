@@ -15,7 +15,7 @@ function invalidateAllDriverDashboards(qc: ReturnType<typeof useQueryClient>) {
 export function useClaimPickup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (pickupId: number) => claimPickupApi(pickupId),
+    mutationFn: (pickupId: string) => claimPickupApi(pickupId),
     onSuccess: async () => {
       await invalidateAllDriverDashboards(qc);
     },

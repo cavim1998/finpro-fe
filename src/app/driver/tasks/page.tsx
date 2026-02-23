@@ -8,6 +8,12 @@ import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
 import { useDriverDashboard } from "@/features/driver/useDriverDashboard";
 import DriverTaskList from "@/app/driver/components/DriverTaskList";
 
+function isActiveTask(task: unknown) {
+  if (typeof task !== "object" || task === null) return false;
+  const status = String((task as { status?: unknown }).status ?? "").toUpperCase();
+  return status === "ASSIGNED" || status === "IN_PROGRESS";
+}
+
 export default function DriverTasksPage() {
   const pageSize = 10;
   const [taskPage, setTaskPage] = useState(1);
@@ -17,7 +23,7 @@ export default function DriverTasksPage() {
   const isAllowed = !!attendanceQ.data?.isCheckedIn && !attendanceQ.data?.isCompleted;
 
   const dashboardQ = useDriverDashboard({ pageSize, taskPage, pickupPage });
-  const tasks = dashboardQ.data?.tasks?.items ?? [];
+  const tasks = (dashboardQ.data?.tasks?.items ?? []).filter(isActiveTask);
   const totalPages = Number(dashboardQ.data?.tasks?.totalPages ?? 0);
   const hasNextPage = (totalPages > 0 && taskPage < totalPages) || tasks.length === pageSize;
 
