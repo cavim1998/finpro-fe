@@ -51,12 +51,12 @@ export default function DriverHeader({
       await onClockOut();
       setOpenClockOut(false);
     } catch (e: unknown) {
-      const msg =
+      const msg: string =
         typeof e === "object" &&
         e !== null &&
         "response" in e &&
         typeof (e as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
-          ? (e as { response?: { data?: { message?: string } } }).response?.data?.message
+          ? ((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Clock-out gagal.")
           : "Clock-out gagal.";
       setErrorMsg(msg);
     }

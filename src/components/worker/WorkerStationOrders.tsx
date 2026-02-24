@@ -5,6 +5,7 @@ import { useWorkerStationOrders } from "@/features/workers/useWorkerStationOrder
 import type { StationType } from "@/types";
 import { ClipboardList, Inbox } from "lucide-react";
 import WorkerOrderCard from "./WorkerOrderCard";
+import type { WorkerOrderCard as WorkerOrderCardItem } from "@/types/worker-station";
 
 type Labels = {
   myTasksTitle: string;
@@ -35,16 +36,24 @@ function MiniList({
   items,
   emptyText,
   onItemClick,
-  statusLabel,
-  accentClassName,
 }: {
-  items: any[] | undefined;
+  items: Array<Record<string, unknown>> | undefined;
   emptyText: string;
   onItemClick?: (orderId: string | number) => void;
-
-  statusLabel: string; 
-  accentClassName?: string;
 }) {
+  const toNumber = (value: unknown, fallback = 0) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  const normalizeStatus = (value: unknown): WorkerOrderCardItem["stationStatus"] => {
+    const status = String(value ?? "").toUpperCase();
+    if (status === "IN_PROGRESS") return "IN_PROGRESS";
+    if (status === "WAITING_BYPASS") return "WAITING_BYPASS";
+    if (status === "COMPLETED") return "COMPLETED";
+    return "PENDING";
+  };
+
   if (!items || items.length === 0) {
     return (
       <div className="text-sm text-muted-foreground py-6 text-center">
@@ -55,19 +64,32 @@ function MiniList({
 
   return (
     <div className="space-y-3">
-      {items.slice(0, 5).map((o) => (
-        <WorkerOrderCard
-          key={o.id}
-          orderNo={o.id}
-          customerName={o.customerName ?? o.customer?.name ?? "-"}
-          clothesCount={o.clothesCount ?? o.itemsCount ?? 0}
-          totalKg={o.totalKg ?? o.weightKg ?? 0}
-          enteredAt={o.enteredAt ?? o.createdAt ?? new Date().toISOString()}
-          statusLabel={statusLabel}
-          accentClassName={accentClassName}
-          onClick={() => onItemClick?.(o.id)}
-        />
-      ))}
+      {items.slice(0, 5).map((o, idx) => {
+        const rawOrderId = o.orderId ?? o.id ?? idx;
+        const orderId =
+          typeof rawOrderId === "string" || typeof rawOrderId === "number"
+            ? rawOrderId
+            : idx;
+
+        const item: WorkerOrderCardItem = {
+          orderStationId: toNumber(o.orderStationId ?? o.id, idx + 1),
+          orderId: String(orderId),
+          orderNo: String(o.orderNo ?? o.id ?? "-"),
+          customerName: String(o.customerName ?? "-"),
+          clothesCount: toNumber(o.clothesCount ?? o.itemsCount, 0),
+          totalKg: toNumber(o.totalKg ?? o.weightKg, 0),
+          enteredAt: String(o.enteredAt ?? o.createdAt ?? new Date().toISOString()),
+          stationStatus: normalizeStatus(o.stationStatus ?? o.status),
+        };
+
+        return (
+          <WorkerOrderCard
+            key={item.orderStationId}
+            item={item}
+            onClick={() => onItemClick?.(item.orderId)}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -122,10 +144,8 @@ export function WorkerStationOrders({
               </div>
             ) : (
               <MiniList
-                items={myTasksQ.data}
+                items={myTasksQ.data as Array<Record<string, unknown>>}
                 emptyText={listsLabels.emptyMyTasks}
-                statusLabel="Washing"
-                accentClassName={theme?.badgeClass}
                 onItemClick={(id) => {
                   console.log("clicked order:", id);
                 }}
@@ -154,10 +174,8 @@ export function WorkerStationOrders({
               </div>
             ) : (
               <MiniList
-                items={incomingQ.data}
+                items={incomingQ.data as Array<Record<string, unknown>>}
                 emptyText={listsLabels.emptyIncoming}
-                statusLabel="Washing"
-                accentClassName={theme?.badgeClass}
                 onItemClick={(id) => {
                   console.log("clicked incoming order:", id);
                 }}

@@ -1,8 +1,10 @@
 import { api } from "@/lib/api";
+import type { StationType } from "@/types";
 
 export type StationTypeCode = "WASHING" | "IRONING" | "PACKING";
 
 export type WorkerOrdersScope = "incoming" | "my" | "completed";
+export type WorkerOrderKind = "INCOMING" | "MY_TASKS" | "COMPLETED";
 
 export type GetStationOrdersParams = {
   stationType: StationTypeCode;
@@ -23,6 +25,28 @@ export async function getStationOrdersApi(params: GetStationOrdersParams) {
     params: query,
   });
   return res.data;
+}
+
+export async function getWorkerStationOrders(
+  stationType: StationType | StationTypeCode,
+  kind: WorkerOrderKind,
+  page = 1,
+  limit = 10,
+) {
+  const scopeMap: Record<WorkerOrderKind, WorkerOrdersScope> = {
+    INCOMING: "incoming",
+    MY_TASKS: "my",
+    COMPLETED: "completed",
+  };
+
+  const res = await getStationOrdersApi({
+    stationType: stationType as StationTypeCode,
+    scope: scopeMap[kind],
+    page,
+    limit,
+  });
+  const data = res?.data ?? res;
+  return data?.items ?? [];
 }
 
 export async function claimOrderApi(stationType: StationTypeCode, orderId: number) {
