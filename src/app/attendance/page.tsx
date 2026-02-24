@@ -106,12 +106,12 @@ export default function AttendancePage() {
       await clockInM.mutateAsync();
       await attendanceQ.refetch();
     } catch (e: unknown) {
-      const message =
+      const message: string =
         typeof e === "object" &&
         e !== null &&
         "response" in e &&
         typeof (e as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
-          ? (e as { response?: { data?: { message?: string } } }).response?.data?.message
+          ? ((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Clock-in gagal.")
           : "Clock-in gagal.";
       setActionError(message);
     }
@@ -123,12 +123,12 @@ export default function AttendancePage() {
       await clockOutM.mutateAsync();
       await attendanceQ.refetch();
     } catch (e: unknown) {
-      const message =
+      const message: string =
         typeof e === "object" &&
         e !== null &&
         "response" in e &&
         typeof (e as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
-          ? (e as { response?: { data?: { message?: string } } }).response?.data?.message
+          ? ((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Clock-out gagal.")
           : "Clock-out gagal.";
       setActionError(message);
     }

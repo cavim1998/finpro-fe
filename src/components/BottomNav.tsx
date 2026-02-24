@@ -80,8 +80,7 @@ type BottomNavProps = {
 export function BottomNav({ role, workerHomePath }: BottomNavProps) {
   const pathname = usePathname();
 
-  // tetap panggil hook tapi bisa dimatikan
-  const meQ = useMe({ enabled: !role });
+  const meQ = useMe();
   const effectiveRole = role ?? (meQ.data?.role as RoleCode | undefined);
 
   if (!effectiveRole) return null;

@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import DriverTaskCard from "./DriverTaskCard";
 
+type TaskLike = Record<string, unknown>;
+
 type Props = {
   isAllowed: boolean;
-  myTasks: unknown[];
+  myTasks: TaskLike[];
   page: number;
   hasNextPage: boolean;
   loading?: boolean;
@@ -30,6 +32,12 @@ export default function DriverTaskList({
   viewAllHref = "/driver/tasks",
   title = "My Tasks",
 }: Props) {
+  const getTaskKey = (task: TaskLike, index: number) => {
+    const id = task.id ?? task.taskId ?? task.task_id;
+    if (typeof id === "string" || typeof id === "number") return String(id);
+    return `task-${page}-${index}`;
+  };
+
   return (
     <Card className="shadow-card">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -53,9 +61,9 @@ export default function DriverTaskList({
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : myTasks.length > 0 ? (
           <div className="space-y-2">
-            {myTasks.map((t) => (
+            {myTasks.map((t, index) => (
               <DriverTaskCard
-                key={t.id}
+                key={getTaskKey(t, index)}
                 task={t}
                 disabled={!isAllowed}
               />

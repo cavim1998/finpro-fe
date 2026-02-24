@@ -6,9 +6,11 @@ import Link from "next/link";
 import type { DriverDashboardParams } from "@/features/driver/driver.api";
 import DriverPickupRequestCard from "./DriverPickupRequestCard";
 
+type PickupLike = Record<string, unknown>;
+
 type Props = {
   isAllowed: boolean;
-  pickupRequests: unknown[];
+  pickupRequests: PickupLike[];
   dashboardParams: DriverDashboardParams;
   page: number;
   hasNextPage: boolean;
@@ -33,6 +35,12 @@ export default function DriverPickupRequestList({
   viewAllHref = "/driver/pickups",
   title = "Pickup Requests",
 }: Props) {
+  const getPickupKey = (pickup: PickupLike, index: number) => {
+    const id = pickup.id ?? pickup.pickupId ?? pickup.pickup_id ?? pickup.orderId ?? pickup.order_id;
+    if (typeof id === "string" || typeof id === "number") return String(id);
+    return `pickup-${page}-${index}`;
+  };
+
   return (
     <Card className="shadow-card">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -56,9 +64,9 @@ export default function DriverPickupRequestList({
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : pickupRequests.length > 0 ? (
           <div className="space-y-2">
-            {pickupRequests.map((p) => (
+            {pickupRequests.map((p, index) => (
               <DriverPickupRequestCard
-                key={p.id}
+                key={getPickupKey(p, index)}
                 pickup={p}
                 dashboardParams={dashboardParams}
                 disabled={!isAllowed}

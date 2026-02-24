@@ -3,10 +3,13 @@
 import DriverPickupRequestList from "./DriverPickupRequestList";
 import DriverTaskList from "./DriverTaskList";
 
+type PickupLike = Record<string, unknown>;
+type TaskLike = Record<string, unknown>;
+
 type Props = {
   isAllowed: boolean;
-  myTasks: unknown[];
-  pickupRequests: unknown[];
+  myTasks: TaskLike[];
+  pickupRequests: PickupLike[];
   dashboardParams: {
     pageSize: number;
     taskPage: number;

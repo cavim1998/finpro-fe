@@ -51,7 +51,9 @@ export default function DriverOrderDetailPage() {
   const payload = detailQ.data;
   const root = asObj(payload);
   const task = asObj(root.task);
-  const pickup = asObj(root.pickupRequest?.id ? root.pickupRequest : root.pickup);
+  const pickupRequest = asObj(root.pickupRequest);
+  const pickup =
+    Object.keys(pickupRequest).length > 0 ? pickupRequest : asObj(root.pickup);
 
   const effective =
     Object.keys(task).length > 0
