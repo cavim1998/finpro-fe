@@ -1,7 +1,7 @@
 import { Search, ArrowUpDown, Filter } from "lucide-react";
 import { OrderListViewProps } from "@/types/order-list";
 
-type ToolbarProps = Pick<
+interface ToolbarProps extends Pick<
   OrderListViewProps,
   | "roleCode"
   | "selectedOutletId"
@@ -13,7 +13,11 @@ type ToolbarProps = Pick<
   | "onSortByChange"
   | "sortOrder"
   | "onSortOrderChange"
->;
+> {
+  outlets?: any[];
+  search: string;
+  onSearchChange: (val: string) => void;
+}
 
 export const FilterToolbar = ({
   roleCode,
@@ -26,13 +30,10 @@ export const FilterToolbar = ({
   onSortByChange,
   sortOrder,
   onSortOrderChange,
+  outlets = [],
+  search,
+  onSearchChange,
 }: ToolbarProps) => {
-  const outlets = [
-    { id: 1, name: "Outlet Jakarta Pusat" },
-    { id: 2, name: "Outlet Tangerang Selatan" },
-    { id: 3, name: "Outlet Bekasi" },
-  ];
-
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center">
       <div className="flex flex-wrap gap-3 w-full xl:w-auto">
@@ -46,9 +47,7 @@ export const FilterToolbar = ({
               onChange={(e) => onOutletChange(Number(e.target.value))}
               className="pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-100 outline-none bg-white cursor-pointer hover:border-blue-300 w-full"
             >
-              <option value="" disabled>
-                -- Pilih Outlet --
-              </option>
+              <option value="">Semua Outlet</option>
               {outlets.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.name}
@@ -69,9 +68,9 @@ export const FilterToolbar = ({
               <>
                 <option value="WAITING_DRIVER">Menunggu Driver</option>
                 <option value="DRIVER_ASSIGNED">Driver Menjemput</option>
-                <option value="ARRIVED_AT_OUTLET">Sampai di Outlet</option>
-                <option value="COMPLETED">Selesai (Jadi Order)</option>
-                <option value="CANCELED">Dibatalkan</option>
+                <option value="PICKED_UP">Diambil</option>
+                <option value="ARRIVED_OUTLET">Sampai di Outlet</option>
+                <option value="CANCELED">Batal</option>
               </>
             ) : (
               <>
@@ -80,7 +79,9 @@ export const FilterToolbar = ({
                 <option value="IRONING">Sedang Disetrika</option>
                 <option value="PACKING">Packing</option>
                 <option value="READY_TO_DELIVER">Siap Antar</option>
-                <option value="COMPLETED">Selesai</option>
+                <option value="DELIVERING_TO_CUSTOMER">Sedang Antar</option>
+                <option value="RECEIVED_BY_CUSTOMER">Selesai Antar</option>
+                <option value="CANCELED">Batal</option>
               </>
             )}
           </select>
@@ -114,6 +115,8 @@ export const FilterToolbar = ({
         <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
         <input
           type="text"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
           placeholder={
             isPickupTab ? "Cari Pelanggan..." : "Cari Order ID / Nama..."
           }

@@ -122,7 +122,7 @@ export default function CreateOutletModal({
             registration={register("name")}
             error={errors.name?.message}
             disabled={isPending}
-            placeholder="Contoh: Chingu Cabang Binjai"
+            placeholder="Contoh: LaundryQ Cabang Binjai"
           />
 
           <div className="space-y-1">

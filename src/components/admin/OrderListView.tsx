@@ -4,8 +4,24 @@ import { FilterToolbar } from "./OrderListView/FilterToolbar";
 import { PickupListItem } from "./OrderListView/PickupListItem";
 import { LoadingState, EmptyState } from "./OrderListView/StateViews";
 import { OrderListViewProps } from "@/types/order-list";
+import { useDebounce } from "@/hooks/use-debunce";
+import { useEffect, useState } from "react";
 
-export const OrderListView = (props: OrderListViewProps) => {
+interface ExtendedOrderListViewProps extends OrderListViewProps {
+  outlets?: any[];
+  search: string;
+  onSearchChange: (val: string) => void;
+  status: string;
+  onStatusChange: (val: string) => void;
+  outletId?: number;
+  onOutletChange: (val: number | undefined) => void;
+  sortBy: string;
+  onSortByChange: (val: string) => void;
+  sortOrder: "asc" | "desc";
+  onSortOrderChange: (val: "asc" | "desc") => void;
+}
+
+export const OrderListView = (props: ExtendedOrderListViewProps) => {
   const {
     title,
     isPickupTab,
@@ -19,7 +35,22 @@ export const OrderListView = (props: OrderListViewProps) => {
     onCreateOrder,
     selectedOutletId,
     onViewDetail,
+    search,
+    onSearchChange,
   } = props;
+
+  const [localSearch, setLocalSearch] = useState(search);
+  const debouncedSearch = useDebounce(localSearch, 500);
+
+  useEffect(() => {
+    if (debouncedSearch !== search) {
+      onSearchChange(debouncedSearch);
+    }
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -34,7 +65,19 @@ export const OrderListView = (props: OrderListViewProps) => {
         </div>
       </div>
 
-      <FilterToolbar {...props} />
+      <FilterToolbar
+        {...props}
+        selectedOutletId={props.outletId}
+        onOutletChange={props.onOutletChange}
+        selectedStatus={props.status}
+        onStatusChange={props.onStatusChange}
+        sortBy={props.sortBy}
+        onSortByChange={props.onSortByChange}
+        sortOrder={props.sortOrder}
+        onSortOrderChange={props.onSortOrderChange}
+        search={localSearch}
+        onSearchChange={setLocalSearch}
+      />
 
       <div className="space-y-4 min-h-75">
         {loading ? (
@@ -60,7 +103,7 @@ export const OrderListView = (props: OrderListViewProps) => {
         )}
       </div>
 
-      {totalData > 0 && (
+      {totalData > limit && (
         <div className="mt-8 flex justify-center">
           <PaginationSection
             meta={{
