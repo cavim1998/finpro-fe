@@ -11,6 +11,8 @@ export const useDashboardStats = (
     activePickups: 0,
     pendingBypass: 0,
     todayRevenue: 0,
+    newCustomers: 0,
+    outletPerformance: 0,
   });
 
   useEffect(() => {
