@@ -9,6 +9,11 @@ export const outletSchema = z.object({
   longitude: z.number({
     message: "Wajib pilih lokasi di peta",
   }),
+  locationCategory: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal("")),
 });
 
 export type OutletFormData = z.infer<typeof outletSchema>;

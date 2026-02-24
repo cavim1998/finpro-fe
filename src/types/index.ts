@@ -152,6 +152,8 @@ export interface Outlet {
   addressText: string;
   latitude?: number;
   longitude?: number;
+  locationCategory?: string | null;
+  photoUrl?: string | null;
   serviceRadiusKm: number;
   isActive: boolean;
   createdAt: Date;

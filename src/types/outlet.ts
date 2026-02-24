@@ -5,7 +5,9 @@ export interface OutletListTypes {
   isActive: true;
   latitude: string;
   longitude: string;
+  locationCategory?: string | null;
   name: string;
+  photoUrl?: string | null;
   serviceRadiusKm: string;
   staffCount: number;
   updatedAt: string;

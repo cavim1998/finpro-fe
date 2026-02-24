@@ -8,6 +8,8 @@ export interface Outlet {
   addressText: string;
   latitude: number;
   longitude: number;
+  locationCategory?: string | null;
+  photoUrl?: string | null;
   serviceRadiusKm: string;
   isActive: boolean;
   createdAt: string;
@@ -35,6 +37,7 @@ export interface CreateOutletPayload {
   addressText: string;
   latitude?: number;
   longitude?: number;
+  locationCategory?: string;
 }
 
 export interface UpdateOutletPayload {
@@ -42,6 +45,7 @@ export interface UpdateOutletPayload {
   addressText?: string;
   latitude?: number;
   longitude?: number;
+  locationCategory?: string;
 }
 
 class OutletService {
@@ -96,7 +100,10 @@ class OutletService {
    */
   async create(payload: CreateOutletPayload): Promise<Outlet> {
     try {
-      const response = await axiosInstance.post<OutletResponse>(this.baseUrl, payload);
+      const response = await axiosInstance.post<OutletResponse>(
+        this.baseUrl,
+        payload,
+      );
       return response.data.data as Outlet;
     } catch (error) {
       console.error('Failed to create outlet:', error);
@@ -111,11 +118,61 @@ class OutletService {
     try {
       const response = await axiosInstance.patch<OutletResponse>(
         `${this.baseUrl}/${id}`,
-        payload
+        payload,
       );
       return response.data.data as Outlet;
     } catch (error) {
       console.error('Failed to update outlet:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload outlet photo
+   */
+  async uploadPhoto(id: number, file: File): Promise<{ url: string }> {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const endpoints = [
+        `${this.baseUrl}/${id}/photo`,
+        `/api/outlets/${id}/photo`,
+      ];
+      const headers = { "Content-Type": "multipart/form-data" };
+      let response: any;
+
+      for (const endpoint of endpoints) {
+        try {
+          response = await axiosInstance.patch<OutletResponse>(
+            endpoint,
+            formData,
+            { headers },
+          );
+          break;
+        } catch (err: any) {
+          if (err?.response?.status !== 404) throw err;
+        }
+
+        try {
+          response = await axiosInstance.post<OutletResponse>(
+            endpoint,
+            formData,
+            { headers },
+          );
+          break;
+        } catch (err: any) {
+          if (err?.response?.status !== 404) throw err;
+        }
+      }
+
+      if (!response) {
+        throw new Error("Upload endpoint not found");
+      }
+      const data = response.data as any;
+      const url = data?.data?.url || data?.url;
+      return { url };
+    } catch (error) {
+      console.error("Failed to upload outlet photo:", error);
       throw error;
     }
   }
