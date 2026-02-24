@@ -153,11 +153,16 @@ export default function CheckStatusHistoryPage() {
                 }
             }
 
+            // Sort orders by createdAt descending (newest first)
+            const sortedOrders = orders.sort((a, b) => {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+
             // Step 4: Return with meta from pickup response
             const pickupMeta = pickupResponse?.data?.meta ?? pickupResponse?.data?.pagination;
             return {
-                data: orders,
-                meta: pickupMeta ?? { total: orders.length, page: pageParam, limit: 20, totalPages: 1 },
+                data: sortedOrders,
+                meta: pickupMeta ?? { total: sortedOrders.length, page: pageParam, limit: 20, totalPages: 1 },
             };
         },
         getNextPageParam: (lastPage) => {
@@ -263,8 +268,12 @@ export default function CheckStatusHistoryPage() {
         }
     };
 
-    const pickupRequests = pickupData?.pages.flatMap((page) => page.data) ?? [];
-    const orders = ordersData?.pages.flatMap((page) => page.data) ?? [];
+    // Merge pages and sort by createdAt descending (newest first)
+    const pickupRequests = (pickupData?.pages.flatMap((page) => page.data) ?? [])
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    const orders = (ordersData?.pages.flatMap((page) => page.data) ?? [])
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">

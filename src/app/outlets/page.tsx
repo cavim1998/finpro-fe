@@ -17,9 +17,10 @@ export default function OutletsPage() {
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '12');
     const search = searchParams.get('search') || '';
-    const category = searchParams.get('category') || '';
+    const locationCategory = searchParams.get('locationCategory') || '';
 
     const [outlets, setOutlets] = useState<OutletListTypes[]>([]);
+    const [allOutlets, setAllOutlets] = useState<OutletListTypes[]>([]); // Store all outlets for client-side pagination
     const [searchInput, setSearchInput] = useState(search);
     const [pagination, setPagination] = useState({
         total: 0,
@@ -29,6 +30,7 @@ export default function OutletsPage() {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [allCategories, setAllCategories] = useState<string[]>([]);
     const abortControllerRef = useRef<AbortController | null>(null);
 
     // Debounce search input before updating URL
@@ -44,7 +46,33 @@ export default function OutletsPage() {
 
     useEffect(() => {
         loadOutlets();
-    }, [page, pageSize, search, category]);
+    }, [page, pageSize, search, locationCategory]);
+
+    // Load all categories once on mount (without filters)
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const response = await axiosInstance.get('/outlets?pageSize=100');
+                const data = response.data?.data ?? response.data;
+                const items = data?.items ?? data;
+                
+                if (Array.isArray(items)) {
+                    const categories = items
+                        .map((outlet: OutletListTypes) => outlet.locationCategory)
+                        .filter((value): value is string => {
+                            return value !== null && value !== undefined && value.trim().length > 0;
+                        })
+                        .map((value) => value.trim());
+                    
+                    setAllCategories(Array.from(new Set(categories)));
+                }
+            } catch (err) {
+                console.error('Failed to load categories:', err);
+            }
+        };
+        
+        loadCategories();
+    }, []);
 
 
     const loadOutlets = async () => {
@@ -59,37 +87,63 @@ export default function OutletsPage() {
 
             setLoading(true);
             setError(null);
-            const params = new URLSearchParams({
-                page: page.toString(),
-                pageSize: pageSize.toString(),
-                ...(search && { search }),
-                ...(category && { category }),
+
+            console.log('[Outlets] Fetching with client-side pagination:', {
+                page,
+                pageSize,
+                search,
+                locationCategory,
             });
 
-            const response = await axiosInstance.get(`/outlets?${params.toString()}`, {
+            // Backend doesn't respect pagination params, fetch all and paginate client-side
+            const fetchParams = new URLSearchParams({
+                ...(search && { search }),
+                ...(locationCategory && { locationCategory }),
+            });
+
+            const response = await axiosInstance.get(`/outlets?${fetchParams.toString()}`, {
                 signal: abortControllerRef.current.signal,
             });
             let data = response.data?.data ?? response.data;
 
+            console.log('[Outlets] Response data:', data);
+
+            // Handle both paginated response and plain array
+            let allItems: OutletListTypes[] = [];
             if (data && typeof data === 'object' && 'items' in data) {
-                const items = Array.isArray(data.items) ? data.items : [];
-                setOutlets(items);
-                setPagination({
-                    total: Number(data.total || items.length),
-                    totalPages: Number(data.totalPages || 1),
-                    page: Number(data.page || page),
-                    pageSize: Number(data.pageSize || pageSize),
-                });
+                allItems = Array.isArray(data.items) ? data.items : [];
             } else {
-                const outletArray = Array.isArray(data) ? data : [];
-                setOutlets(outletArray);
-                setPagination({
-                    total: outletArray.length,
-                    totalPages: 1,
-                    page,
-                    pageSize,
-                });
+                allItems = Array.isArray(data) ? data : [];
             }
+
+            console.log('[Outlets] Total items from backend:', allItems.length);
+            
+            // Store all outlets
+            setAllOutlets(allItems);
+            
+            // Client-side pagination
+            const startIndex = (page - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const paginatedItems = allItems.slice(startIndex, endIndex);
+            const totalPages = Math.ceil(allItems.length / pageSize);
+            
+            console.log('[Outlets] Client-side pagination:', {
+                totalItems: allItems.length,
+                page,
+                pageSize,
+                startIndex,
+                endIndex,
+                displayingItems: paginatedItems.length,
+                totalPages
+            });
+
+            setOutlets(paginatedItems);
+            setPagination({
+                total: allItems.length,
+                totalPages: totalPages,
+                page: page,
+                pageSize: pageSize,
+            });
         } catch (err: any) {
             // Ignore abort errors
             if (err.name === 'AbortError' || err.name === 'CanceledError') {
@@ -114,7 +168,15 @@ export default function OutletsPage() {
             }
         });
 
-        if (newParams.search || newParams.pageSize) {
+        // Reset page to 1 when filters change
+        if (
+            (newParams.search !== undefined &&
+            Object.prototype.hasOwnProperty.call(newParams, 'search')) ||
+            (newParams.locationCategory !== undefined &&
+            Object.prototype.hasOwnProperty.call(newParams, 'locationCategory')) ||
+            (newParams.pageSize !== undefined &&
+            Object.prototype.hasOwnProperty.call(newParams, 'pageSize'))
+        ) {
             nextParams.set('page', '1');
         }
 
@@ -129,8 +191,8 @@ export default function OutletsPage() {
         setSearchInput(value);
     };
 
-    const handleCategoryChange = (value: string) => {
-        updateSearchParams({ category: value });
+    const handleLocationCategoryChange = (value: string) => {
+        updateSearchParams({ locationCategory: value });
     };
 
     const handlePageSizeChange = (value: number) => {
@@ -186,6 +248,11 @@ export default function OutletsPage() {
                     {/* Map Section */}
                     <div className="mb-12">
                         <OutletsMap outlets={outlets} loading={loading} />
+                        {locationCategory && outlets.length === 0 && (
+                            <div className="mt-4 text-center text-gray-500 text-sm">
+                                Tidak ada outlet dengan kategori "{locationCategory}"
+                            </div>
+                        )}
                     </div>
 
                     {/* Controls */}
@@ -199,50 +266,82 @@ export default function OutletsPage() {
                                 value={searchInput}
                                 onChange={(e) => handleSearchChange(e.target.value)}
                                 placeholder="Search outlets..."
-                                disabled
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-400 cursor-not-allowed"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1dacbc]"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Location Category</label>
                             <select
-                                value={category}
-                                onChange={(e) => handleCategoryChange(e.target.value)}
+                                value={locationCategory}
+                                onChange={(e) => handleLocationCategoryChange(e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1dacbc]"
                             >
                                 <option value="">All Locations</option>
-                                <option value="jakarta">Jakarta</option>
-                                <option value="bandung">Bandung</option>
-                                <option value="surabaya">Surabaya</option>
+                                {allCategories.map((option) => (
+                                    <option key={option} value={option}>
+                                        {option}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Items per page</label>
                             <select
-                                value={pageSize}
+                                value={pageSize.toString()}
                                 onChange={(e) => handlePageSizeChange(parseInt(e.target.value))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1dacbc]"
                             >
-                                <option value={6}>6</option>
-                                <option value={12}>12</option>
-                                <option value={24}>24</option>
+                                <option value="6">6</option>
+                                <option value="9">9</option>
+                                <option value="12">12</option>
                             </select>
                         </div>
                     </div>
 
+                    {/* Results info */}
+                    {outlets.length > 0 && (
+                        <div className="mb-4 text-sm text-gray-600 flex justify-between items-center">
+                            <span>
+                                Menampilkan {outlets.length} outlet dari total {pagination.total} outlet
+                            </span>
+                            <span className="text-xs text-gray-500">
+                                Halaman {page} dari {pagination.totalPages}
+                            </span>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {outlets.length === 0 && (
+                            <div className="col-span-full text-center py-12">
+                                <div className="text-gray-400 text-6xl mb-4">🏪</div>
+                                <p className="text-gray-600 font-semibold">Tidak ada outlet ditemukan</p>
+                                {locationCategory && (
+                                    <p className="text-gray-500 text-sm mt-2">
+                                        Tidak ada outlet dengan kategori "{locationCategory}"
+                                    </p>
+                                )}
+                            </div>
+                        )}
                         {outlets.map((outlet) => (
                             <div
                                 key={outlet.id}
                                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
                             >
                                 <div className="relative h-48 bg-gray-300 overflow-hidden">
-                                    <div className="w-full h-full bg-linear-to-br from-[#1dacbc]/20 to-[#14939e]/20 flex items-center justify-center">
-                                        <div className="text-center">
-                                            <div className="text-6xl mb-2">🏪</div>
-                                            <p className="text-gray-600 text-sm">Outlet Image</p>
+                                    {outlet.photoUrl ? (
+                                        <img
+                                            src={outlet.photoUrl}
+                                            alt={outlet.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-linear-to-br from-[#1dacbc]/20 to-[#14939e]/20 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <div className="text-6xl mb-2">🏪</div>
+                                                <p className="text-gray-600 text-sm">Outlet Image</p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                     <div className="absolute top-3 right-3 bg-[#1dacbc] text-white px-3 py-1 rounded-full text-xs font-semibold">
                                         {outlet.isActive ? 'Aktif' : 'Tidak Aktif'}
                                     </div>
@@ -252,6 +351,11 @@ export default function OutletsPage() {
                                     <h3 className="font-bold text-[#1dacbc] text-lg mb-3">
                                         {outlet.name}
                                     </h3>
+                                    {outlet.locationCategory && (
+                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-[#e6f4f6] text-[#1dacbc] mb-3">
+                                            {outlet.locationCategory}
+                                        </span>
+                                    )}
                                     <div className="space-y-2 text-sm text-gray-600">
                                         <div className="flex items-start gap-2">
                                             <FaMapMarkerAlt className="text-lg" />

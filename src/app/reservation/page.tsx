@@ -195,6 +195,11 @@ export default function ReservationPage() {
                 notes: notes || undefined,
             });
             toast.success('Pickup request created successfully');
+            
+            // Redirect to check-status page after 1 second
+            setTimeout(() => {
+                router.push('/check-status');
+            }, 1000);
         } catch (error: any) {
             const message = error?.response?.data?.message || 'Failed to create pickup request';
             toast.error(message);

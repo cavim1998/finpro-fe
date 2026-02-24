@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Store, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
-import { useCreateOutlet, useUpdateOutlet } from "@/hooks/api/useOutlet";
+import {
+  useCreateOutlet,
+  useUpdateOutlet,
+  useUploadOutletPhoto,
+} from "@/hooks/api/useOutlet";
 import { outletSchema, OutletFormData } from "@/lib/schema/outlet.schema";
 import { FormInput } from "@/components/FormInput";
 import { CoordinateDisplay } from "@/components/CoordinateDisplay";
@@ -33,7 +37,11 @@ export default function CreateOutletModal({
 }: CreateOutletModalProps) {
   const createMutation = useCreateOutlet();
   const updateMutation = useUpdateOutlet();
+  const uploadPhotoMutation = useUploadOutletPhoto();
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoError, setPhotoError] = useState<string>("");
 
   const {
     register,
@@ -49,6 +57,7 @@ export default function CreateOutletModal({
       addressText: "",
       latitude: undefined,
       longitude: undefined,
+      locationCategory: "",
     },
   });
 
@@ -57,11 +66,17 @@ export default function CreateOutletModal({
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
+        const categoryValue = 
+          initialData.locationCategory || 
+          initialData.location_category || 
+          "";
+        
         reset({
           name: initialData.name,
           addressText: initialData.addressText || initialData.address,
           latitude: Number(initialData.latitude),
           longitude: Number(initialData.longitude),
+          locationCategory: categoryValue,
         });
       } else {
         reset({
@@ -69,14 +84,72 @@ export default function CreateOutletModal({
           addressText: "",
           latitude: undefined,
           longitude: undefined,
+          locationCategory: "",
         });
       }
+      setPhotoPreview(initialData?.photoUrl || null);
+      setPhotoFile(null);
+      setPhotoError("");
     }
   }, [isOpen, initialData, reset]);
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+    ];
+
+    if (!validTypes.includes(file.type)) {
+      setPhotoError("Hanya JPG, PNG, atau GIF (maks 1MB)");
+      setPhotoFile(null);
+      return;
+    }
+
+    if (file.size > 1024 * 1024) {
+      setPhotoError("Ukuran file maksimal 1MB");
+      setPhotoFile(null);
+      return;
+    }
+
+    setPhotoError("");
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadOutletPhoto = async (outletId: number) => {
+    if (!photoFile) return;
+    try {
+      await uploadPhotoMutation.mutateAsync({ id: outletId, file: photoFile });
+      toast.success("Foto outlet diperbarui");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Gagal upload foto");
+    }
+  };
+
   const onSubmit = (data: OutletFormData) => {
+    const payload = {
+      ...data,
+      locationCategory: data.locationCategory?.trim() || undefined,
+    };
+
+    console.log("[CreateOutletModal] Submitting payload:", payload);
+
     const options = {
-      onSuccess: () => {
+      onSuccess: async (response: any) => {
+        const createdData = response?.data || response;
+        const outletId = createdData?.id || initialData?.id;
+        if (outletId && photoFile) {
+          await uploadOutletPhoto(outletId);
+        }
         toast.success(initialData ? "Outlet diperbarui!" : "Outlet dibuat!");
         onClose();
       },
@@ -85,8 +158,8 @@ export default function CreateOutletModal({
     };
 
     initialData
-      ? updateMutation.mutate({ id: initialData.id, data }, options)
-      : createMutation.mutate(data, options);
+      ? updateMutation.mutate({ id: initialData.id, data: payload }, options)
+      : createMutation.mutate(payload, options);
   };
 
   if (!isOpen) return null;
@@ -116,7 +189,11 @@ export default function CreateOutletModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form 
+          key={initialData?.id || 'new'}
+          onSubmit={handleSubmit(onSubmit)} 
+          className="space-y-4"
+        >
           <FormInput
             label="Nama Outlet"
             registration={register("name")}
@@ -143,6 +220,14 @@ export default function CreateOutletModal({
             )}
           </div>
 
+          <FormInput
+            label="Kategori Lokasi"
+            registration={register("locationCategory")}
+            error={errors.locationCategory?.message}
+            disabled={isPending}
+            placeholder="Contoh: Jakarta, Bandung, Surabaya"
+          />
+
           <div className={isPending ? "opacity-50 pointer-events-none" : ""}>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Pin Lokasi <span className="text-red-500">*</span>
@@ -159,6 +244,38 @@ export default function CreateOutletModal({
                 Lokasi wajib dipilih di peta.
               </p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700">
+              Foto Outlet
+            </label>
+            {photoPreview ? (
+              <div className="w-full h-40 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                <img
+                  src={photoPreview}
+                  alt="Outlet"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-full h-40 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-sm text-gray-500">
+                Belum ada foto
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/gif"
+              onChange={handlePhotoChange}
+              disabled={isPending}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+            {photoError && (
+              <p className="text-xs text-red-500">{photoError}</p>
+            )}
+            <p className="text-xs text-gray-500">
+              Upload foto akan dilakukan setelah outlet disimpan. Maks 1MB.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">

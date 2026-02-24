@@ -64,3 +64,41 @@ export const useDeleteOutlet = () => {
     },
   });
 };
+
+export const useUploadOutletPhoto = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, file }: { id: number; file: File }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const endpoints = [`/outlets/${id}/photo`, `/api/outlets/${id}/photo`];
+      const headers = { "Content-Type": "multipart/form-data" };
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await axiosInstance.patch(endpoint, formData, {
+            headers,
+          });
+          return response.data;
+        } catch (err: any) {
+          if (err?.response?.status !== 404) throw err;
+        }
+
+        try {
+          const response = await axiosInstance.post(endpoint, formData, {
+            headers,
+          });
+          return response.data;
+        } catch (err: any) {
+          if (err?.response?.status !== 404) throw err;
+        }
+      }
+
+      throw new Error("Upload endpoint not found");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["outlets"] });
+    },
+  });
+};

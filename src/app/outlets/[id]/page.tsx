@@ -18,6 +18,8 @@ interface OutletDetail {
     createdAt?: string;
     latitude: string;
     longitude: string;
+    locationCategory?: string | null;
+    photoUrl?: string | null;
     phone?: string;
     operatingHours?: string;
 }
@@ -139,6 +141,15 @@ export default function OutletDetailPage() {
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
                             <div className="flex flex-col lg:flex-row lg:items-start gap-10">
                                 <div className="w-full lg:w-[55%]">
+                                    {outlet.photoUrl && (
+                                        <div className="rounded-2xl overflow-hidden h-64 md:h-72 bg-gray-100 mb-6">
+                                            <img
+                                                src={outlet.photoUrl}
+                                                alt={outlet.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    )}
                                     <div className="rounded-2xl overflow-hidden h-80 md:h-[460px] bg-gray-100">
                                         {hasValidCoords ? (
                                             <MapContainer
@@ -168,6 +179,12 @@ export default function OutletDetailPage() {
                                     <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">
                                         {outlet.name}
                                     </h1>
+
+                                    {outlet.locationCategory && (
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#e6f4f6] text-[#1dacbc] mt-3">
+                                            {outlet.locationCategory}
+                                        </span>
+                                    )}
 
                                     <div className="flex items-start gap-3 mt-4 text-gray-600">
                                         <MapPin className="w-5 h-5 text-[#1dacbc] flex-shrink-0 mt-0.5" />

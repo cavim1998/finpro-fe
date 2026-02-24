@@ -411,7 +411,13 @@ export default function CheckStatusPage() {
             const response = await axiosInstance.get('/pickup-requests');
             const payload = response?.data?.data ?? response?.data ?? [];
             const list = Array.isArray(payload) ? payload : [];
-            setPickupRequests(list);
+            
+            // Sort by createdAt descending (newest first)
+            const sortedList = list.sort((a: PickupRequestListItem, b: PickupRequestListItem) => {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+            
+            setPickupRequests(sortedList);
         } catch (error: any) {
             console.error('Failed to load pickup requests:', error);
         } finally {
@@ -453,7 +459,12 @@ export default function CheckStatusPage() {
                 }
             }
 
-            setOrders(ordersData);
+            // Sort orders by createdAt descending (newest first)
+            const sortedOrders = ordersData.sort((a, b) => {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+
+            setOrders(sortedOrders);
         } catch (error: any) {
             console.error('Failed to load orders:', error);
         } finally {
