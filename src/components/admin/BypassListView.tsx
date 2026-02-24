@@ -3,9 +3,46 @@ import { FilterToolbar } from "./BypassListView/FilterToolbar";
 import { BypassListItem } from "./BypassListView/BypassListItem";
 import { LoadingState, EmptyState } from "./BypassListView/StateViews";
 import { BypassListViewProps } from "@/types/bypass";
+import { useEffect, useState } from "react";
+import { useDebounce } from "@/hooks/use-debunce";
 
-export default function BypassListView(props: BypassListViewProps) {
-  const { data, loading, page, limit, totalData, onPageChange } = props;
+interface ExtendedProps extends BypassListViewProps {
+  search: string;
+  onSearchChange: (val: string) => void;
+  sortBy?: string;
+  onSortByChange?: (val: string) => void;
+  sortOrder?: "asc" | "desc";
+  onSortOrderChange?: (val: "asc" | "desc") => void;
+  outlets: any[];
+}
+
+export default function BypassListView(props: ExtendedProps) {
+  const {
+    data,
+    loading,
+    page,
+    limit,
+    totalData,
+    onPageChange,
+    search,
+    onSearchChange,
+    outlets,
+  } = props;
+
+  const [localSearch, setLocalSearch] = useState(search || "");
+  const debouncedSearch = useDebounce(localSearch, 500);
+
+  useEffect(() => {
+    if (debouncedSearch !== search) {
+      onSearchChange(debouncedSearch);
+    }
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    if (search !== localSearch) {
+      setLocalSearch(search || "");
+    }
+  }, [search]);
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -16,7 +53,11 @@ export default function BypassListView(props: BypassListViewProps) {
         </p>
       </div>
 
-      <FilterToolbar {...props} />
+      <FilterToolbar
+        {...props}
+        search={localSearch}
+        onSearchChange={setLocalSearch}
+      />
 
       <div className="space-y-4 min-h-75">
         {loading ? (
@@ -34,7 +75,7 @@ export default function BypassListView(props: BypassListViewProps) {
         )}
       </div>
 
-      {totalData > 0 && (
+      {totalData > limit && (
         <div className="mt-8 flex justify-center">
           <PaginationSection
             meta={{ page, take: limit, total: totalData }}

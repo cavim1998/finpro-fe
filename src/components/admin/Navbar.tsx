@@ -45,7 +45,7 @@ const Navbar: React.FC<NavbarProps> = ({
               <Menu size={24} />
             </button>
             <span className="text-xl font-bold text-[#17A2B8]">
-              CHINGU{" "}
+              LAUNDRYQ{" "}
               <span className="text-xs font-normal text-gray-500 block sm:inline">
                 {roleCode.replace("_", " ")}
               </span>

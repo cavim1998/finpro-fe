@@ -20,6 +20,8 @@ interface DashboardViewProps {
     activePickups: number;
     pendingBypass: number;
     todayRevenue: number;
+    newCustomers: number;
+    outletPerformance: number;
   };
 }
 
@@ -35,6 +37,8 @@ export default function DashboardView({
     activePickups: 0,
     pendingBypass: 0,
     todayRevenue: 0,
+    newCustomers: 0,
+    outletPerformance: 0,
   };
 
   const menuItems = [
@@ -110,7 +114,9 @@ export default function DashboardView({
           </div>
           <div>
             <p className="text-sm text-gray-500 font-medium">Performa Outlet</p>
-            <h3 className="text-2xl font-bold text-gray-800">--%</h3>
+            <h3 className="text-2xl font-bold text-gray-800">
+              {dashboardStats.outletPerformance}%
+            </h3>
           </div>
         </div>
 
@@ -120,7 +126,9 @@ export default function DashboardView({
           </div>
           <div>
             <p className="text-sm text-gray-500 font-medium">Pelanggan Baru</p>
-            <h3 className="text-2xl font-bold text-gray-800">--</h3>
+            <h3 className="text-2xl font-bold text-gray-800">
+              +{dashboardStats.newCustomers}
+            </h3>
           </div>
         </div>
       </div>

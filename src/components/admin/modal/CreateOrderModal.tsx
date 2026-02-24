@@ -31,7 +31,10 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       getLaundryItems()
-        .then((res) => setItemsMaster(res))
+        .then((res: any) => {
+          const items = Array.isArray(res) ? res : res.data || [];
+          setItemsMaster(items);
+        })
         .catch((err) => console.error("Gagal load item", err));
 
       setWeight("");

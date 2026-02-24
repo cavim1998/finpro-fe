@@ -76,7 +76,7 @@ export const UsersTable = ({
                       </div>
                       <div>
                         <p className="font-bold text-gray-800">
-                          {u.user.profile.fullName}
+                          {u.user.profile ? u.user.profile.fullName : "-"}
                         </p>
                         <p className="text-xs text-gray-500">{u.user.email}</p>
                       </div>

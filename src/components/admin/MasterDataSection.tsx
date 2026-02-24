@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { MasterDataNav } from "./MasterDataSection/MasterDataNav";
 import { ErrorState } from "@/components/ErrorState";
 import { LoadingState } from "@/components/LoadingState";
@@ -15,11 +17,43 @@ import MasterEmployeeView from "./MasterDataSection/MasterUserView";
 import MasterShiftView from "./MasterDataSection/MasterShiftView";
 
 export default function MasterDataSection() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { state, actions } = useMasterData();
+
+  const viewParam = searchParams.get("view")?.toUpperCase();
+  const validTabs = ["ITEMS", "OUTLETS", "SHIFTS", "USERS"];
+  const currentView = validTabs.includes(viewParam || "") ? viewParam : "USERS";
+
+  useEffect(() => {
+    if (!viewParam) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("view", "USERS");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [viewParam, searchParams, pathname, router]);
+
+  useEffect(() => {
+    if (currentView && state.subTab !== currentView) {
+      actions.setSubTab(currentView as any);
+    }
+  }, [currentView, state.subTab, actions]);
+
+  // 4. Handler Ganti Tab: Update URL
+  const handleTabChange = (tab: string) => {
+    const params = new URLSearchParams();
+    params.set("tab", "MASTER");
+    params.set("view", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in zoom-in duration-300">
-      <MasterDataNav activeTab={state.subTab} onTabChange={actions.setSubTab} />
+      <MasterDataNav
+        activeTab={currentView as any}
+        onTabChange={handleTabChange}
+      />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-100">
         {state.subTab === "USERS" &&

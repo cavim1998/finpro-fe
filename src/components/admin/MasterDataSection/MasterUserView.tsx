@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useEmployees } from "@/hooks/api/useEmployee";
 import { useOutlets } from "@/hooks/api/useOutlet";
 import { UsersTable } from "./UsersTable";
@@ -8,38 +8,42 @@ import { MasterToolbar } from "./MasterToolbar";
 import PaginationSection from "@/components/PaginationSection";
 import { MasterItemViewProps } from "@/types/master-data-admin";
 import { useDebounce } from "@/hooks/use-debunce";
+import { useQueryFilters } from "@/hooks/use-query-filters";
 
 export default function MasterUserView({ actions }: MasterItemViewProps) {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 500);
-  const [filterOutlet, setFilterOutlet] = useState("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const filters = useQueryFilters("user");
+  const [localSearch, setLocalSearch] = useState(filters.search);
+  const debouncedSearch = useDebounce(localSearch, 500);
+
+  useEffect(() => {
+    if (debouncedSearch !== filters.search) {
+      filters.setSearch(debouncedSearch);
+    }
+  }, [debouncedSearch]);
 
   const { data: outletData } = useOutlets({ limit: 100 });
   const { data: userData } = useEmployees({
-    page,
-    search: debouncedSearch,
-    outletId: filterOutlet || undefined,
+    page: filters.page,
+    search: filters.search,
+    outletId: filters.outletId,
   });
 
   return (
     <div className="space-y-6">
       <MasterToolbar
-        search={search}
+        search={localSearch}
         onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
+          setLocalSearch(val);
+          filters.setPage(1);
         }}
         placeholder="Cari nama atau email pegawai..."
-        filterValue={filterOutlet}
-        onFilterChange={(val) => {
-          setFilterOutlet(val);
-          setPage(1);
-        }}
-        filterOptions={outletData?.data}
-        sortOrder={sortOrder}
-        onSortToggle={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+        outlets={outletData?.data || []}
+        selectedOutletId={filters.outletId}
+        onOutletChange={(id) => filters.setOutletId(id)}
+        sortOrder={filters.sortOrder}
+        onSortToggle={() =>
+          filters.setSortOrder(filters.sortOrder === "asc" ? "desc" : "asc")
+        }
       />
 
       <UsersTable
@@ -49,14 +53,14 @@ export default function MasterUserView({ actions }: MasterItemViewProps) {
         onDelete={(id, name) => actions.handleDeleteTrigger(id, name, "USERS")}
       />
 
-      {userData?.meta && (
+      {userData?.meta && userData.meta.total > userData.meta.take && (
         <PaginationSection
           meta={{
             page: userData.meta.page,
             take: userData.meta.take,
             total: userData.meta.total,
           }}
-          onClick={setPage}
+          onClick={filters.setPage}
         />
       )}
     </div>

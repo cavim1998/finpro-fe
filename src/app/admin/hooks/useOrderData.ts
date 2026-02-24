@@ -2,64 +2,53 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { getOrders, getPickups } from "@/services/order.service";
 import { RoleCode } from "@/types";
+import { getBypassRequests } from "@/services/bypass.service";
 
 interface UseOrderDataProps {
   activeTab: string;
   roleCode: RoleCode | null;
   userOutletId?: number;
+  page: number;
+  limit: number;
+  search: string;
+  status: string;
+  outletId?: number;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
 }
 
 export const useOrderData = ({
   activeTab,
   roleCode,
   userOutletId,
+  page,
+  limit,
+  search,
+  status,
+  outletId,
+  sortBy,
+  sortOrder,
 }: UseOrderDataProps) => {
   const [dataList, setDataList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
   const [totalData, setTotalData] = useState(0);
-
-  const [selectedOutletId, setSelectedOutletId] = useState<number | undefined>(
-    undefined,
-  );
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
-  useEffect(() => {
-    if (roleCode === "OUTLET_ADMIN" && userOutletId) {
-      setSelectedOutletId(userOutletId);
-    }
-  }, [roleCode, userOutletId]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [activeTab, selectedOutletId, selectedStatus, sortBy, sortOrder]);
 
   const fetchData = useCallback(async () => {
     if (!roleCode) return;
 
-    if (
-      (activeTab === "ORDERS" || activeTab === "PICKUP") &&
-      roleCode === "SUPER_ADMIN" &&
-      !selectedOutletId
-    ) {
-      setDataList([]);
-      setTotalData(0);
-      return;
-    }
-
     setLoading(true);
     try {
+      const effectiveOutletId =
+        outletId || (roleCode === "OUTLET_ADMIN" ? userOutletId : undefined);
+
       const params = {
         page,
         limit,
-        outletId: selectedOutletId,
-        status: selectedStatus || undefined,
+        outletId: effectiveOutletId,
+        status: status || undefined,
         sortBy,
         sortOrder,
+        search,
       };
 
       let res: any = null;
@@ -67,6 +56,8 @@ export const useOrderData = ({
         res = await getOrders(params);
       } else if (activeTab === "PICKUP") {
         res = await getPickups(params);
+      } else if (activeTab === "BYPASS") {
+        res = await getBypassRequests(params);
       }
 
       if (res?.data && res?.meta) {
@@ -86,16 +77,22 @@ export const useOrderData = ({
   }, [
     activeTab,
     roleCode,
-    selectedOutletId,
-    selectedStatus,
-    sortBy,
-    sortOrder,
+    userOutletId,
     page,
     limit,
+    search,
+    status,
+    outletId,
+    sortBy,
+    sortOrder,
   ]);
 
   useEffect(() => {
-    if (activeTab === "ORDERS" || activeTab === "PICKUP") {
+    if (
+      activeTab === "ORDERS" ||
+      activeTab === "PICKUP" ||
+      activeTab === "BYPASS"
+    ) {
       fetchData();
     }
   }, [fetchData, activeTab]);
@@ -103,18 +100,7 @@ export const useOrderData = ({
   return {
     dataList,
     loading,
-    page,
-    setPage,
-    limit,
     totalData,
-    selectedOutletId,
-    setSelectedOutletId,
-    selectedStatus,
-    setSelectedStatus,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
     refreshData: fetchData,
   };
 };
