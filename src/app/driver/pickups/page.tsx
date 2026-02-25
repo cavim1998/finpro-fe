@@ -17,6 +17,9 @@ export default function DriverPickupsPage() {
   const isAllowed = !!attendanceQ.data?.isCheckedIn && !attendanceQ.data?.isCompleted;
 
   const dashboardQ = useDriverDashboard({ pageSize, taskPage, pickupPage });
+  const tasks = dashboardQ.data?.tasks?.items ?? [];
+  const inProgress = Number(dashboardQ.data?.stats?.inProgress ?? 0);
+  const hasActiveTask = tasks.length > 0 || inProgress > 0;
   const pickupRequests = dashboardQ.data?.pickupRequests?.items ?? [];
   const totalPages = Number(dashboardQ.data?.pickupRequests?.totalPages ?? 0);
   const hasNextPage =
@@ -32,6 +35,7 @@ export default function DriverPickupsPage() {
           isAllowed={isAllowed}
           pickupRequests={pickupRequests}
           dashboardParams={{ pageSize, taskPage, pickupPage }}
+          hasActiveTask={hasActiveTask}
           page={pickupPage}
           hasNextPage={hasNextPage}
           loading={dashboardQ.isFetching}
