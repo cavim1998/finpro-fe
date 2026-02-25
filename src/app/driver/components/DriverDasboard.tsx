@@ -72,6 +72,7 @@ export default function DriverDashboard() {
     (taskTotalPages > 0 && taskPage < taskTotalPages) || tasks.length === pageSize;
   const pickupHasNextPage =
     (pickupTotalPages > 0 && pickupPage < pickupTotalPages) || pickupRequests.length === pageSize;
+  const hasActiveTask = tasks.length > 0 || Number(stats.inProgress) > 0;
 
   return (
     <div className="container mx-auto space-y-6 pb-24">
@@ -96,6 +97,7 @@ export default function DriverDashboard() {
           isAllowed={isAllowed}
           myTasks={tasks}
           pickupRequests={pickupRequests}
+          hasActiveTask={hasActiveTask}
           dashboardParams={{ pageSize, taskPage, pickupPage }}
           onTaskPrev={() => setTaskPage((p) => Math.max(1, p - 1))}
           onTaskNext={() => setTaskPage((p) => p + 1)}

@@ -4,11 +4,13 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { useClaimDeliveryMutation, useClaimPickupMutation } from "@/features/driver/driver.hooks";
 import type { DriverDashboardParams } from "@/features/driver/driver.api";
+import { toast } from "sonner";
 
 type Props = {
   pickup: unknown;
   dashboardParams: DriverDashboardParams;
   disabled?: boolean;
+  hasActiveTask?: boolean;
 };
 
 function formatDateTime(v?: string | Date | null) {
@@ -41,7 +43,7 @@ function getAddressText(pickup: Record<string, unknown>) {
   return String(a.addressText ?? a.label ?? a.receiverName ?? a.receiverPhone ?? "-");
 }
 
-export default function DriverPickupRequestCard({ pickup, dashboardParams, disabled }: Props) {
+export default function DriverPickupRequestCard({ pickup, dashboardParams, disabled, hasActiveTask = false }: Props) {
   const [open, setOpen] = React.useState(false);
   const p = getObj(pickup);
   const claimPickupM = useClaimPickupMutation(dashboardParams);
@@ -77,6 +79,10 @@ export default function DriverPickupRequestCard({ pickup, dashboardParams, disab
 
   const onClaim = async () => {
     if (!canClaim) return;
+    if (hasActiveTask) {
+      toast.error("Selesaikan task aktif terlebih dahulu sebelum claim task baru.");
+      return;
+    }
     if (isDelivery) {
       await claimDeliveryM.mutateAsync(orderId);
     } else {
@@ -110,7 +116,7 @@ export default function DriverPickupRequestCard({ pickup, dashboardParams, disab
 
           <Button
             className="w-full"
-            disabled={disabled || actionLoading || !canClaim}
+            disabled={disabled || actionLoading || !canClaim || hasActiveTask}
             onClick={onClaim}
           >
             {actionLoading ? "Memproses..." : isDelivery ? "Deliver" : "Pickup"}
