@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { axiosInstance } from '@/lib/axios';
-import Cookies from 'js-cookie';
 import { formatRupiah } from '@/lib/currency';
 import { IoRefresh } from 'react-icons/io5';
 
@@ -106,6 +106,7 @@ type OrderListItem = {
 
 export default function CheckStatusPage() {
     const router = useRouter();
+    const { data: session, status } = useSession();
     const [orderNumber, setOrderNumber] = useState('');
     const [order, setOrder] = useState<Order | null>(null);
     const [pickupDetail, setPickupDetail] = useState<any>(null);
@@ -128,14 +129,12 @@ export default function CheckStatusPage() {
     const notifiedOrdersRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
-        const userCookie = Cookies.get('user_data');
-        if (!userCookie) {
-            return;
+        if (status === 'authenticated' && session?.user) {
+            setShowAccountSection(true);
+            loadPickupRequests();
+            loadOrders();
         }
-        setShowAccountSection(true);
-        loadPickupRequests();
-        loadOrders();
-    }, []);
+    }, [status, session, router]);
 
     // Sync filtered arrays whenever orders or pickups load
     useEffect(() => {
