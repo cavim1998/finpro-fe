@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
@@ -131,10 +131,71 @@ export default function CheckStatusPage() {
     useEffect(() => {
         if (status === 'authenticated' && session?.user) {
             setShowAccountSection(true);
-            loadPickupRequests();
-            loadOrders();
         }
-    }, [status, session, router]);
+    }, [status, session]);
+
+    // Load pickup requests and orders when authenticated
+    useEffect(() => {
+        if (status === 'authenticated') {
+            // Define and call loading functions
+            (async () => {
+                // Load pickups
+                setLoadingPickupRequests(true);
+                try {
+                    const response = await axiosInstance.get('/pickup-requests');
+                    const payload = response?.data?.data ?? response?.data ?? [];
+                    const list = Array.isArray(payload) ? payload : [];
+                    const sortedList = list.sort((a: PickupRequestListItem, b: PickupRequestListItem) => {
+                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    });
+                    setPickupRequests(sortedList);
+                } catch (error: any) {
+                    console.error('Failed to load pickup requests:', error);
+                } finally {
+                    setLoadingPickupRequests(false);
+                }
+
+                // Load orders
+                setLoadingOrders(true);
+                try {
+                    const pickupResponse = await axiosInstance.get('/pickup-requests');
+                    const pickupData = pickupResponse?.data?.data ?? [];
+                    const pickupsWithOrders = Array.isArray(pickupData)
+                        ? pickupData.filter((p: any) => p.status === 'ARRIVED_OUTLET' && p.order?.id)
+                        : [];
+                    const orderIds = pickupsWithOrders.map((p: any) => p.order.id);
+                    const ordersData: OrderListItem[] = [];
+
+                    for (const orderId of orderIds) {
+                        try {
+                            const orderResponse = await axiosInstance.get(`/orders/${orderId}`);
+                            const orderData = orderResponse?.data?.data;
+                            if (orderData) {
+                                ordersData.push({
+                                    ...orderData,
+                                    orderNumber: orderData.orderNumber || orderData.orderNo || orderData.invoiceNumber || orderData.id,
+                                    status: orderData.orderStatus || orderData.status,
+                                    deliveryDate: orderData.deliveryDate || orderData.deliveredAt,
+                                    isPaid: orderData.isPaid ?? false,
+                                });
+                            }
+                        } catch (error) {
+                            console.error(`Failed to fetch order ${orderId}:`, error);
+                        }
+                    }
+
+                    const sortedOrders = ordersData.sort((a, b) => {
+                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    });
+                    setOrders(sortedOrders);
+                } catch (error: any) {
+                    console.error('Failed to load orders:', error);
+                } finally {
+                    setLoadingOrders(false);
+                }
+            })();
+        }
+    }, [status]);
 
     // Sync filtered arrays whenever orders or pickups load
     useEffect(() => {
@@ -404,7 +465,7 @@ export default function CheckStatusPage() {
         }).format(amount);
     };
 
-    const loadPickupRequests = async () => {
+    const loadPickupRequests = useCallback(async () => {
         setLoadingPickupRequests(true);
         try {
             const response = await axiosInstance.get('/pickup-requests');
@@ -422,9 +483,9 @@ export default function CheckStatusPage() {
         } finally {
             setLoadingPickupRequests(false);
         }
-    };
+    }, []);
 
-    const loadOrders = async () => {
+    const loadOrders = useCallback(async () => {
         setLoadingOrders(true);
         try {
             // Step 1: Fetch all pickup requests
@@ -469,7 +530,7 @@ export default function CheckStatusPage() {
         } finally {
             setLoadingOrders(false);
         }
-    };
+    }, []);
 
     const refreshTrackedOrder = async () => {
         if (!order?.id) {
