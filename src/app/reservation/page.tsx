@@ -25,6 +25,7 @@ export default function ReservationPage() {
     const [selectedOutletId, setSelectedOutletId] = useState<number | null>(null);
     const [showAllOutlets, setShowAllOutlets] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [dataloaded, setDataLoaded] = useState(false);
     
     const [formData, setFormData] = useState({
         name: '',
@@ -37,81 +38,63 @@ export default function ReservationPage() {
         specialInstructions: ''
     });
 
+    // Auth check
     useEffect(() => {
         if (status === 'unauthenticated') {
+            setLoading(false);
             router.push('/signin');
-            return;
-        }
-
-        if (status === 'authenticated' && session?.user) {
+        } else if (status === 'authenticated' && session?.user) {
             setUserData(session.user);
             setFormData(prev => ({
                 ...prev,
                 name: session.user.name || '',
                 phone: session.user.phone || '',
             }));
-            
-            // Load user's saved addresses
-            loadAddresses();
-            loadOutlets();
-            setLoading(false);
         }
-    }, [session, status, router]);
+    }, [status, session, router]);
 
-    const loadAddresses = async () => {
-        try {
-            const data = await addressService.getAll();
-            setAddresses(data);
-            
-            // Auto-select primary address if exists, or first address
-            const primaryAddress = data.find(addr => addr.isPrimary);
-            if (primaryAddress) {
-                handleAddressSelect(primaryAddress.id.toString());
-            } else if (data.length > 0) {
-                handleAddressSelect(data[0].id.toString());
-            }
-        } catch (error) {
-            console.error('Failed to load addresses:', error);
-        }
-    };
+    // Load data when authenticated
+    useEffect(() => {
+        if (status === 'authenticated' && !dataloaded) {
+            (async () => {
+                try {
+                    // Load addresses and outlets in parallel
+                    const [addressesData, outletsResponse] = await Promise.all([
+                        addressService.getAll(),
+                        axiosInstance.get('/outlets')
+                    ]);
 
-    const loadOutlets = async () => {
-        try {
-            const response = await axiosInstance.get('/outlets');
-            let data = response.data;
-            if (data && typeof data === 'object' && 'data' in data) {
-                data = data.data;
-            }
-            const outletArray = Array.isArray(data) ? data : [];
-            setOutlets(outletArray);
-            
-            // If address is already selected, sort outlets by distance
-            if (selectedAddressId && addresses.length > 0) {
-                const selectedAddr = addresses.find(a => a.id === selectedAddressId);
-                if (selectedAddr && selectedAddr.latitude && selectedAddr.longitude) {
-                    const sorted = sortOutletsByDistance(outletArray, selectedAddr.latitude, selectedAddr.longitude);
-                    setSortedOutlets(sorted as Array<OutletListTypes & { distance?: number }>);
-                    return;
+                    // Process addresses
+                    setAddresses(addressesData);
+
+                    // Process outlets
+                    let outletArray = outletsResponse.data;
+                    if (outletArray && typeof outletArray === 'object' && 'data' in outletArray) {
+                        outletArray = outletArray.data;
+                    }
+                    outletArray = Array.isArray(outletArray) ? outletArray : [];
+                    setOutlets(outletArray);
+                    setSortedOutlets(outletArray as Array<OutletListTypes & { distance?: number }>);
+
+                    // Outlets will be auto-selected when user picks an address
+                    // For now, just show the list without selection
+
+                    setDataLoaded(true);
+                    setLoading(false);
+                } catch (error) {
+                    console.error('Failed to load data:', error);
+                    setLoading(false);
                 }
-            }
-            
-            // Otherwise just set them as is
-            setSortedOutlets(outletArray as Array<OutletListTypes & { distance?: number }>);
-            
-            // Auto-select first active outlet
-            if (outletArray.length > 0) {
-                const activeOutlet = outletArray.find(o => o.isActive) || outletArray[0];
-                handleOutletSelect(activeOutlet.id);
-            }
-        } catch (error) {
-            console.error('Failed to load outlets:', error);
+            })();
         }
-    };
+    }, [status, dataloaded]);
 
     const handleAddressSelect = (addressId: string) => {
-        const selected = addresses.find(addr => addr.id === parseInt(addressId));
+        const addressIdNum = parseInt(addressId);
+        setSelectedAddressId(addressIdNum);
+        
+        const selected = addresses.find(addr => addr.id === addressIdNum);
         if (selected) {
-            setSelectedAddressId(selected.id);
             setFormData(prev => ({
                 ...prev,
                 address: `${selected.addressText}\n\nPenerima: ${selected.receiverName}\nTelepon: ${selected.receiverPhone}`
@@ -132,14 +115,11 @@ export default function ReservationPage() {
     };
 
     const handleOutletSelect = (outletId: number) => {
-        const selected = outlets.find(outlet => outlet.id === outletId);
-        if (selected) {
-            setSelectedOutletId(outletId);
-            setFormData(prev => ({
-                ...prev,
-                outletId: outletId
-            }));
-        }
+        setSelectedOutletId(outletId);
+        setFormData(prev => ({
+            ...prev,
+            outletId: outletId
+        }));
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

@@ -114,8 +114,8 @@ export default function CheckStatusPage() {
     const [searched, setSearched] = useState(false);
     const [pickupRequests, setPickupRequests] = useState<PickupRequestListItem[]>([]);
     const [orders, setOrders] = useState<OrderListItem[]>([]);
-    const [loadingPickupRequests, setLoadingPickupRequests] = useState(false);
-    const [loadingOrders, setLoadingOrders] = useState(false);
+    const [loadingPickupRequests, setLoadingPickupRequests] = useState(true);
+    const [loadingOrders, setLoadingOrders] = useState(true);
     const [showAccountSection, setShowAccountSection] = useState(false);
     const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
     const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
@@ -131,66 +131,91 @@ export default function CheckStatusPage() {
     useEffect(() => {
         if (status === 'authenticated' && session?.user) {
             setShowAccountSection(true);
+        } else if (status === 'unauthenticated') {
+            // Set loading to false for unauthenticated users
+            setLoadingPickupRequests(false);
+            setLoadingOrders(false);
         }
     }, [status, session]);
 
     // Load pickup requests and orders when authenticated
     useEffect(() => {
         if (status === 'authenticated') {
-            // Define and call loading functions
+            // Set both as loading immediately
+            setLoadingPickupRequests(true);
+            setLoadingOrders(true);
+
+            // Run both requests in parallel with Promise.all
             (async () => {
-                // Load pickups
-                setLoadingPickupRequests(true);
                 try {
-                    const response = await axiosInstance.get('/pickup-requests');
-                    const payload = response?.data?.data ?? response?.data ?? [];
-                    const list = Array.isArray(payload) ? payload : [];
-                    const sortedList = list.sort((a: PickupRequestListItem, b: PickupRequestListItem) => {
-                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                    });
-                    setPickupRequests(sortedList);
-                } catch (error: any) {
-                    console.error('Failed to load pickup requests:', error);
-                } finally {
-                    setLoadingPickupRequests(false);
-                }
+                    const [pickupResponse, orderPickupResponse] = await Promise.all([
+                        // Load pickups
+                        axiosInstance.get('/pickup-requests'),
+                        // Load pickups for orders (reuse if possible, but fetch separately for clarity)
+                        axiosInstance.get('/pickup-requests')
+                    ]);
 
-                // Load orders
-                setLoadingOrders(true);
-                try {
-                    const pickupResponse = await axiosInstance.get('/pickup-requests');
-                    const pickupData = pickupResponse?.data?.data ?? [];
-                    const pickupsWithOrders = Array.isArray(pickupData)
-                        ? pickupData.filter((p: any) => p.status === 'ARRIVED_OUTLET' && p.order?.id)
-                        : [];
-                    const orderIds = pickupsWithOrders.map((p: any) => p.order.id);
-                    const ordersData: OrderListItem[] = [];
-
-                    for (const orderId of orderIds) {
-                        try {
-                            const orderResponse = await axiosInstance.get(`/orders/${orderId}`);
-                            const orderData = orderResponse?.data?.data;
-                            if (orderData) {
-                                ordersData.push({
-                                    ...orderData,
-                                    orderNumber: orderData.orderNumber || orderData.orderNo || orderData.invoiceNumber || orderData.id,
-                                    status: orderData.orderStatus || orderData.status,
-                                    deliveryDate: orderData.deliveryDate || orderData.deliveredAt,
-                                    isPaid: orderData.isPaid ?? false,
-                                });
-                            }
-                        } catch (error) {
-                            console.error(`Failed to fetch order ${orderId}:`, error);
-                        }
+                    // Process pickups
+                    try {
+                        const payload = pickupResponse?.data?.data ?? pickupResponse?.data ?? [];
+                        const list = Array.isArray(payload) ? payload : [];
+                        const sortedList = list.sort((a: PickupRequestListItem, b: PickupRequestListItem) => {
+                            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                        });
+                        setPickupRequests(sortedList);
+                    } catch (error: any) {
+                        console.error('Failed to process pickup requests:', error);
+                    } finally {
+                        setLoadingPickupRequests(false);
                     }
 
-                    const sortedOrders = ordersData.sort((a, b) => {
-                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                    });
-                    setOrders(sortedOrders);
+                    // Process orders
+                    try {
+                        const pickupData = orderPickupResponse?.data?.data ?? [];
+                        const pickupsWithOrders = Array.isArray(pickupData)
+                            ? pickupData.filter((p: any) => p.status === 'ARRIVED_OUTLET' && p.order?.id)
+                            : [];
+                        const orderIds = pickupsWithOrders.map((p: any) => p.order.id);
+                        
+                        if (orderIds.length === 0) {
+                            setOrders([]);
+                        } else {
+                            // Fetch all orders in parallel
+                            const orderResponses = await Promise.allSettled(
+                                orderIds.map(orderId => axiosInstance.get(`/orders/${orderId}`))
+                            );
+                            
+                            const ordersData: OrderListItem[] = [];
+                            orderResponses.forEach((result) => {
+                                if (result.status === 'fulfilled') {
+                                    const orderData = result.value?.data?.data;
+                                    if (orderData) {
+                                        ordersData.push({
+                                            ...orderData,
+                                            orderNumber: orderData.orderNumber || orderData.orderNo || orderData.invoiceNumber || orderData.id,
+                                            status: orderData.orderStatus || orderData.status,
+                                            deliveryDate: orderData.deliveryDate || orderData.deliveredAt,
+                                            isPaid: orderData.isPaid ?? false,
+                                        });
+                                    }
+                                } else {
+                                    console.error('Failed to fetch order:', result.reason);
+                                }
+                            });
+
+                            const sortedOrders = ordersData.sort((a, b) => {
+                                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                            });
+                            setOrders(sortedOrders);
+                        }
+                    } catch (error: any) {
+                        console.error('Failed to load orders:', error);
+                    } finally {
+                        setLoadingOrders(false);
+                    }
                 } catch (error: any) {
-                    console.error('Failed to load orders:', error);
-                } finally {
+                    console.error('Failed to load data:', error);
+                    setLoadingPickupRequests(false);
                     setLoadingOrders(false);
                 }
             })();
@@ -789,7 +814,7 @@ export default function CheckStatusPage() {
                                     <div className="text-center py-8">
                                         <p className="text-gray-500 text-sm">Sign in to view your orders</p>
                                     </div>
-                                ) : loadingOrders ? (
+                                ) : (status === 'loading' || loadingOrders) ? (
                                     <div className="text-center py-8">
                                         <p className="text-gray-500 text-sm">Loading...</p>
                                     </div>
@@ -918,7 +943,7 @@ export default function CheckStatusPage() {
                                     <div className="text-center py-8">
                                         <p className="text-gray-500 text-sm">Sign in to view your pickup requests</p>
                                     </div>
-                                ) : loadingPickupRequests ? (
+                                ) : (status === 'loading' || loadingPickupRequests) ? (
                                     <div className="text-center py-8">
                                         <p className="text-gray-500 text-sm">Loading...</p>
                                     </div>
