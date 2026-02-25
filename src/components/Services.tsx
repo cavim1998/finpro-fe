@@ -5,19 +5,19 @@ const Services = () => {
 
   const experienceItems: { image: string; title: string; }[] = [
     {
-      image: "/ImgAssets/daily-laundry.png",
+      image: "/imgAssets/daily-laundry.png",
       title: "Daily Laundry"
     },
     {
-      image: "/ImgAssets/wash-fold.png",
+      image: "/imgAssets/wash-fold.png",
       title: "Wash & Fold"
     },
     {
-      image: "/ImgAssets/shoe-cleaning.png",
+      image: "/imgAssets/shoe-cleaning.png",
       title: "Shoe Cleaning"
     },
     {
-      image: "/ImgAssets/bag-cleaning.png",
+      image: "/imgAssets/bag-cleaning.png",
       title: "Bag Cleaning"
     }
   ];

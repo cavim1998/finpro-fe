@@ -31,7 +31,7 @@ const MainHeader = () => {
                     {/* Image Section */}
                     <div className='flex-1'>
                         <img
-                            src="/ImgAssets/main-header.png"
+                            src="/imgAssets/main-header.png"
                             alt="Laundry Service Illustration"
                             className='w-full h-auto'
                         />
