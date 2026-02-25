@@ -2,12 +2,12 @@ import React from 'react'
 
 const Payments = () => {
     const paymentMethods = [    
-        { name: 'QRIS', logo: '/ImgAssets/payments/QRIS.png' },
-        { name: 'Mastercard', logo: '/ImgAssets/payments/Mastercard.png' },
-        { name: 'GoPay', logo: '/ImgAssets/payments/GoPay.png' },
-        { name: 'DANA', logo: '/ImgAssets/payments/Dana.png' },
-        { name: 'OVO', logo: '/ImgAssets/payments/OVO.png' },
-        { name: 'VISA', logo: '/ImgAssets/payments/Visa.png' },
+        { name: 'QRIS', logo: '/imgAssets/payments/QRIS.png' },
+        { name: 'Mastercard', logo: '/imgAssets/payments/Mastercard.png' },
+        { name: 'GoPay', logo: '/imgAssets/payments/Gopay.png' },
+        { name: 'DANA', logo: '/imgAssets/payments/Dana.png' },
+        { name: 'OVO', logo: '/imgAssets/payments/OVO.png' },
+        { name: 'VISA', logo: '/imgAssets/payments/Visa.png' },
     ]
 
     return (
