@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { axiosInstance } from '@/lib/axios';
-import Cookies from 'js-cookie';
 import { formatRupiah } from '@/lib/currency';
 import { IoRefresh, IoCaretDown } from 'react-icons/io5';
 
@@ -62,6 +62,7 @@ interface PaginatedResponse<T> {
 
 export default function CheckStatusHistoryPage() {
     const router = useRouter();
+    const { data: session, status } = useSession();
     const [showAccountSection, setShowAccountSection] = useState(false);
     const [activeTab, setActiveTab] = useState<'pickups' | 'orders'>('pickups');
     const [filterDateFrom, setFilterDateFrom] = useState('');
@@ -69,12 +70,10 @@ export default function CheckStatusHistoryPage() {
     const observerTarget = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const userCookie = Cookies.get('user_data');
-        if (!userCookie) {
-            return;
+        if (status === 'authenticated' && session?.user) {
+            setShowAccountSection(true);
         }
-        setShowAccountSection(true);
-    }, []);
+    }, [status, session]);
 
     // Fetch pickup requests with infinite query
     const {
