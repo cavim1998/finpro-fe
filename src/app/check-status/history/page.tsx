@@ -376,7 +376,7 @@ export default function CheckStatusHistoryPage() {
                             {/* Pickup Requests Tab */}
                             {activeTab === 'pickups' && (
                                 <div className="space-y-3">
-                                    {isLoadingPickups ? (
+                                    {(status === 'loading' || isLoadingPickups) ? (
                                         <div className="text-center py-12">
                                             <p className="text-gray-500">Loading pickup requests...</p>
                                         </div>
@@ -434,7 +434,7 @@ export default function CheckStatusHistoryPage() {
                             {/* Orders Tab */}
                             {activeTab === 'orders' && (
                                 <div className="space-y-3">
-                                    {isLoadingOrders ? (
+                                    {(status === 'loading' || isLoadingOrders) ? (
                                         <div className="text-center py-12">
                                             <p className="text-gray-500">Loading orders...</p>
                                         </div>
