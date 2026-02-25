@@ -10,6 +10,7 @@ type Props = {
   isAllowed: boolean;
   myTasks: TaskLike[];
   pickupRequests: PickupLike[];
+  hasActiveTask?: boolean;
   dashboardParams: {
     pageSize: number;
     taskPage: number;
@@ -29,6 +30,7 @@ export default function DriverLists({
   isAllowed,
   myTasks,
   pickupRequests,
+  hasActiveTask = false,
   dashboardParams,
   onTaskPrev,
   onTaskNext,
@@ -62,6 +64,7 @@ export default function DriverLists({
         isAllowed={isAllowed}
         pickupRequests={dashboardLoading ? [] : pickupRequests}
         dashboardParams={dashboardParams}
+        hasActiveTask={hasActiveTask}
         page={dashboardParams.pickupPage}
         hasNextPage={pickupHasNextPage}
         loading={dashboardLoading}

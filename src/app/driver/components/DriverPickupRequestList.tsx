@@ -12,6 +12,7 @@ type Props = {
   isAllowed: boolean;
   pickupRequests: PickupLike[];
   dashboardParams: DriverDashboardParams;
+  hasActiveTask?: boolean;
   page: number;
   hasNextPage: boolean;
   loading?: boolean;
@@ -26,6 +27,7 @@ export default function DriverPickupRequestList({
   isAllowed,
   pickupRequests,
   dashboardParams,
+  hasActiveTask = false,
   page,
   hasNextPage,
   loading,
@@ -60,6 +62,10 @@ export default function DriverPickupRequestList({
           <p className="text-sm text-muted-foreground">
             Check-in dulu untuk melihat pickup request.
           </p>
+        ) : hasActiveTask ? (
+          <p className="text-sm text-amber-700">
+            Kamu masih punya task aktif. Selesaikan dulu sebelum claim pickup/delivery lain.
+          </p>
         ) : loading ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : pickupRequests.length > 0 ? (
@@ -70,6 +76,7 @@ export default function DriverPickupRequestList({
                 pickup={p}
                 dashboardParams={dashboardParams}
                 disabled={!isAllowed}
+                hasActiveTask={hasActiveTask}
               />
             ))}
           </div>
