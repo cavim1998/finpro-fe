@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { useSession } from 'next-auth/react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaTshirt } from 'react-icons/fa';
@@ -15,6 +15,7 @@ import { sortOutletsByDistance } from '@/lib/distance';
 
 export default function ReservationPage() {
     const router = useRouter();
+    const { data: session, status } = useSession();
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState<any>(null);
     const [addresses, setAddresses] = useState<Address[]>([]);
@@ -37,30 +38,25 @@ export default function ReservationPage() {
     });
 
     useEffect(() => {
-        const userCookie = Cookies.get('user_data');
-        if (!userCookie) {
+        if (status === 'unauthenticated') {
             router.push('/signin');
             return;
         }
-        
-        try {
-            const user = JSON.parse(userCookie);
-            setUserData(user);
+
+        if (status === 'authenticated' && session?.user) {
+            setUserData(session.user);
             setFormData(prev => ({
                 ...prev,
-                name: user.name || '',
-                phone: user.phone || '',
+                name: session.user.name || '',
+                phone: session.user.phone || '',
             }));
             
             // Load user's saved addresses
             loadAddresses();
             loadOutlets();
-        } catch (error) {
-            console.error('Error parsing user data:', error);
-            router.push('/signin');
+            setLoading(false);
         }
-        setLoading(false);
-    }, [router]);
+    }, [session, status, router]);
 
     const loadAddresses = async () => {
         try {
@@ -208,7 +204,7 @@ export default function ReservationPage() {
         }
     };
 
-    if (loading) {
+    if (loading || status === 'loading') {
         return (
             <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center">
                 <div className="text-center">
