@@ -35,7 +35,7 @@ export const useAdminDashboardLogic = () => {
 
   const handleTabChange = useCallback(
     (newTab: TabType) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams();
       params.set("tab", newTab);
       if (newTab === "MASTER") params.set("view", "USERS");
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
