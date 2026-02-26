@@ -40,6 +40,7 @@ export const useOrderData = ({
 
     setLoading(true);
     try {
+      setDataList([]);
       const effectiveOutletId =
         outletId || (roleCode === "OUTLET_ADMIN" ? userOutletId : undefined);
 
