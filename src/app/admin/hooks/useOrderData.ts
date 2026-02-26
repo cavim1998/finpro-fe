@@ -88,6 +88,7 @@ export const useOrderData = ({
     outletId,
     sortBy,
     sortOrder,
+    isOrderCreated,
   ]);
 
   useEffect(() => {
