@@ -39,7 +39,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onViewDetail }) => {
             {/* Order No (Lebih penting daripada UUID) */}
             <h3 className="font-bold text-gray-800 text-lg">{order.orderNo}</h3>
             <p className="text-xs text-gray-400 mt-0.5">
-              ID: {order.id.substring(0, 8)}...
+              ID: {order.id.toString().substring(0, 8)}...
             </p>
           </div>
 

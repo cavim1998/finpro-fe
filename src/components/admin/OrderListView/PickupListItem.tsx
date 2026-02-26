@@ -41,7 +41,7 @@ export const PickupListItem = ({ item, onCreateOrder }: PickupItemProps) => {
         <div className="flex-1 w-full">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded font-mono border border-gray-200">
-              #{item.id.substring(0, 8)}
+              #{item.id.toString().substring(0, 8)}
             </span>
             <span
               className={`text-xs font-bold px-2 py-1 rounded border capitalize ${getStatusBadgeStyle(item.status)}`}
