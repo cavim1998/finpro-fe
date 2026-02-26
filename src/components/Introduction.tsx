@@ -20,7 +20,7 @@ const Introduction = () => {
                     {/* Image Section */}
                     <div className='flex-1'>
                         <img
-                            src="/ImgAssets/header-pickup.png"
+                            src="/imgAssets/header-pickup.png"
                             alt="Laundry Service Illustration"
                             className='w-full h-auto bg-white rounded-xl'
                         />

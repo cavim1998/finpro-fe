@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { useSession } from 'next-auth/react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhyMustCard from '@/components/WhyMustCard';
@@ -10,14 +10,14 @@ import { FaHandshake, FaAward, FaUsers, FaShieldAlt, FaTruck, FaCheckCircle, FaT
 
 export default function AboutUsPage() {
     const router = useRouter();
+    const { data: session, status } = useSession();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const userData = Cookies.get('user_data');
-        setIsLoggedIn(!!userData);
+        setIsLoggedIn(status === 'authenticated');
         setLoading(false);
-    }, []);
+    }, [status]);
 
     const handleBooking = () => {
         if (isLoggedIn) {
