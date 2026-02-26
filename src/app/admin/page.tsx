@@ -58,6 +58,8 @@ export default function AdminDashboardPage() {
   const filters = useQueryFilters(filterPrefix);
   const statusParamKey = `${filterPrefix}Status`;
   const currentStatus = searchParams.get(statusParamKey) || "";
+  const isOrderCreatedKey = "pickupIsOrderCreated";
+  const currentIsOrderCreated = searchParams.get(isOrderCreatedKey) || "";
 
   const handleStatusChange = (val: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -89,6 +91,7 @@ export default function AdminDashboardPage() {
         : filters.sortBy,
     sortOrder: filters.sortOrder,
     status: currentStatus,
+    isOrderCreated: activeTab === "PICKUP" ? currentIsOrderCreated : undefined,
   });
 
   const dashboardStats = useDashboardStats(roleCode, filters.outletId);
@@ -96,8 +99,6 @@ export default function AdminDashboardPage() {
   const [selectedPickupId, setSelectedPickupId] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const isOrderCreatedKey = "pickupIsOrderCreated";
-  const currentIsOrderCreated = searchParams.get(isOrderCreatedKey) || "";
 
   const handleIsOrderCreatedChange = (val: string) => {
     const params = new URLSearchParams(searchParams.toString());
