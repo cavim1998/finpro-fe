@@ -80,7 +80,7 @@ export const PickupListItem = ({ item, onCreateOrder }: PickupItemProps) => {
         <div className="w-full lg:w-auto">
           <button
             onClick={() => onCreateOrder && onCreateOrder(item.id)}
-            disabled={item.status !== "ARRIVED_OUTLET"}
+            disabled={item.status !== "ARRIVED_OUTLET" || !!item.order}
             className="w-full lg:w-auto text-white bg-[#17A2B8] font-bold text-sm px-6 py-3 rounded-lg hover:bg-[#138496] shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {item.status === "COMPLETED" ? "Sudah Diproses" : "Process Pickup"}
