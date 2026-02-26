@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAdminAuth } from "./useAdminAuth";
 import { useOrderData } from "./useOrderData";
@@ -32,6 +32,10 @@ export const useAdminDashboardLogic = () => {
   ].includes(rawTab as any)
     ? (rawTab as TabType)
     : "DASHBOARD";
+
+  useEffect(() => {
+    orderData.refreshData();
+  }, [activeTab]);
 
   const handleTabChange = useCallback(
     (newTab: TabType) => {
