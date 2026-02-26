@@ -80,6 +80,8 @@ export const useAdminDashboardLogic = () => {
     return filters.sortBy;
   };
 
+  const effectiveSortOrder = (filters.sortOrder as "asc" | "desc") || "desc";
+
   const { data: outletsResponse } = useOutlets();
   const orderData = useOrderData({
     activeTab,
@@ -90,7 +92,7 @@ export const useAdminDashboardLogic = () => {
     search: filters.search,
     outletId: filters.outletId,
     sortBy: resolveSortBy(),
-    sortOrder: filters.sortOrder,
+    sortOrder: effectiveSortOrder,
     status: currentStatus,
     isOrderCreated: activeTab === "PICKUP" ? currentIsOrderCreated : undefined,
   });
