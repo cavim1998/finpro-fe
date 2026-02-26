@@ -96,6 +96,19 @@ export default function AdminDashboardPage() {
   const [selectedPickupId, setSelectedPickupId] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const isOrderCreatedKey = "pickupIsOrderCreated";
+  const currentIsOrderCreated = searchParams.get(isOrderCreatedKey) || "";
+
+  const handleIsOrderCreatedChange = (val: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) {
+      params.set(isOrderCreatedKey, val);
+    } else {
+      params.delete(isOrderCreatedKey);
+    }
+    params.set("pickupPage", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const handleViewDetail = (id: string) => {
     setSelectedOrderId(id);
@@ -172,6 +185,8 @@ export default function AdminDashboardPage() {
             }
             onRefresh={refreshData}
             onViewDetail={handleViewDetail}
+            isOrderCreated={currentIsOrderCreated}
+            onIsOrderCreatedChange={handleIsOrderCreatedChange}
           />
         )}
 

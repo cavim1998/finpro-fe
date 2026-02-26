@@ -15,6 +15,7 @@ interface UseOrderDataProps {
   outletId?: number;
   sortBy: string;
   sortOrder: "asc" | "desc";
+  isOrderCreated?: string;
 }
 
 export const useOrderData = ({
@@ -28,6 +29,7 @@ export const useOrderData = ({
   outletId,
   sortBy,
   sortOrder,
+  isOrderCreated,
 }: UseOrderDataProps) => {
   const [dataList, setDataList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,7 @@ export const useOrderData = ({
         sortBy,
         sortOrder,
         search,
+        isOrderCreated: activeTab === "PICKUP" ? isOrderCreated : undefined,
       };
 
       let res: any = null;

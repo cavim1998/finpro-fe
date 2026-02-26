@@ -21,6 +21,15 @@ export interface GetParams {
   status?: string;
   outletId?: number;
 }
+export interface GetParamsPickup {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  status?: string;
+  outletId?: number;
+  isOrderCreated?: string;
+}
 
 export const createOrder = async (payload: CreateOrderPayload) => {
   const response = await axiosInstance.post("/orders", payload);
@@ -37,7 +46,7 @@ export const getOrders = async (params: GetParams) => {
   return response.data;
 };
 
-export const getPickups = async (params: GetParams) => {
+export const getPickups = async (params: GetParamsPickup) => {
   const response = await axiosInstance.get("/admin-pickup", { params });
   return response.data;
 };
