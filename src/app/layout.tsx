@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/Providers";
 import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +44,16 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${baloo2.variable} ${poppins.variable} font-sans antialiased`}
       >
         <Providers>
-          <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="flex flex-col items-center">
+                <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                <p className="text-gray-500">Loading...</p>
+              </div>
+            </div>
+          }>
+            {children}
+          </Suspense>
         </Providers>
 
         <Toaster richColors position="top-right" />

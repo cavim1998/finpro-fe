@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { axiosInstance } from '@/lib/axios';
 import { toast } from 'sonner';
-import { MapPin, Phone, Clock } from 'lucide-react';
+import { MapPin, Phone, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { FaCircleChevronLeft } from "react-icons/fa6";
 import dynamic from 'next/dynamic';
@@ -101,9 +101,9 @@ export default function OutletDetailPage() {
         return (
             <div className="min-h-screen bg-[#f9f9f9]">
                 <Navbar />
-                <div className="container mx-auto px-4 py-20 text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1dacbc] mx-auto"></div>
-                    <p className="mt-4 text-gray-500">Loading outlet details...</p>
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                    <p className="text-gray-500">Loading outlet details...</p>
                 </div>
                 <Footer />
             </div>
