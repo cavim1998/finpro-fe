@@ -19,37 +19,92 @@ const TabNav = ({ tab, setTab }: { tab: string; setTab: any }) => (
   </div>
 );
 
-const DetailView = ({ data }: { data: any }) => (
-  <div className="space-y-4">
-    <div className="bg-gray-50 p-3 rounded-lg text-sm">
-      <p className="font-bold text-gray-700">
-        Customer: {data.customer?.profile?.fullName || "N/A"}
-      </p>
-      <p className="text-gray-500">
-        {data.pickupRequest?.address?.addressText}
-      </p>
-    </div>
-    <div className="border rounded-lg p-3">
-      <h4 className="font-bold text-sm mb-2 border-b pb-2">
-        Item Cucian ({data.totalWeightKg} Kg)
-      </h4>
-      {data.items?.map((item: any, idx: number) => (
-        <div key={idx} className="flex justify-between text-sm py-1">
-          <span>
-            {item.item?.name} x{item.qty}
-          </span>
-          <span className="font-bold text-gray-700">
-            Rp {item.price * item.qty}
-          </span>
+const DetailView = ({ data }: { data: any }) => {
+  const getCompletionTime = (stationType: string) => {
+    const station = data?.stations?.find(
+      (s: any) => s.stationType === stationType,
+    );
+
+    if (station && station.status === "COMPLETED" && station.completedAt) {
+      return new Date(station.completedAt).toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    return "Belum Selesai";
+  };
+
+  return (
+    <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
+      <div className="bg-gray-50 p-3 rounded-lg text-sm">
+        <p className="font-bold text-gray-700">
+          Customer: {data.customer?.profile?.fullName || "N/A"}
+        </p>
+        <p className="text-gray-500">
+          {data.pickupRequest?.address?.addressText}
+        </p>
+      </div>
+
+      <div className="border rounded-lg p-3">
+        <h4 className="font-bold text-sm mb-2 border-b pb-2">
+          Item Cucian ({data.totalWeightKg} Kg)
+        </h4>
+        {data.items?.map((item: any, idx: number) => (
+          <div key={idx} className="flex justify-between text-sm py-1">
+            <span>
+              {item.item?.name} x{item.qty}
+            </span>
+            <span className="font-bold text-gray-700">
+              Rp {(item.price * item.qty).toLocaleString("id-ID")}
+            </span>
+          </div>
+        ))}
+        <div className="flex justify-between font-bold text-blue-600 border-t pt-2 mt-2">
+          <span>Total Akhir</span>
+          <span>Rp {Number(data.totalAmount).toLocaleString("id-ID")}</span>
         </div>
-      ))}
-      <div className="flex justify-between font-bold text-blue-600 border-t pt-2 mt-2">
-        <span>Total Akhir</span>
-        <span>Rp {data.totalAmount}</span>
+      </div>
+
+      <div className="border rounded-lg p-3">
+        <h4 className="font-bold text-sm mb-3 border-b pb-2 text-gray-800">
+          Status Pengerjaan
+        </h4>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-2 border rounded-md bg-blue-50 text-center">
+            <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase">
+              Washing
+            </p>
+            <p
+              className={`text-sm font-bold ${getCompletionTime("WASHING") === "Belum Selesai" ? "text-gray-400 font-normal text-xs" : "text-blue-700"}`}
+            >
+              {getCompletionTime("WASHING")}
+            </p>
+          </div>
+          <div className="p-2 border rounded-md bg-orange-50 text-center">
+            <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase">
+              Ironing
+            </p>
+            <p
+              className={`text-sm font-bold ${getCompletionTime("IRONING") === "Belum Selesai" ? "text-gray-400 font-normal text-xs" : "text-orange-700"}`}
+            >
+              {getCompletionTime("IRONING")}
+            </p>
+          </div>
+          <div className="p-2 border rounded-md bg-green-50 text-center">
+            <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase">
+              Packing
+            </p>
+            <p
+              className={`text-sm font-bold ${getCompletionTime("PACKING") === "Belum Selesai" ? "text-gray-400 font-normal text-xs" : "text-green-700"}`}
+            >
+              {getCompletionTime("PACKING")}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const TrackView = ({ data }: { data: any }) => (
   <div className="space-y-3 relative border-l-2 border-blue-100 ml-3 pl-4">
