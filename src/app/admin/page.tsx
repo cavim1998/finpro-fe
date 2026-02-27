@@ -11,7 +11,6 @@ import OrderDetailModal from "@/components/admin/modal/OrderDetailModal";
 import { useAdminDashboardLogic } from "./hooks/useAdminDashboardLogic";
 
 export default function AdminDashboardPage() {
-  // Panggil Logic Hook
   const { auth, navigation, filters, data, handlers, modals, modalHandlers } =
     useAdminDashboardLogic();
 
@@ -53,13 +52,11 @@ export default function AdminDashboardPage() {
                 : "Pickup Requests"
             }
             isPickupTab={navigation.activeTab === "PICKUP"}
-            // Data Props
             data={data.list}
             loading={data.loading}
             totalData={data.total}
             roleCode={auth.roleCode}
             outlets={data.outlets}
-            // Filter Props
             page={filters.page}
             onPageChange={filters.setPage}
             limit={10}
@@ -69,12 +66,10 @@ export default function AdminDashboardPage() {
             onOutletChange={filters.setOutletId}
             status={filters.currentStatus}
             onStatusChange={handlers.onStatusChange}
-            // Sort Props
             sortBy={filters.sortBy}
             onSortByChange={handlers.onSortByChange}
             sortOrder={filters.sortOrder}
             onSortOrderChange={filters.setSortOrder}
-            // Custom Logic Props
             onCreateOrder={
               navigation.activeTab === "PICKUP"
                 ? modalHandlers.openCreateOrder
@@ -95,7 +90,6 @@ export default function AdminDashboardPage() {
             roleCode={auth.roleCode}
             onRefresh={data.refresh}
             outlets={data.outlets}
-            // Filters
             page={filters.page}
             limit={10}
             onPageChange={filters.setPage}
@@ -119,7 +113,6 @@ export default function AdminDashboardPage() {
           auth.roleCode === "SUPER_ADMIN" && <MasterDataSection />}
       </main>
 
-      {/* --- MODALS --- */}
       <CreateOrderModal
         isOpen={modals.createOrder}
         onClose={modalHandlers.closeCreateOrder}

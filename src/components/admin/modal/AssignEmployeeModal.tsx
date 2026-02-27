@@ -14,7 +14,6 @@ interface AssignEmployeeModalProps {
 export default function AssignEmployeeModal(props: AssignEmployeeModalProps) {
   const { isOpen, onClose, initialData } = props;
 
-  // Panggil Logic dari Hook
   const { form, onSubmit, isEditMode, isPending, data, uiState } =
     useAssignEmployeeForm(props);
   const {

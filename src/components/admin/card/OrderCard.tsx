@@ -1,17 +1,14 @@
 import { Order } from "@/types";
 import { FileText, MoreVertical, CreditCard } from "lucide-react";
 import React from "react";
-// Pastikan path import ini sesuai dengan lokasi helper currency Anda
 import { formatRupiah } from "@/lib/currency";
 
 interface OrderCardProps {
-  // Kita extend tipe Order karena properti isPaid & itemCount adalah tambahan dari backend
   order: Order & { isPaid?: boolean; itemCount?: number };
   onViewDetail?: (id: string) => void;
 }
 
 const OrderCard: React.FC<OrderCardProps> = ({ order, onViewDetail }) => {
-  // Helper warna status order
   const getStatusColor = (status: string) => {
     switch (status) {
       case "COMPLETED":
