@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Edit,
-  Trash2,
-  Plus,
-  UserCircle,
-  MapPin,
-  Clock,
-  Shield,
-} from "lucide-react";
+import { Edit, Trash2, Plus, UserCircle, MapPin, Shield } from "lucide-react";
 import { Employee } from "@/types/employee";
 
 interface UsersTableProps {

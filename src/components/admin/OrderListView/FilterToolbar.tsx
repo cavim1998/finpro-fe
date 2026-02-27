@@ -17,6 +17,8 @@ interface ToolbarProps extends Pick<
   outlets?: any[];
   search: string;
   onSearchChange: (val: string) => void;
+  isOrderCreated?: string;
+  onIsOrderCreatedChange?: (val: string) => void;
 }
 
 export const FilterToolbar = ({
@@ -33,6 +35,8 @@ export const FilterToolbar = ({
   outlets = [],
   search,
   onSearchChange,
+  isOrderCreated,
+  onIsOrderCreatedChange,
 }: ToolbarProps) => {
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center">
@@ -84,6 +88,18 @@ export const FilterToolbar = ({
                 <option value="CANCELED">Batal</option>
               </>
             )}
+          </select>
+        )}
+
+        {isPickupTab && onIsOrderCreatedChange && (
+          <select
+            value={isOrderCreated || ""}
+            onChange={(e) => onIsOrderCreatedChange(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 outline-none bg-white cursor-pointer w-full sm:w-auto"
+          >
+            <option value="">Semua Proses</option>
+            <option value="false">Belum Diproses (Perlu Order)</option>
+            <option value="true">Sudah Diproses (Ada Order)</option>
           </select>
         )}
 

@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Menu,
-  AlertTriangle,
   LayoutDashboard,
   Truck,
   ShoppingBag,
@@ -67,7 +66,6 @@ const Navbar: React.FC<NavbarProps> = ({
     await signOut({ callbackUrl: "/signin" });
   };
 
-  // Generate avatar from name
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -159,7 +157,11 @@ const Navbar: React.FC<NavbarProps> = ({
                     />
                   ) : (
                     <span className="text-sm">
-                      {getInitials(userData?.name || roleCode === "SUPER_ADMIN" ? "SA" : "OA")}
+                      {getInitials(
+                        userData?.name || roleCode === "SUPER_ADMIN"
+                          ? "SA"
+                          : "OA",
+                      )}
                     </span>
                   )}
                 </button>

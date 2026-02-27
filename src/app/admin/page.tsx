@@ -1,7 +1,5 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Navbar from "@/components/admin/Navbar";
 import DashboardView from "@/components/admin/DashboardView";
 import { OrderListView } from "@/components/admin/OrderListView";
@@ -10,99 +8,13 @@ import MasterDataSection from "@/components/admin/MasterDataSection";
 import CreateOrderModal from "@/components/admin/modal/CreateOrderModal";
 import BypassListView from "@/components/admin/BypassListView";
 import OrderDetailModal from "@/components/admin/modal/OrderDetailModal";
-import { useAdminAuth } from "./hooks/useAdminAuth";
-import { useOrderData } from "./hooks/useOrderData";
-import { useDashboardStats } from "@/components/admin/dashboard/useDashboardStats";
-import { useOutlets } from "@/hooks/api/useOutlet";
-import { useQueryFilters } from "@/hooks/use-query-filters";
-
-type TabType =
-  | "DASHBOARD"
-  | "ORDERS"
-  | "PICKUP"
-  | "BYPASS"
-  | "REPORT"
-  | "MASTER";
+import { useAdminDashboardLogic } from "./hooks/useAdminDashboardLogic";
 
 export default function AdminDashboardPage() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const { roleCode, userOutletId, isAuthLoading } = useAdminAuth();
-  const rawTab = searchParams.get("tab")?.toUpperCase();
-  const validTabs: TabType[] = [
-    "DASHBOARD",
-    "ORDERS",
-    "PICKUP",
-    "BYPASS",
-    "REPORT",
-    "MASTER",
-  ];
-  const activeTab = validTabs.includes(rawTab as TabType)
-    ? (rawTab as TabType)
-    : "DASHBOARD";
+  const { auth, navigation, filters, data, handlers, modals, modalHandlers } =
+    useAdminDashboardLogic();
 
-  const handleTabChange = useCallback(
-    (newTab: TabType) => {
-      const params = new URLSearchParams();
-      params.set("tab", newTab);
-      if (newTab === "MASTER") {
-        params.set("view", "USERS");
-      }
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    },
-    [pathname, router],
-  );
-
-  const filterPrefix = activeTab === "PICKUP" ? "pickup" : "order";
-  const filters = useQueryFilters(filterPrefix);
-  const statusParamKey = `${filterPrefix}Status`;
-  const currentStatus = searchParams.get(statusParamKey) || "";
-
-  const handleStatusChange = (val: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (val) {
-      params.set(statusParamKey, val);
-    } else {
-      params.delete(statusParamKey);
-    }
-    params.set(`${filterPrefix}Page`, "1");
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
-  const { data: outletsResponse } = useOutlets();
-  const { dataList, loading, totalData, refreshData } = useOrderData({
-    activeTab,
-    roleCode,
-    userOutletId,
-    page: filters.page,
-    limit: 10,
-    search: filters.search,
-    outletId: filters.outletId,
-    sortBy:
-      activeTab === "ORDERS" || activeTab === "PICKUP" || activeTab === "BYPASS"
-        ? filters.sortBy === "name"
-          ? activeTab === "BYPASS"
-            ? "requestedAt"
-            : "createdAt"
-          : filters.sortBy
-        : filters.sortBy,
-    sortOrder: filters.sortOrder,
-    status: currentStatus,
-  });
-
-  const dashboardStats = useDashboardStats(roleCode, filters.outletId);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedPickupId, setSelectedPickupId] = useState<string | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-
-  const handleViewDetail = (id: string) => {
-    setSelectedOrderId(id);
-    setShowDetailModal(true);
-  };
-
-  if (isAuthLoading) {
+  if (auth.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         Memuat data pengguna...
@@ -110,38 +22,41 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!roleCode) return null;
+  if (!auth.roleCode) return null;
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] pt-16 font-sans">
       <Navbar
-        activeTab={activeTab}
-        setActiveTab={(tab) => handleTabChange(tab as TabType)}
-        roleCode={roleCode}
+        activeTab={navigation.activeTab}
+        setActiveTab={navigation.handleTabChange}
+        roleCode={auth.roleCode}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === "DASHBOARD" && (
+        {navigation.activeTab === "DASHBOARD" && (
           <DashboardView
-            roleCode={roleCode}
-            onNavigate={(tab) => handleTabChange(tab as TabType)}
-            onProcessPickup={() => handleTabChange("PICKUP")}
-            onProcessBypass={() => handleTabChange("BYPASS")}
-            stats={dashboardStats}
+            roleCode={auth.roleCode}
+            onNavigate={navigation.handleTabChange}
+            onProcessPickup={() => navigation.handleTabChange("PICKUP")}
+            onProcessBypass={() => navigation.handleTabChange("BYPASS")}
+            stats={data.stats}
           />
         )}
 
-        {(activeTab === "ORDERS" || activeTab === "PICKUP") && (
+        {(navigation.activeTab === "ORDERS" ||
+          navigation.activeTab === "PICKUP") && (
           <OrderListView
             title={
-              activeTab === "ORDERS" ? "Order Management" : "Pickup Requests"
+              navigation.activeTab === "ORDERS"
+                ? "Order Management"
+                : "Pickup Requests"
             }
-            isPickupTab={activeTab === "PICKUP"}
-            data={dataList}
-            loading={loading}
-            totalData={totalData}
-            roleCode={roleCode}
-            outlets={outletsResponse?.data || []}
+            isPickupTab={navigation.activeTab === "PICKUP"}
+            data={data.list}
+            loading={data.loading}
+            totalData={data.total}
+            roleCode={auth.roleCode}
+            outlets={data.outlets}
             page={filters.page}
             onPageChange={filters.setPage}
             limit={10}
@@ -149,76 +64,69 @@ export default function AdminDashboardPage() {
             onSearchChange={filters.setSearch}
             outletId={filters.outletId}
             onOutletChange={filters.setOutletId}
-            status={currentStatus}
-            onStatusChange={handleStatusChange}
+            status={filters.currentStatus}
+            onStatusChange={handlers.onStatusChange}
             sortBy={filters.sortBy}
-            onSortByChange={(val) => {
-              const params = new URLSearchParams(searchParams.toString());
-              params.set(`${filterPrefix}SortBy`, val);
-              params.set(`${filterPrefix}Page`, "1");
-              router.replace(`${pathname}?${params.toString()}`, {
-                scroll: false,
-              });
-            }}
+            onSortByChange={handlers.onSortByChange}
             sortOrder={filters.sortOrder}
             onSortOrderChange={filters.setSortOrder}
             onCreateOrder={
-              activeTab === "PICKUP"
-                ? (id) => {
-                    setSelectedPickupId(id);
-                    setShowCreateModal(true);
-                  }
+              navigation.activeTab === "PICKUP"
+                ? modalHandlers.openCreateOrder
                 : undefined
             }
-            onRefresh={refreshData}
-            onViewDetail={handleViewDetail}
+            onRefresh={data.refresh}
+            onViewDetail={modalHandlers.openDetailOrder}
+            isOrderCreated={filters.currentIsOrderCreated}
+            onIsOrderCreatedChange={handlers.onIsOrderCreatedChange}
           />
         )}
 
-        {activeTab === "BYPASS" && (
+        {navigation.activeTab === "BYPASS" && (
           <BypassListView
-            data={dataList}
-            loading={loading}
+            data={data.list}
+            loading={data.loading}
+            totalData={data.total}
+            roleCode={auth.roleCode}
+            onRefresh={data.refresh}
+            outlets={data.outlets}
             page={filters.page}
             limit={10}
-            totalData={totalData}
             onPageChange={filters.setPage}
-            onRefresh={refreshData}
-            roleCode={roleCode}
             selectedOutletId={filters.outletId}
             onOutletChange={filters.setOutletId}
-            selectedStatus={currentStatus}
-            onStatusChange={handleStatusChange}
+            selectedStatus={filters.currentStatus}
+            onStatusChange={handlers.onStatusChange}
             search={filters.search}
             onSearchChange={filters.setSearch}
-            outlets={outletsResponse?.data || []}
           />
         )}
 
-        {activeTab === "REPORT" && (
-          <ReportSection roleCode={roleCode} userOutletId={userOutletId} />
+        {navigation.activeTab === "REPORT" && (
+          <ReportSection
+            roleCode={auth.roleCode}
+            userOutletId={auth.userOutletId}
+          />
         )}
 
-        {activeTab === "MASTER" && roleCode === "SUPER_ADMIN" && (
-          <MasterDataSection />
-        )}
+        {navigation.activeTab === "MASTER" &&
+          auth.roleCode === "SUPER_ADMIN" && <MasterDataSection />}
       </main>
 
-      {/* --- MODALS --- */}
       <CreateOrderModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        pickupId={selectedPickupId}
+        isOpen={modals.createOrder}
+        onClose={modalHandlers.closeCreateOrder}
+        pickupId={modals.selectedPickupId}
         onSuccess={() => {
-          refreshData();
-          handleTabChange("ORDERS");
+          data.refresh();
+          navigation.handleTabChange("ORDERS");
         }}
       />
 
       <OrderDetailModal
-        isOpen={showDetailModal}
-        onClose={() => setShowDetailModal(false)}
-        orderId={selectedOrderId}
+        isOpen={modals.detailOrder}
+        onClose={modalHandlers.closeDetailOrder}
+        orderId={modals.selectedOrderId}
       />
     </div>
   );

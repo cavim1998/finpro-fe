@@ -19,6 +19,8 @@ interface ExtendedOrderListViewProps extends OrderListViewProps {
   onSortByChange: (val: string) => void;
   sortOrder: "asc" | "desc";
   onSortOrderChange: (val: "asc" | "desc") => void;
+  isOrderCreated?: string;
+  onIsOrderCreatedChange?: (val: string) => void;
 }
 
 export const OrderListView = (props: ExtendedOrderListViewProps) => {
@@ -77,6 +79,8 @@ export const OrderListView = (props: ExtendedOrderListViewProps) => {
         onSortOrderChange={props.onSortOrderChange}
         search={localSearch}
         onSearchChange={setLocalSearch}
+        isOrderCreated={props.isOrderCreated}
+        onIsOrderCreatedChange={props.onIsOrderCreatedChange}
       />
 
       <div className="space-y-4 min-h-75">

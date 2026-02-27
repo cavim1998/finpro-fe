@@ -61,7 +61,6 @@ export const OutletsGrid = ({
                     <h4 className="font-bold text-gray-800 line-clamp-1">
                       {o.name}
                     </h4>
-                    {/* Badge Staff Count (jika ada data _count dari backend) */}
                     <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full w-fit mt-1">
                       <Users size={10} />
                       <span>{o._count?.staff || 0} Staff</span>

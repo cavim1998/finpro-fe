@@ -73,7 +73,7 @@ const CreateOrderModal: React.FC<CreateOrderModalProps> = ({
         pickupRequestId: pickupId,
         serviceType,
         totalWeightKg: parseFloat(weight),
-        deliveryFee: 0, //nanti bisa diisi berdasarkan ongkir
+        deliveryFee: 0,
         items: orderItems.map((item) => ({
           itemId: parseInt(item.itemId),
           qty: parseInt(item.qty),

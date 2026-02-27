@@ -40,7 +40,6 @@ export default function MasterDataSection() {
     }
   }, [currentView, state.subTab, actions]);
 
-  // 4. Handler Ganti Tab: Update URL
   const handleTabChange = (tab: string) => {
     const params = new URLSearchParams();
     params.set("tab", "MASTER");

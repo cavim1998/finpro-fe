@@ -30,7 +30,6 @@ export const ItemsGrid = ({
       </div>
 
       {data.length === 0 ? (
-        // --- EMPTY STATE ---
         <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
           <div className="bg-gray-100 p-4 rounded-full inline-block mb-3">
             <Shirt className="text-gray-400" size={32} />

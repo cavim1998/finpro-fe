@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Shirt, Loader2 } from "lucide-react";
@@ -57,7 +57,6 @@ export default function CreateItemModal({
     }
   }, [isOpen, initialData, reset]);
 
-  // Kita beri tipe manual di sini agar intellisense tetap jalan
   const onSubmit = (data: LaundryItemFormData) => {
     const options = {
       onSuccess: () => {
@@ -108,7 +107,7 @@ export default function CreateItemModal({
           <FormInput
             label="Nama Item"
             registration={register("name")}
-            error={errors.name?.message as string} // Casting string agar aman
+            error={errors.name?.message as string}
             placeholder="Contoh: Baju Kaos / Kemeja"
             disabled={isPending}
           />

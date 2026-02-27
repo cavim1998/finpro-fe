@@ -41,7 +41,7 @@ export const PickupListItem = ({ item, onCreateOrder }: PickupItemProps) => {
         <div className="flex-1 w-full">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded font-mono border border-gray-200">
-              #{item.id.substring(0, 8)}
+              #{item.id.toString().substring(0, 8)}
             </span>
             <span
               className={`text-xs font-bold px-2 py-1 rounded border capitalize ${getStatusBadgeStyle(item.status)}`}
@@ -80,7 +80,7 @@ export const PickupListItem = ({ item, onCreateOrder }: PickupItemProps) => {
         <div className="w-full lg:w-auto">
           <button
             onClick={() => onCreateOrder && onCreateOrder(item.id)}
-            disabled={item.status === "COMPLETED" || item.status === "CANCELED"}
+            disabled={item.status !== "ARRIVED_OUTLET" || !!item.order}
             className="w-full lg:w-auto text-white bg-[#17A2B8] font-bold text-sm px-6 py-3 rounded-lg hover:bg-[#138496] shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {item.status === "COMPLETED" ? "Sudah Diproses" : "Process Pickup"}
