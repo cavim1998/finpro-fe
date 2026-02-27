@@ -107,17 +107,52 @@ const DetailView = ({ data }: { data: any }) => {
 };
 
 const TrackView = ({ data }: { data: any }) => (
-  <div className="space-y-3 relative border-l-2 border-blue-100 ml-3 pl-4">
+  <div className="space-y-4 relative border-l-2 border-blue-200 ml-3 pl-5 py-2">
     {data.stations?.map((st: any, idx: number) => (
       <div key={idx} className="relative">
-        <div className="absolute -left-5.75 top-1 w-3 h-3 bg-blue-500 rounded-full"></div>
+        <div
+          className={`absolute -left-[27px] top-1 w-4 h-4 rounded-full border-2 border-white ${
+            st.status === "COMPLETED"
+              ? "bg-green-500"
+              : st.status === "IN_PROGRESS"
+                ? "bg-blue-500 animate-pulse"
+                : "bg-gray-300"
+          }`}
+        ></div>
+
         <p className="text-sm font-bold text-gray-800">{st.stationType}</p>
-        <p className="text-xs text-gray-500">Status: {st.status}</p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs font-medium text-gray-500 mb-1">
+          Status:{" "}
+          <span
+            className={
+              st.status === "COMPLETED" ? "text-green-600" : "text-blue-600"
+            }
+          >
+            {st.status}
+          </span>
+        </p>
+        <p className="text-xs text-gray-500">
           Pekerja: {st.worker?.profile?.fullName || "Belum diassign"}
         </p>
+
+        {st.completedAt && (
+          <p className="text-xs text-gray-500 mt-1">
+            Selesai:{" "}
+            <span className="font-medium text-gray-700">
+              {new Date(st.completedAt).toLocaleString("id-ID", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </p>
+        )}
       </div>
     ))}
+    {(!data.stations || data.stations.length === 0) && (
+      <p className="text-sm text-gray-400">Belum ada data tracking stasiun.</p>
+    )}
   </div>
 );
 
