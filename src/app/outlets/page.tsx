@@ -9,6 +9,7 @@ import { axiosInstance } from '@/lib/axios';
 import { OutletListTypes } from '@/types/outlet';
 import { FaMapMarkerAlt } from "react-icons/fa";
 import OutletsMap from '@/components/OutletsMap';
+import { Loader2 } from 'lucide-react';
 
 export default function OutletsPage() {
     const router = useRouter();
@@ -55,7 +56,7 @@ export default function OutletsPage() {
                 const response = await axiosInstance.get('/outlets?pageSize=100');
                 const data = response.data?.data ?? response.data;
                 const items = data?.items ?? data;
-                
+
                 if (Array.isArray(items)) {
                     const categories = items
                         .map((outlet: OutletListTypes) => outlet.locationCategory)
@@ -63,14 +64,14 @@ export default function OutletsPage() {
                             return value !== null && value !== undefined && value.trim().length > 0;
                         })
                         .map((value) => value.trim());
-                    
+
                     setAllCategories(Array.from(new Set(categories)));
                 }
             } catch (err) {
                 console.error('Failed to load categories:', err);
             }
         };
-        
+
         loadCategories();
     }, []);
 
@@ -117,16 +118,16 @@ export default function OutletsPage() {
             }
 
             console.log('[Outlets] Total items from backend:', allItems.length);
-            
+
             // Store all outlets
             setAllOutlets(allItems);
-            
+
             // Client-side pagination
             const startIndex = (page - 1) * pageSize;
             const endIndex = startIndex + pageSize;
             const paginatedItems = allItems.slice(startIndex, endIndex);
             const totalPages = Math.ceil(allItems.length / pageSize);
-            
+
             console.log('[Outlets] Client-side pagination:', {
                 totalItems: allItems.length,
                 page,
@@ -171,11 +172,11 @@ export default function OutletsPage() {
         // Reset page to 1 when filters change
         if (
             (newParams.search !== undefined &&
-            Object.prototype.hasOwnProperty.call(newParams, 'search')) ||
+                Object.prototype.hasOwnProperty.call(newParams, 'search')) ||
             (newParams.locationCategory !== undefined &&
-            Object.prototype.hasOwnProperty.call(newParams, 'locationCategory')) ||
+                Object.prototype.hasOwnProperty.call(newParams, 'locationCategory')) ||
             (newParams.pageSize !== undefined &&
-            Object.prototype.hasOwnProperty.call(newParams, 'pageSize'))
+                Object.prototype.hasOwnProperty.call(newParams, 'pageSize'))
         ) {
             nextParams.set('page', '1');
         }
@@ -221,9 +222,9 @@ export default function OutletsPage() {
 
             {/* Loading State */}
             {loading && (
-                <div className="container mx-auto px-4 py-24 text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1dacbc] mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                    <p className="text-gray-500">Loading...</p>
                 </div>
             )}
 
@@ -398,11 +399,10 @@ export default function OutletsPage() {
                                 <button
                                     key={p}
                                     onClick={() => handlePageChange(p)}
-                                    className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                                        page === p
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium ${page === p
                                             ? 'bg-[#1dacbc] text-white'
                                             : 'border border-gray-300 hover:bg-gray-50'
-                                    }`}
+                                        }`}
                                 >
                                     {p}
                                 </button>

@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { axiosInstance } from '@/lib/axios';
 import { formatRupiah } from '@/lib/currency';
-import { IoRefresh } from 'react-icons/io5';
+import { Loader2 } from 'lucide-react';
 
 declare global {
     interface Window {
@@ -176,7 +176,7 @@ export default function CheckStatusPage() {
                             ? pickupData.filter((p: any) => p.status === 'ARRIVED_OUTLET' && p.order?.id)
                             : [];
                         const orderIds = pickupsWithOrders.map((p: any) => p.order.id);
-                        
+
                         if (orderIds.length === 0) {
                             setOrders([]);
                         } else {
@@ -184,7 +184,7 @@ export default function CheckStatusPage() {
                             const orderResponses = await Promise.allSettled(
                                 orderIds.map(orderId => axiosInstance.get(`/orders/${orderId}`))
                             );
-                            
+
                             const ordersData: OrderListItem[] = [];
                             orderResponses.forEach((result) => {
                                 if (result.status === 'fulfilled') {
@@ -283,7 +283,7 @@ export default function CheckStatusPage() {
                 if (priorityDiff !== 0) return priorityDiff;
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             })
-            .slice(0, 5);
+            .slice(0, 3);
     };
 
     // Get top 5 most recent + active orders
@@ -294,7 +294,7 @@ export default function CheckStatusPage() {
                 if (priorityDiff !== 0) return priorityDiff;
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             })
-            .slice(0, 5);
+            .slice(0, 3);
     };
 
     // Calculate payment deadlines for each order
@@ -314,7 +314,7 @@ export default function CheckStatusPage() {
                         const hours = Math.floor(timeRemaining / (60 * 60 * 1000));
                         const minutes = Math.floor((timeRemaining % (60 * 60 * 1000)) / (60 * 1000));
                         const seconds = Math.floor((timeRemaining % (60 * 1000)) / 1000);
-                        
+
                         deadlinesMap[order.id] = {
                             deadline,
                             timeRemaining: `${hours}h ${minutes}m ${seconds}s`,
@@ -360,7 +360,7 @@ export default function CheckStatusPage() {
                     if (timeRemaining > 0) {
                         const hours = Math.floor(timeRemaining / (60 * 60 * 1000));
                         const minutes = Math.floor((timeRemaining % (60 * 60 * 1000)) / (60 * 1000));
-                        
+
                         deadlinesMap[order.id] = {
                             deadline,
                             timeRemaining: `${hours}h ${minutes}m`,
@@ -496,12 +496,12 @@ export default function CheckStatusPage() {
             const response = await axiosInstance.get('/pickup-requests');
             const payload = response?.data?.data ?? response?.data ?? [];
             const list = Array.isArray(payload) ? payload : [];
-            
+
             // Sort by createdAt descending (newest first)
             const sortedList = list.sort((a: PickupRequestListItem, b: PickupRequestListItem) => {
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             });
-            
+
             setPickupRequests(sortedList);
         } catch (error: any) {
             console.error('Failed to load pickup requests:', error);
@@ -652,9 +652,9 @@ export default function CheckStatusPage() {
                 status: 'RECEIVED_BY_CUSTOMER'
             });
             const responseData = response?.data?.data;
-            
+
             toast.success(response?.data?.message || 'Order received successfully');
-            
+
             // Reload orders to get updated status and receivedConfirmedAt
             refreshTrackedOrder();
         } catch (error: any) {
@@ -668,7 +668,7 @@ export default function CheckStatusPage() {
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
             <Navbar />
-            
+
             {/* Main Content */}
             <div className="grow">
                 {/* Hero Section */}
@@ -682,7 +682,7 @@ export default function CheckStatusPage() {
                 {/* Content */}
                 <div className="container mx-auto px-4 py-10">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        
+
                         {/* Sidebar - Track Order Card */}
                         <div className="lg:col-span-1">
                             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -700,12 +700,12 @@ export default function CheckStatusPage() {
                                         <label className="block text-gray-700 text-xs font-semibold mb-1">
                                             Search Order ID
                                         </label>
-                                            <input
+                                        <input
                                             type="text"
                                             value={orderNumber}
                                             onChange={(e) => setOrderNumber(e.target.value)}
                                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                                placeholder="Enter order ID"
+                                            placeholder="Enter order ID"
                                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
                                         />
                                     </div>
@@ -805,7 +805,6 @@ export default function CheckStatusPage() {
                                             className="text-lg text-[#1dacbc] hover:text-[#14939e] transition disabled:opacity-50"
                                             title="Refresh orders"
                                         >
-                                            <IoRefresh className={loadingOrders ? 'animate-spin' : ''} />
                                         </button>
                                     )}
                                 </div>
@@ -815,8 +814,9 @@ export default function CheckStatusPage() {
                                         <p className="text-gray-500 text-sm">Sign in to view your orders</p>
                                     </div>
                                 ) : (status === 'loading' || loadingOrders) ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-500 text-sm">Loading...</p>
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                                        <p className="text-gray-500">Loading your orders...</p>
                                     </div>
                                 ) : orders.length === 0 ? (
                                     <div className="text-center py-8">
@@ -874,47 +874,47 @@ export default function CheckStatusPage() {
                                                     {isPaidOrder(orderItem.isPaid ?? false) ? (
                                                         <div className="text-xs font-semibold px-3 py-1 rounded bg-green-100 text-green-700">
                                                             ✅ PAID
-                                                            </div>
-                                                        ) : canPayOrder(orderItem.status) && (
+                                                        </div>
+                                                    ) : canPayOrder(orderItem.status) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handlePayOrder(orderItem.id)}
+                                                            disabled={payingOrderId === orderItem.id}
+                                                            className="px-3 py-1 bg-[#1dacbc] text-white text-xs rounded-md font-semibold hover:bg-[#14939e] transition disabled:bg-gray-400 whitespace-nowrap"
+                                                        >
+                                                            {payingOrderId === orderItem.id ? 'Processing...' : 'Pay Here'}
+                                                        </button>
+                                                    )}
+                                                    {orderItem.status === 'DELIVERING_TO_CUSTOMER' && (
+                                                        <>
+                                                            {confirmationDeadlines[orderItem.id] && (
+                                                                <div className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700">
+                                                                    🕐 Auto-confirm in {confirmationDeadlines[orderItem.id].timeRemaining}
+                                                                </div>
+                                                            )}
                                                             <button
                                                                 type="button"
-                                                                onClick={() => handlePayOrder(orderItem.id)}
-                                                                disabled={payingOrderId === orderItem.id}
-                                                                className="px-3 py-1 bg-[#1dacbc] text-white text-xs rounded-md font-semibold hover:bg-[#14939e] transition disabled:bg-gray-400 whitespace-nowrap"
+                                                                onClick={() => handleConfirmReceipt(orderItem.id)}
+                                                                disabled={confirmingOrderId === orderItem.id}
+                                                                className="px-3 py-1 bg-green-600 text-white text-xs rounded-md font-semibold hover:bg-green-700 transition disabled:bg-gray-400 whitespace-nowrap"
                                                             >
-                                                                {payingOrderId === orderItem.id ? 'Processing...' : 'Pay Here'}
+                                                                {confirmingOrderId === orderItem.id ? 'Confirming...' : 'I Received It'}
                                                             </button>
-                                                        )}
-                                                        {orderItem.status === 'DELIVERING_TO_CUSTOMER' && (
-                                                            <>
-                                                                {confirmationDeadlines[orderItem.id] && (
-                                                                    <div className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-700">
-                                                                        🕐 Auto-confirm in {confirmationDeadlines[orderItem.id].timeRemaining}
-                                                                    </div>
-                                                                )}
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleConfirmReceipt(orderItem.id)}
-                                                                    disabled={confirmingOrderId === orderItem.id}
-                                                                    className="px-3 py-1 bg-green-600 text-white text-xs rounded-md font-semibold hover:bg-green-700 transition disabled:bg-gray-400 whitespace-nowrap"
-                                                                >
-                                                                    {confirmingOrderId === orderItem.id ? 'Confirming...' : 'I Received It'}
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                        </>
+                                                    )}
                                                 </div>
-                                            ))}
-                                            {orders.length > 5 && (
-                                                <a
-                                                    href="/check-status/history"
-                                                    className="w-full block px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-semibold text-center"
-                                                >
-                                                    See All Orders ({orders.length})
-                                                </a>
-                                            )}
-                                        </div>
-                                    )}
+                                            </div>
+                                        ))}
+                                        {orders.length > 5 && (
+                                            <a
+                                                href="/check-status/history"
+                                                className="w-full block px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-semibold text-center"
+                                            >
+                                                See All Orders ({orders.length})
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Pickup Requests Section */}
@@ -934,7 +934,6 @@ export default function CheckStatusPage() {
                                             className="text-lg text-[#1dacbc] hover:text-[#14939e] transition disabled:opacity-50"
                                             title="Refresh pickup requests"
                                         >
-                                            <IoRefresh className={loadingPickupRequests ? 'animate-spin' : ''} />
                                         </button>
                                     )}
                                 </div>
@@ -944,8 +943,9 @@ export default function CheckStatusPage() {
                                         <p className="text-gray-500 text-sm">Sign in to view your pickup requests</p>
                                     </div>
                                 ) : (status === 'loading' || loadingPickupRequests) ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-500 text-sm">Loading...</p>
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                                        <p className="text-gray-500">Loading your pickup requests...</p>
                                     </div>
                                 ) : pickupRequests.length === 0 ? (
                                     <div className="text-center py-8">

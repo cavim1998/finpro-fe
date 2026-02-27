@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useSession } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
 import UploadPhotoModal from '@/components/modals/UploadPhotoModal';
 import ChangeEmailModal from '@/components/modals/ChangeEmailModal';
 import ChangePasswordModal from '@/components/modals/ChangePasswordModal';
@@ -171,12 +172,6 @@ export default function ProfilePage() {
 
                 {/* Profile Content */}
                 <div className="container mx-auto px-4 py-12">
-                    {loading && (
-                        <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                            <p className="text-gray-600">Loading profile...</p>
-                        </div>
-                    )}
-
                     {!loading && profile && !profile.verified && (
                         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded">
                             <div className="flex">
@@ -198,23 +193,32 @@ export default function ProfilePage() {
                         <div className="md:col-span-1 space-y-4">
                             {/* Profile Card */}
                             <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                                {/* Profile Image Placeholder */}
-                                <div className="w-40 h-40 mx-auto bg-gray-300 rounded-full flex items-center justify-center mb-4 overflow-hidden">
-                                    {profile?.profileImage ? (
-                                        <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-gray-500">Image</span>
-                                    )}
-                                </div>
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">{profile?.name || 'User Name'}</h2>
-                                <p className="text-gray-500 mb-4">LaundryQ Member</p>
-                                <button
-                                    className="w-full bg-[#1dacbc] text-white py-2 px-4 rounded-lg hover:bg-[#14939e] transition mb-2"
-                                    onClick={() => setIsUploadOpen(true)}
-                                >
-                                    Edit Photo
-                                </button>
-                                <p className="text-xs text-gray-500 mt-2">Max 1MB • JPG, PNG, GIF</p>
+                                {loading ? (
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                                        <p className="text-gray-500">Loading profile...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Profile Image Placeholder */}
+                                        <div className="w-40 h-40 mx-auto bg-gray-300 rounded-full flex items-center justify-center mb-4 overflow-hidden">
+                                            {profile?.profileImage ? (
+                                                <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-gray-500">Image</span>
+                                            )}
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-gray-800 mb-2">{profile?.name || 'User Name'}</h2>
+                                        <p className="text-gray-500 mb-4">LaundryQ Member</p>
+                                        <button
+                                            className="w-full bg-[#1dacbc] text-white py-2 px-4 rounded-lg hover:bg-[#14939e] transition mb-2"
+                                            onClick={() => setIsUploadOpen(true)}
+                                        >
+                                            Edit Photo
+                                        </button>
+                                        <p className="text-xs text-gray-500 mt-2">Max 1MB • JPG, PNG, GIF</p>
+                                    </>
+                                )}
                             </div>
 
                             {/* Quick Links */}
@@ -237,96 +241,108 @@ export default function ProfilePage() {
                                     </h3>
                                     <button
                                         onClick={() => setIsEditPersonalDataOpen(true)}
-                                        className="bg-[#1dacbc] text-white py-2 px-4 rounded-lg font-semibold hover:bg-[#14939e] transition text-sm"
+                                        disabled={loading}
+                                        className="bg-[#1dacbc] text-white py-2 px-4 rounded-lg font-semibold hover:bg-[#14939e] transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Edit
                                     </button>
                                 </div>
 
                                 <div className="space-y-6">
-                                    {/* Full Name */}
-                                    <div>
-                                        <label className="block text-gray-600 text-sm font-semibold mb-1">Full Name</label>
-                                        <p className="text-gray-800 text-lg">{profile?.name || '—'}</p>
-                                    </div>
-
-                                    {/* Phone */}
-                                    <div>
-                                        <label className="block text-gray-600 text-sm font-semibold mb-1">Phone Number</label>
-                                        <p className="text-gray-800 text-lg">{profile?.phone || '—'}</p>
-                                    </div>
-
-                                    {/* Divider */}
-                                    <div className="border-t border-gray-200"></div>
-
-                                    {/* Email */}
-                                    <div>
-                                        <label className="block text-gray-600 text-sm font-semibold mb-1">Email Address</label>
-                                        <div className="flex gap-2 items-center">
-                                            <p className="text-gray-800 text-lg flex-1">{profile?.email || '—'}</p>
-                                            <button
-                                                className="px-4 py-2 border border-[#1dacbc] text-[#1dacbc] rounded-lg font-semibold hover:bg-gray-50 transition text-sm whitespace-nowrap"
-                                                onClick={() => setIsChangeEmailOpen(true)}
-                                            >
-                                                Change Email
-                                            </button>
+                                    {loading ? (
+                                        <div className="flex flex-col items-center justify-center py-12">
+                                            <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                                            <p className="text-gray-500">Loading profile...</p>
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Status:{' '}
-                                            {profile?.verified ? (
-                                                <span className="text-green-600 font-semibold">Verified</span>
-                                            ) : (
-                                                <span className="text-yellow-600 font-semibold">Unverified</span>
+                                    ) : (
+                                        <>
+                                            {/* Full Name */}
+                                            <div>
+                                                <label className="block text-gray-600 text-sm font-semibold mb-1">Full Name</label>
+                                                <p className="text-gray-800 text-lg">{profile?.name || '—'}</p>
+                                            </div>
+
+                                            {/* Phone */}
+                                            <div>
+                                                <label className="block text-gray-600 text-sm font-semibold mb-1">Phone Number</label>
+                                                <p className="text-gray-800 text-lg">{profile?.phone || '—'}</p>
+                                            </div>
+
+                                            {/* Divider */}
+                                            <div className="border-t border-gray-200"></div>
+
+                                            {/* Email */}
+                                            <div>
+                                                <label className="block text-gray-600 text-sm font-semibold mb-1">Email Address</label>
+                                                <div className="flex gap-2 items-center">
+                                                    <p className="text-gray-800 text-lg flex-1">{profile?.email || '—'}</p>
+                                                    <button
+                                                        disabled={loading}
+                                                        className="px-4 py-2 border border-[#1dacbc] text-[#1dacbc] rounded-lg font-semibold hover:bg-gray-50 transition text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        onClick={() => setIsChangeEmailOpen(true)}
+                                                    >
+                                                        Change Email
+                                                    </button>
+                                                </div>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Status:{' '}
+                                                    {profile?.verified ? (
+                                                        <span className="text-green-600 font-semibold">Verified</span>
+                                                    ) : (
+                                                        <span className="text-yellow-600 font-semibold">Unverified</span>
+                                                    )}
+                                                </p>
+                                            </div>
+
+                                            {/* Password - Hanya tampil jika bukan Google user */}
+                                            {profile?.provider !== 'google' && (
+                                                <div>
+                                                    <label className="block text-gray-600 text-sm font-semibold mb-1">Password</label>
+                                                    <div className="flex gap-2 items-center">
+                                                        <p className="text-gray-800 text-lg flex-1">••••••••</p>
+                                                        <button
+                                                            disabled={loading}
+                                                            className="px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-semibold hover:bg-[#14939e] transition text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            onClick={() => setIsChangePasswordOpen(true)}
+                                                        >
+                                                            Change Password
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             )}
-                                        </p>
-                                    </div>
 
-                                    {/* Password - Hanya tampil jika bukan Google user */}
-                                    {profile?.provider !== 'google' && (
-                                        <div>
-                                            <label className="block text-gray-600 text-sm font-semibold mb-1">Password</label>
-                                            <div className="flex gap-2 items-center">
-                                                <p className="text-gray-800 text-lg flex-1">••••••••</p>
-                                                <button
-                                                    className="px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-semibold hover:bg-[#14939e] transition text-sm whitespace-nowrap"
-                                                    onClick={() => setIsChangePasswordOpen(true)}
-                                                >
-                                                    Change Password
-                                                </button>
+                                            {/* Connected Accounts - Hanya tampil jika Google user */}
+                                            {profile?.provider === 'google' && (
+                                                <div>
+                                                    <label className="block text-gray-600 text-sm font-semibold mb-2">Connected Accounts</label>
+                                                    <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                                                        <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                                        </svg>
+                                                        <span className="text-gray-700 text-sm">Connected with Google</span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Divider */}
+                                            <div className="border-t border-gray-200"></div>
+
+                                            {/* Member Since */}
+                                            <div>
+                                                <label className="block text-gray-600 text-sm font-semibold mb-1">Member Since</label>
+                                                <p className="text-gray-800 text-lg">
+                                                    {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('id-ID', {
+                                                        year: 'numeric',
+                                                        month: 'long',
+                                                        day: 'numeric',
+                                                    }) : '—'}
+                                                </p>
                                             </div>
-                                        </div>
+                                        </>
                                     )}
-
-                                    {/* Connected Accounts - Hanya tampil jika Google user */}
-                                    {profile?.provider === 'google' && (
-                                        <div>
-                                            <label className="block text-gray-600 text-sm font-semibold mb-2">Connected Accounts</label>
-                                            <div className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
-                                                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                                                </svg>
-                                                <span className="text-gray-700 text-sm">Connected with Google</span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Divider */}
-                                    <div className="border-t border-gray-200"></div>
-
-                                    {/* Member Since */}
-                                    <div>
-                                        <label className="block text-gray-600 text-sm font-semibold mb-1">Member Since</label>
-                                        <p className="text-gray-800 text-lg">
-                                            {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('id-ID', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            }) : '—'}
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
 

@@ -12,6 +12,7 @@ import { OutletListTypes } from '@/types/outlet';
 import { Address } from '@/types/address';
 import { toast } from 'sonner';
 import { sortOutletsByDistance } from '@/lib/distance';
+import { Loader2 } from 'lucide-react';
 
 export default function ReservationPage() {
     const router = useRouter();
@@ -26,16 +27,15 @@ export default function ReservationPage() {
     const [showAllOutlets, setShowAllOutlets] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [dataloaded, setDataLoaded] = useState(false);
-    
+
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
         address: '',
         outletId: null as number | null,
-        pickupDate: '',
-        pickupTime: '',
         serviceType: 'regular',
-        specialInstructions: ''
+        specialInstructions: '',
+        scheduledPickupAt: ''
     });
 
     // Auth check
@@ -92,20 +92,20 @@ export default function ReservationPage() {
     const handleAddressSelect = (addressId: string) => {
         const addressIdNum = parseInt(addressId);
         setSelectedAddressId(addressIdNum);
-        
+
         const selected = addresses.find(addr => addr.id === addressIdNum);
         if (selected) {
             setFormData(prev => ({
                 ...prev,
                 address: `${selected.addressText}\n\nPenerima: ${selected.receiverName}\nTelepon: ${selected.receiverPhone}`
             }));
-            
+
             // Calculate distances to all outlets if address has coordinates
             if (selected.latitude && selected.longitude && outlets.length > 0) {
                 const sorted = sortOutletsByDistance(outlets, selected.latitude, selected.longitude);
                 setSortedOutlets(sorted as Array<OutletListTypes & { distance?: number }>);
                 setShowAllOutlets(false);
-                
+
                 // Auto-select the closest outlet
                 if (sorted.length > 0) {
                     handleOutletSelect(sorted[0].id);
@@ -129,19 +129,37 @@ export default function ReservationPage() {
         });
     };
 
-    const buildScheduledPickupAt = (pickupDate: string, pickupTime: string) => {
-        if (!pickupDate || !pickupTime) {
-            return null;
+    const formatDateTimeLocal = (date: Date) => {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+
+    const parseScheduledPickupLocal = (value: string) => {
+        if (!value) return null;
+        const [datePart, timePart] = value.split('T');
+        if (!datePart || !timePart) return null;
+
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hour, minute] = timePart.split(':').map(Number);
+        if ([year, month, day, hour, minute].some(Number.isNaN)) return null;
+
+        return new Date(year, month - 1, day, hour, minute, 0, 0);
+    };
+
+    const applyPresetTime = (hour: number) => {
+        const baseDate = formData.scheduledPickupAt ? new Date(formData.scheduledPickupAt) : new Date();
+        if (Number.isNaN(baseDate.getTime())) return;
+
+        baseDate.setHours(hour, 0, 0, 0);
+        const now = new Date();
+        if (baseDate <= now) {
+            baseDate.setDate(baseDate.getDate() + 1);
         }
-        const timeStart = pickupTime.split('-')[0]?.trim();
-        if (!timeStart) {
-            return null;
-        }
-        const localDateTime = new Date(`${pickupDate}T${timeStart}:00`);
-        if (Number.isNaN(localDateTime.getTime())) {
-            return null;
-        }
-        return localDateTime.toISOString();
+
+        setFormData(prev => ({
+            ...prev,
+            scheduledPickupAt: formatDateTimeLocal(baseDate),
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -150,9 +168,29 @@ export default function ReservationPage() {
             toast.error('Please select a pickup address');
             return;
         }
-        const scheduledPickupAt = buildScheduledPickupAt(formData.pickupDate, formData.pickupTime);
-        if (!scheduledPickupAt) {
+        
+        // Validate datetime-local input
+        if (!formData.scheduledPickupAt) {
             toast.error('Please select a valid pickup date and time');
+            return;
+        }
+
+        // Convert datetime-local to ISO timestamp
+        const scheduledPickupAt = new Date(formData.scheduledPickupAt).toISOString();
+        
+        // Validate: pickup time must be in the future
+        const now = new Date();
+        const pickupTime = new Date(formData.scheduledPickupAt);
+        if (pickupTime <= now) {
+            toast.error('Pickup time must be in the future');
+            return;
+        }
+
+        // Validate: working hours (8 AM - 6 PM)
+        const hour = pickupTime.getHours();
+        const minute = pickupTime.getMinutes();
+        if (hour < 8 || hour > 18 || (hour === 18 && minute > 0)) {
+            toast.error('Pickup time must be between 08:00 and 18:00');
             return;
         }
 
@@ -171,7 +209,7 @@ export default function ReservationPage() {
                 notes: notes || undefined,
             });
             toast.success('Pickup request created successfully');
-            
+
             // Redirect to check-status page after 1 second
             setTimeout(() => {
                 router.push('/check-status');
@@ -187,9 +225,9 @@ export default function ReservationPage() {
     if (loading || status === 'loading') {
         return (
             <div className="min-h-screen bg-[#f9f9f9] flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1dacbc] mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                    <p className="text-gray-500">Loading...</p>
                 </div>
             </div>
         );
@@ -256,7 +294,7 @@ export default function ReservationPage() {
                                         <FaMapMarkerAlt className="inline mr-2 text-[#1dacbc]" />
                                         Pickup Address *
                                     </label>
-                                    
+
                                     {/* Address Selector */}
                                     {addresses.length > 0 ? (
                                         <>
@@ -299,8 +337,8 @@ export default function ReservationPage() {
                                             <p className="text-sm text-yellow-700 mb-3">
                                                 Please add an address first in the profile page to continue with the order.
                                             </p>
-                                            <a 
-                                                href="/profile#addresses" 
+                                            <a
+                                                href="/profile#addresses"
                                                 className="inline-block px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-semibold hover:bg-[#14939e] transition text-sm"
                                             >
                                                 + Add Address
@@ -327,18 +365,18 @@ export default function ReservationPage() {
                                                     <div
                                                         key={outlet.id}
                                                         onClick={() => handleOutletSelect(outlet.id)}
-                                                        className={`p-4 border-2 rounded-lg transition cursor-pointer ${
-                                                            selectedOutletId === outlet.id
-                                                                ? 'border-[#1dacbc] bg-blue-50 shadow-md'
-                                                                : 'border-gray-300 hover:border-[#1dacbc] hover:shadow-md'
-                                                        }`}
+                                                        className={`p-4 border-2 rounded-lg transition cursor-pointer ${selectedOutletId === outlet.id
+                                                            ? 'border-[#1dacbc] bg-blue-50 shadow-md'
+                                                            : 'border-gray-300 hover:border-[#1dacbc] hover:shadow-md'
+                                                            }`}
                                                     >
                                                         <div className="font-semibold text-gray-800 mb-2">{outlet.name}</div>
-                                                        <div className="text-sm text-gray-600 mb-2">📍 {outlet.addressText}</div>
-                                                        <div className="text-sm text-gray-600 mb-2">📏 Radius: {outlet.serviceRadiusKm} km</div>
+                                                        <div className="text-sm text-gray-600 mb-2">🏠 {outlet.addressText}</div>
+                                                        <div className="text-sm text-gray-600 mb-2">🌆 {outlet.locationCategory}</div>
+                                                        <div className="text-sm text-gray-600 mb-2"></div>
                                                         {outlet.distance !== undefined && (
                                                             <div className="text-sm font-semibold text-[#1dacbc] mb-2">
-                                                                📍 Distance: {outlet.distance} km
+                                                                📏 Distance: {outlet.distance} km
                                                             </div>
                                                         )}
                                                         {outlet.staffCount !== undefined && (
@@ -346,7 +384,7 @@ export default function ReservationPage() {
                                                         )}
                                                         {selectedOutletId === outlet.id && (
                                                             <div className="mt-3 text-sm font-semibold text-[#1dacbc]">
-                                                                ✓ Terpilih
+                                                                ✔️ Terpilih
                                                             </div>
                                                         )}
                                                     </div>
@@ -379,45 +417,98 @@ export default function ReservationPage() {
                                 <h2 className="text-2xl font-bold text-[#1dacbc] mb-6">
                                     Pickup Schedule
                                 </h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label htmlFor="pickupDate" className="block text-sm font-medium text-gray-700 mb-2">
-                                            <FaCalendarAlt className="inline mr-2 text-[#1dacbc]" />
-                                            Pickup Date *
-                                        </label>
-                                        <input
-                                            type="date"
-                                            id="pickupDate"
-                                            name="pickupDate"
-                                            value={formData.pickupDate}
-                                            onChange={handleChange}
-                                            required
-                                            min={new Date().toISOString().split('T')[0]}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="pickupTime" className="block text-sm font-medium text-gray-700 mb-2">
-                                            <FaClock className="inline mr-2 text-[#1dacbc]" />
-                                            Pickup Time *
-                                        </label>
-                                        <select
-                                            id="pickupTime"
-                                            name="pickupTime"
-                                            value={formData.pickupTime}
-                                            onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
-                                        >
-                                            <option value="">Select time</option>
-                                            <option value="08:00-10:00">08:00 - 10:00</option>
-                                            <option value="10:00-12:00">10:00 - 12:00</option>
-                                            <option value="12:00-14:00">12:00 - 14:00</option>
-                                            <option value="14:00-16:00">14:00 - 16:00</option>
-                                            <option value="16:00-18:00">16:00 - 18:00</option>
-                                        </select>
+                                
+                                {/* Quick Preset Buttons */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                                        Quick Select (Available: 08:00 - 18:00)
+                                    </label>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {[8, 10, 12, 14, 16, 18].map((hour) => {
+                                            const selectedDate = formData.scheduledPickupAt ? new Date(formData.scheduledPickupAt) : null;
+                                            const isSelected = !!selectedDate && selectedDate.getHours() === hour && selectedDate.getMinutes() === 0;
+
+                                            return (
+                                                <button
+                                                    key={hour}
+                                                    type="button"
+                                                    onClick={() => applyPresetTime(hour)}
+                                                    className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                                                        isSelected
+                                                            ? 'border-[#1dacbc] bg-[#1dacbc] text-white'
+                                                            : 'border-gray-300 hover:border-[#1dacbc] hover:bg-blue-50'
+                                                    }`}
+                                                >
+                                                    {`${String(hour).padStart(2, '0')}:00`}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
+
+                                {/* Custom DateTime Picker */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        <FaCalendarAlt className="inline mr-2 text-[#1dacbc]" />
+                                        Or Choose Custom Date & Time *
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        name="scheduledPickupAt"
+                                        value={formData.scheduledPickupAt}
+                                        onChange={(e) => {
+                                            const selectedTime = new Date(e.target.value);
+                                            const hour = selectedTime.getHours();
+                                            const minute = selectedTime.getMinutes();
+                                            
+                                            // Validate working hours (8 AM - 6 PM)
+                                            if (hour < 8 || hour > 18 || (hour === 18 && minute > 0)) {
+                                                toast.error('Please select a time between 08:00 and 18:00');
+                                                return;
+                                            }
+                                            
+                                            setFormData(prev => ({ ...prev, scheduledPickupAt: e.target.value }));
+                                        }}
+                                        required
+                                        min={formatDateTimeLocal(new Date())}
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-[#1dacbc]"
+                                    />
+                                    <p className="mt-2 text-xs text-gray-500">💡 Working hours: 08:00 - 18:00 daily</p>
+                                </div>
+
+                                {/* Preview Selected Time */}
+                                {(() => {
+                                    const previewDate = parseScheduledPickupLocal(formData.scheduledPickupAt);
+                                    if (!previewDate) return null;
+
+                                    return (
+                                        <div className="mt-4 rounded-xl border border-[#1dacbc]/30 bg-[#e8f8fa] p-4">
+                                            <p className="text-sm font-semibold text-[#0f6f78] mb-3">Scheduled Pickup</p>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                                    <span>📅</span>
+                                                    <span className="font-medium">
+                                                        {previewDate.toLocaleDateString('id-ID', {
+                                                            weekday: 'long',
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric',
+                                                        })}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                                    <span>🕐</span>
+                                                    <span className="font-medium">
+                                                        {previewDate.toLocaleTimeString('id-ID', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                        })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             {/* Service Details */}

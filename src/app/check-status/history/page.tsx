@@ -10,6 +10,9 @@ import Footer from '@/components/Footer';
 import { axiosInstance } from '@/lib/axios';
 import { formatRupiah } from '@/lib/currency';
 import { IoRefresh, IoCaretDown } from 'react-icons/io5';
+import { Loader2 } from 'lucide-react';
+import { FaCircleChevronLeft } from 'react-icons/fa6';
+import Link from 'next/link';
 
 interface PickupRequestListItem {
     id: string;
@@ -270,7 +273,7 @@ export default function CheckStatusHistoryPage() {
     // Merge pages and sort by createdAt descending (newest first)
     const pickupRequests = (pickupData?.pages.flatMap((page) => page.data) ?? [])
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
+
     const orders = (ordersData?.pages.flatMap((page) => page.data) ?? [])
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -288,13 +291,16 @@ export default function CheckStatusHistoryPage() {
                                 <h1 className="text-3xl md:text-4xl font-bold">Order & Pickup History</h1>
                                 <p className="text-teal-50 text-sm mt-1">View your complete order and pickup tracking history</p>
                             </div>
-                            <button
-                                onClick={() => router.back()}
-                                className="px-4 py-2 bg-white text-[#1dacbc] rounded-md font-semibold hover:bg-gray-100 transition"
-                            >
-                                ← Back
-                            </button>
                         </div>
+                    </div>
+                </div>
+
+                {/* Back Button */}
+                <div className="bg-white border-b">
+                    <div className="container mx-auto px-4 py-4">
+                        <Link href="/check-status" className="text-[#1dacbc] text-lg hover:underline flex items-center gap-2">
+                            <FaCircleChevronLeft /> Back to Check Status
+                        </Link>
                     </div>
                 </div>
 
@@ -352,21 +358,19 @@ export default function CheckStatusHistoryPage() {
                                 <div className="flex gap-4 border-b border-gray-200">
                                     <button
                                         onClick={() => setActiveTab('pickups')}
-                                        className={`px-4 py-3 font-semibold text-sm transition border-b-2 ${
-                                            activeTab === 'pickups'
-                                                ? 'text-[#1dacbc] border-[#1dacbc]'
-                                                : 'text-gray-600 border-transparent hover:text-gray-800'
-                                        }`}
+                                        className={`px-4 py-3 font-semibold text-sm transition border-b-2 ${activeTab === 'pickups'
+                                            ? 'text-[#1dacbc] border-[#1dacbc]'
+                                            : 'text-gray-600 border-transparent hover:text-gray-800'
+                                            }`}
                                     >
                                         📍 Pickup Requests {pickupData?.pages?.[0]?.meta?.total ? `(${pickupData.pages[0].meta.total})` : ''}
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('orders')}
-                                        className={`px-4 py-3 font-semibold text-sm transition border-b-2 ${
-                                            activeTab === 'orders'
-                                                ? 'text-[#1dacbc] border-[#1dacbc]'
-                                                : 'text-gray-600 border-transparent hover:text-gray-800'
-                                        }`}
+                                        className={`px-4 py-3 font-semibold text-sm transition border-b-2 ${activeTab === 'orders'
+                                            ? 'text-[#1dacbc] border-[#1dacbc]'
+                                            : 'text-gray-600 border-transparent hover:text-gray-800'
+                                            }`}
                                     >
                                         📦 Orders {ordersData?.pages?.[0]?.meta?.total ? `(${ordersData.pages[0].meta.total})` : ''}
                                     </button>
@@ -377,8 +381,9 @@ export default function CheckStatusHistoryPage() {
                             {activeTab === 'pickups' && (
                                 <div className="space-y-3">
                                     {(status === 'loading' || isLoadingPickups) ? (
-                                        <div className="text-center py-12">
-                                            <p className="text-gray-500">Loading pickup requests...</p>
+                                        <div className="flex flex-col items-center justify-center py-12">
+                                            <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                                            <p className="text-gray-500">Loading your pickup requests...</p>
                                         </div>
                                     ) : pickupRequests.length === 0 ? (
                                         <div className="text-center py-12">
@@ -435,8 +440,9 @@ export default function CheckStatusHistoryPage() {
                             {activeTab === 'orders' && (
                                 <div className="space-y-3">
                                     {(status === 'loading' || isLoadingOrders) ? (
-                                        <div className="text-center py-12">
-                                            <p className="text-gray-500">Loading orders...</p>
+                                        <div className="flex flex-col items-center justify-center py-12">
+                                            <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                                            <p className="text-gray-500">Loading your orders...</p>
                                         </div>
                                     ) : orders.length === 0 ? (
                                         <div className="text-center py-12">
