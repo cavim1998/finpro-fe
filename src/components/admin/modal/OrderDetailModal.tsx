@@ -111,7 +111,7 @@ const TrackView = ({ data }: { data: any }) => (
     {data.stations?.map((st: any, idx: number) => (
       <div key={idx} className="relative">
         <div
-          className={`absolute -left-[27px] top-1 w-4 h-4 rounded-full border-2 border-white ${
+          className={`absolute -left-6.75 top-1 w-4 h-4 rounded-full border-2 border-white ${
             st.status === "COMPLETED"
               ? "bg-green-500"
               : st.status === "IN_PROGRESS"
