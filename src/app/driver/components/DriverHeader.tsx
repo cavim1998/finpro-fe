@@ -2,6 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Bell, Clock3 } from "lucide-react";
 import * as React from "react";
 
@@ -17,6 +24,10 @@ type Props = {
 
   onClockOut: () => Promise<void>;
   clockOutLoading: boolean;
+  incomingCount?: number;
+  notificationOpen?: boolean;
+  onNotificationOpenChange?: (open: boolean) => void;
+  notificationContent?: React.ReactNode;
 };
 
 export default function DriverHeader({
@@ -27,6 +38,10 @@ export default function DriverHeader({
   sinceText,
   onClockOut,
   clockOutLoading,
+  incomingCount = 0,
+  notificationOpen = false,
+  onNotificationOpenChange,
+  notificationContent,
 }: Props) {
   const [openClockOut, setOpenClockOut] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
@@ -73,12 +88,23 @@ export default function DriverHeader({
           <h2 className="text-xl font-bold">Driver Station</h2>
         </div>
 
-        <Button variant="ghost" size="icon" className="rounded-full" aria-label="notifications">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative rounded-full bg-white text-[#1dacbc] hover:bg-[#1dacbc] hover:text-white"
+          aria-label="notifications"
+          onClick={() => onNotificationOpenChange?.(true)}
+        >
           <Bell className="h-5 w-5" />
+          {incomingCount > 0 ? (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+              {incomingCount > 99 ? "99+" : incomingCount}
+            </span>
+          ) : null}
         </Button>
       </div>
 
-      <Card className="p-4 rounded-2xl border bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/15 via-primary/5 to-transparent">
+      <Card className="p-4 rounded-2xl border bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-primary/15 via-primary/5 to-transparent">
         <CardContent className="p-0">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
@@ -118,6 +144,22 @@ export default function DriverHeader({
         loading={clockOutLoading}
         onConfirm={handleConfirmClockOut}
       />
+
+      <Dialog open={notificationOpen} onOpenChange={onNotificationOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Incoming Tasks</DialogTitle>
+            <DialogDescription>
+              {incomingCount > 0
+                ? `Ada ${incomingCount} task masuk untuk driver.`
+                : "Belum ada task masuk saat ini."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {notificationContent}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

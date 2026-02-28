@@ -1,24 +1,7 @@
 "use client";
 
-import RequireCheckInRQ from "@/components/guards/RequireCheckIn";
-import NavbarWorker from "@/components/Navbarworker";
-import { BottomNav } from "@/components/BottomNav";
-import WorkerCompletedOrders from "@/components/worker/WorkerCompletedOrders";
+import WorkerOrdersRedirect from "@/components/worker/WorkerOrdersRedirect";
 
 export default function WorkerWashingOrderPage() {
-  return (
-    <RequireCheckInRQ
-      roles={["WORKER"]}
-      redirectTo="/attendance?next=/worker/washing/order"
-    >
-      <NavbarWorker />
-
-      <WorkerCompletedOrders
-        station="WASHING"
-        title="Completed Orders / Washing"
-        subtitle="Semua order yang pernah kamu selesaikan di Washing."
-      />
-      <BottomNav role="WORKER" workerHomePath="/worker/washing" />
-    </RequireCheckInRQ>
-  );
+  return <WorkerOrdersRedirect station="washing" />;
 }

@@ -40,7 +40,7 @@ export default function DriverTaskCard({ task, disabled }: Props) {
   const createdAt = formatDateTime((pickupRequest.createdAt as string | undefined) ?? undefined);
 
   return (
-    <div className="rounded-xl border p-3">
+    <div className="rounded-xl border p-3 transition-shadow hover:shadow-[0_12px_28px_rgba(249,115,22,0.12)]">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <p className="font-semibold text-base line-clamp-1">{customerName}</p>

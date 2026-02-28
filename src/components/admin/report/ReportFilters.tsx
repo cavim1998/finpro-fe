@@ -1,5 +1,27 @@
 import { Download, Loader2 } from "lucide-react";
 
+type ReportFilterType = "SALES" | "PERFORMANCE" | "ATTENDANCE";
+
+type OutletOption = {
+  id: number;
+  name: string;
+};
+
+type ReportFiltersProps = {
+  role: string | null;
+  type: ReportFilterType;
+  setType: (type: ReportFilterType) => void;
+  outId?: number;
+  setOut: (outletId?: number) => void;
+  sDate: string;
+  setSDate: (value: string) => void;
+  eDate: string;
+  setEDate: (value: string) => void;
+  outlets?: { data?: OutletOption[] };
+  onExport: () => void;
+  isExporting?: boolean;
+};
+
 export const ReportFilters = ({
   role,
   type,
@@ -13,7 +35,7 @@ export const ReportFilters = ({
   outlets,
   onExport,
   isExporting = false,
-}: any) => (
+}: ReportFiltersProps) => (
   <div className="bg-white p-4 rounded-xl shadow-sm border flex flex-col xl:flex-row justify-between gap-4">
     <div className="flex bg-gray-100 p-1 rounded-lg w-fit">
       <button
@@ -28,6 +50,12 @@ export const ReportFilters = ({
       >
         Employee Performance
       </button>
+      <button
+        onClick={() => setType("ATTENDANCE")}
+        className={`px-4 py-2 text-sm font-medium rounded-md ${type === "ATTENDANCE" ? "bg-white text-[#17A2B8] shadow-sm" : "text-gray-500"}`}
+      >
+        Attendance
+      </button>
     </div>
     <div className="flex flex-wrap gap-2 items-center">
       {role === "SUPER_ADMIN" && (
@@ -37,7 +65,7 @@ export const ReportFilters = ({
           className="border p-2 rounded-lg text-sm outline-none"
         >
           <option value="">Semua Outlet</option>
-          {outlets?.data.map((outlet: any) => (
+          {outlets?.data?.map((outlet) => (
             <option key={outlet.id} value={outlet.id}>
               {outlet.name}
             </option>

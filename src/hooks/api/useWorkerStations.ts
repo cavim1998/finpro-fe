@@ -82,12 +82,13 @@ async function getStationStats(stationType: StationType) {
 
 async function getStationOrders(params: {
   stationType: StationType;
+  outletId: number;
   scope: "incoming" | "my" | "completed";
   page?: number;
   limit?: number;
 }) {
-  const { stationType, scope, page = 1, limit = 10 } = params;
-  const res = await axiosInstance.get(`/worker/stations/${stationType}/orders`, {
+  const { stationType, outletId, scope, page = 1, limit = 10 } = params;
+  const res = await axiosInstance.get(`/worker/stations/${stationType}/orders/${outletId}`, {
     params: { scope, page, limit },
   });
   return res.data?.data as WorkerOrderListItem[];
@@ -145,18 +146,27 @@ export function useWorkerStationStatsQuery(
 export function useWorkerStationOrdersQuery(
   stationType: StationType,
   scope: "incoming" | "my" | "completed",
-  options?: { enabled?: boolean; page?: number; limit?: number }
+  options?: { enabled?: boolean; page?: number; limit?: number; outletId?: number }
 ) {
   return useQuery({
-    queryKey: ["worker", "station-orders", stationType, scope, options?.page ?? 1, options?.limit ?? 10],
+    queryKey: [
+      "worker",
+      "station-orders",
+      stationType,
+      options?.outletId ?? 0,
+      scope,
+      options?.page ?? 1,
+      options?.limit ?? 10,
+    ],
     queryFn: () =>
       getStationOrders({
         stationType,
+        outletId: options?.outletId ?? 0,
         scope,
         page: options?.page ?? 1,
         limit: options?.limit ?? 10,
       }),
-    enabled: options?.enabled ?? true,
+    enabled: (options?.enabled ?? true) && Number(options?.outletId) > 0,
     staleTime: 3_000,
   });
 }

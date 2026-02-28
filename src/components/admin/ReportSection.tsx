@@ -5,6 +5,7 @@ import { useReportData } from "./report/useReportData";
 import { ReportFilters } from "./report/ReportFilters";
 import { SalesView } from "./report/SalesView";
 import { PerformanceView } from "./report/PerformanceView";
+import { AttendanceView, mapAttendanceReportRow } from "./report/AttendanceView";
 import { RoleCode } from "@/types";
 import { useOutlets } from "@/hooks/api/useOutlet";
 import { toast } from "sonner";
@@ -12,11 +13,20 @@ import { useState } from "react";
 import {
   getSalesReport,
   getPerformanceReport,
+  getAttendanceReport,
 } from "@/services/report.service";
 
 interface ReportProps {
   roleCode: RoleCode | null;
   userOutletId?: number;
+}
+
+type ExportRow = Record<string, string | number>;
+
+function toObject(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
@@ -35,36 +45,75 @@ export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
         limit: 999999,
       };
 
-      let excelData: any[] = [];
+      let excelData: ExportRow[] = [];
       let fileName = "";
 
       if (hook.reportType === "SALES") {
         const res = await getSalesReport(params);
-        const orders = res?.data?.orders || [];
+        const payload = toObject(res?.data);
+        const orders: unknown[] = Array.isArray(payload.orders) ? payload.orders : [];
 
-        excelData = orders.map((o: any) => ({
-          "Nomor Order": o.orderNo,
-          "Nama Pelanggan": o.customerName,
-          "Nama Outlet": o.outletName,
-          "Tanggal Transaksi": new Date(o.createdAt).toLocaleString("id-ID"),
-          "Total Pendapatan (Rp)": Number(o.totalAmount),
-        }));
+        excelData = orders.map((order: unknown) => {
+          const o = toObject(order);
+          return {
+            "Nomor Order": String(o.orderNo ?? "-"),
+            "Nama Pelanggan": String(o.customerName ?? "-"),
+            "Nama Outlet": String(o.outletName ?? "-"),
+            "Tanggal Transaksi": new Date(String(o.createdAt ?? "")).toLocaleString("id-ID"),
+            "Total Pendapatan (Rp)": Number(o.totalAmount ?? 0),
+          };
+        });
 
         fileName = `Laporan_Penjualan_${hook.startDate || "Semua"}.xlsx`;
-      } else {
+      } else if (hook.reportType === "PERFORMANCE") {
         const res = await getPerformanceReport(params);
-        const employees = res?.data || [];
+        const employees: unknown[] = Array.isArray(res?.data) ? res.data : [];
 
-        excelData = employees.map((emp: any) => ({
-          "Nama Pegawai": emp.name,
-          Posisi: emp.role,
-          "Nama Outlet": emp.outletName,
-          "Tugas Cucian Diselesaikan": emp.stationJobsDone,
-          "Tugas Antar/Jemput": emp.deliveryJobsDone,
-          "Total Pekerjaan": emp.jobsDone,
-        }));
+        excelData = employees.map((employee: unknown) => {
+          const emp = toObject(employee);
+          return {
+            "Nama Pegawai": String(emp.name ?? "-"),
+            Posisi: String(emp.role ?? "-"),
+            "Nama Outlet": String(emp.outletName ?? "-"),
+            "Tugas Cucian Diselesaikan": Number(emp.stationJobsDone ?? 0),
+            "Tugas Antar/Jemput": Number(emp.deliveryJobsDone ?? 0),
+            "Total Pekerjaan": Number(emp.jobsDone ?? 0),
+          };
+        });
 
         fileName = `Laporan_Performa_Pegawai_${hook.startDate || "Semua"}.xlsx`;
+      } else {
+        const exportLimit = 100;
+        let exportPage = 1;
+        let totalPages = 1;
+        const items: unknown[] = [];
+
+        while (exportPage <= totalPages) {
+          const res = await getAttendanceReport({
+            page: exportPage,
+            limit: exportLimit,
+            startDate: hook.startDate,
+            endDate: hook.endDate,
+          });
+
+          const pageItems: unknown[] = Array.isArray(res?.data) ? res.data : [];
+          items.push(...pageItems);
+          totalPages = Number(res?.meta?.totalPages ?? exportPage);
+          exportPage += 1;
+        }
+
+        excelData = items.map((item: unknown) => {
+          const row = mapAttendanceReportRow(item);
+          return {
+            "Nama Pegawai": row.employeeName,
+            Posisi: row.position,
+            Outlet: row.outletName,
+            "Jumlah Clock In": row.totalClockIn,
+            "Jumlah Clock Out": row.totalClockOut,
+          };
+        });
+
+        fileName = `Laporan_Attendance_${hook.startDate || "Semua"}.xlsx`;
       }
 
       if (excelData.length === 0) {
@@ -112,6 +161,13 @@ export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
         <SalesView
           data={hook.data}
           meta={hook.meta}
+          onPageChange={hook.setPage}
+        />
+      ) : hook.reportType === "ATTENDANCE" ? (
+        <AttendanceView
+          data={hook.data}
+          meta={hook.meta}
+          loading={hook.loading}
           onPageChange={hook.setPage}
         />
       ) : (

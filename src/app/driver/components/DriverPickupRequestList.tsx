@@ -12,7 +12,6 @@ type Props = {
   isAllowed: boolean;
   pickupRequests: PickupLike[];
   dashboardParams: DriverDashboardParams;
-  hasActiveTask?: boolean;
   page: number;
   hasNextPage: boolean;
   loading?: boolean;
@@ -27,7 +26,6 @@ export default function DriverPickupRequestList({
   isAllowed,
   pickupRequests,
   dashboardParams,
-  hasActiveTask = false,
   page,
   hasNextPage,
   loading,
@@ -35,7 +33,7 @@ export default function DriverPickupRequestList({
   onNext,
   showViewAll = true,
   viewAllHref = "/driver/pickups",
-  title = "Pickup Requests",
+  title = "Incoming Task",
 }: Props) {
   const getPickupKey = (pickup: PickupLike, index: number) => {
     const id = pickup.id ?? pickup.pickupId ?? pickup.pickup_id ?? pickup.orderId ?? pickup.order_id;
@@ -44,13 +42,13 @@ export default function DriverPickupRequestList({
   };
 
   return (
-    <Card className="shadow-card">
+    <Card className="border-[#1DACBC]/30 shadow-card transition-shadow hover:shadow-[0_16px_36px_rgba(29,172,188,0.16)]">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-xl">{title}</CardTitle>
+        <CardTitle className="text-xl text-[#1DACBC]">{title}</CardTitle>
         {showViewAll ? (
           <Link
             href={viewAllHref}
-            className="text-l text-primary font-medium border p-1.5 rounded-xl"
+            className="rounded-xl border border-[#1DACBC]/30 p-1.5 text-l font-medium text-[#1DACBC] transition-colors hover:bg-[#1DACBC]/5"
           >
             View all
           </Link>
@@ -62,10 +60,6 @@ export default function DriverPickupRequestList({
           <p className="text-sm text-muted-foreground">
             Check-in dulu untuk melihat pickup request.
           </p>
-        ) : hasActiveTask ? (
-          <p className="text-sm text-amber-700">
-            Kamu masih punya task aktif. Selesaikan dulu sebelum claim pickup/delivery lain.
-          </p>
         ) : loading ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : pickupRequests.length > 0 ? (
@@ -76,7 +70,6 @@ export default function DriverPickupRequestList({
                 pickup={p}
                 dashboardParams={dashboardParams}
                 disabled={!isAllowed}
-                hasActiveTask={hasActiveTask}
               />
             ))}
           </div>
