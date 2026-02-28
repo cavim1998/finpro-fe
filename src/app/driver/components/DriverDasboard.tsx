@@ -6,6 +6,8 @@ import { useClockOutMutation } from "@/hooks/api/useAttendanceMutations";
 import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
 import { useProfileQuery } from "@/hooks/api/useProfile";
 import { useDriverDashboard } from "@/features/driver/useDriverDashboard";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 import DriverHeader from "./DriverHeader";
 import DriverLists from "./DriverLists";
@@ -25,6 +27,7 @@ function formatTime(d?: Date | string | null) {
 }
 
 export default function DriverDashboard() {
+  const router = useRouter();
   const profileQ = useProfileQuery();
   const attendanceQ = useAttendanceTodayQuery();
   const clockOutM = useClockOutMutation();
@@ -32,6 +35,7 @@ export default function DriverDashboard() {
   const pageSize = 5;
   const [taskPage, setTaskPage] = useState(1);
   const [pickupPage, setPickupPage] = useState(1);
+  const [notificationOpen, setNotificationOpen] = useState<boolean | null>(null);
 
   const dashboardQ = useDriverDashboard({ pageSize, taskPage, pickupPage });
 
@@ -72,7 +76,9 @@ export default function DriverDashboard() {
     (taskTotalPages > 0 && taskPage < taskTotalPages) || tasks.length === pageSize;
   const pickupHasNextPage =
     (pickupTotalPages > 0 && pickupPage < pickupTotalPages) || pickupRequests.length === pageSize;
-  const hasActiveTask = tasks.length > 0 || Number(stats.inProgress) > 0;
+
+  const resolvedNotificationOpen =
+    notificationOpen ?? (isAllowed && pickupRequests.length > 0);
 
   return (
     <div className="container mx-auto space-y-6 pb-24">
@@ -84,6 +90,50 @@ export default function DriverDashboard() {
         sinceText={sinceText}
         onClockOut={onClockOut}
         clockOutLoading={clockOutM.isPending}
+        incomingCount={Number(stats.incoming ?? 0)}
+        notificationOpen={resolvedNotificationOpen}
+        onNotificationOpenChange={setNotificationOpen}
+        notificationContent={
+          pickupRequests.length > 0 ? (
+            <div className="space-y-2">
+              {pickupRequests.slice(0, 5).map((item, index) => {
+                const record =
+                  typeof item === "object" && item !== null
+                    ? (item as Record<string, unknown>)
+                    : {};
+                const title = String(
+                  record.customerName ??
+                    (record.customer as { email?: string } | undefined)?.email ??
+                    `Task ${index + 1}`,
+                );
+                const id = String(record.id ?? record.pickupId ?? record.orderId ?? index);
+
+                return (
+                  <div key={id} className="rounded-xl border p-3 text-sm">
+                    <p className="font-semibold">{title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ID: {id}
+                    </p>
+                  </div>
+                );
+              })}
+              {Number.isFinite(Number(today?.outletId ?? 0)) && Number(today?.outletId ?? 0) > 0 ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setNotificationOpen(false);
+                    router.push(`/driver/pickups/${Number(today?.outletId)}`);
+                  }}
+                >
+                  Lihat Semua Incoming
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">Tidak ada task masuk.</div>
+          )
+        }
       />
 
       <div className="p-1 space-y-5 -mt-4 pr-4 pl-4">
@@ -97,7 +147,6 @@ export default function DriverDashboard() {
           isAllowed={isAllowed}
           myTasks={tasks}
           pickupRequests={pickupRequests}
-          hasActiveTask={hasActiveTask}
           dashboardParams={{ pageSize, taskPage, pickupPage }}
           onTaskPrev={() => setTaskPage((p) => Math.max(1, p - 1))}
           onTaskNext={() => setTaskPage((p) => p + 1)}

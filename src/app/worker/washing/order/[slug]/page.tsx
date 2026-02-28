@@ -170,22 +170,27 @@ export default function WorkerWashingOrderDetailPage() {
       roles={["WORKER"]}
       redirectTo={orderId ? `/attendance?next=/worker/washing/order/${orderId}` : "/attendance?next=/worker/washing"}
     >
-      <div className="border-b-1">
-        <NavbarWorker />
-      </div>
+      <div className="min-h-screen bg-[#F8F9FA]">
+        <div className="border-b-1">
+          <NavbarWorker />
+        </div>
 
-      <div className="container mx-auto px-4 py-6 pb-24 space-y-4">
-        <Button asChild variant="ghost" className="gap-2">
-          <Link href={backHref}>
-            <ArrowLeft className="h-4 w-4" /> Kembali
-          </Link>
-        </Button>
+        <div className="container mx-auto px-4 py-6 pb-24 space-y-4">
+          <Button
+            asChild
+            variant="ghost"
+            className="gap-2 text-[#1DACBC] hover:bg-[#1DACBC]/5 hover:text-[#138A96]"
+          >
+            <Link href={backHref}>
+              <ArrowLeft className="h-4 w-4" /> Kembali
+            </Link>
+          </Button>
 
-        <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-lg">Detail Order</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <Card className="rounded-2xl border border-[#1DACBC]/30 transition-shadow hover:shadow-[0_16px_36px_rgba(29,172,188,0.14)]">
+            <CardHeader>
+              <CardTitle className="text-lg text-[#1DACBC]">Detail Order</CardTitle>
+            </CardHeader>
+            <CardContent>
             {orderQ.isLoading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Loading detail order...
@@ -194,8 +199,8 @@ export default function WorkerWashingOrderDetailPage() {
               <div className="text-sm text-destructive">Gagal memuat detail order.</div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-xl border p-4">
-                  <div className="text-lg font-semibold">#{orderLabel}</div>
+                <div className="rounded-xl border border-[#1DACBC]/20 p-4">
+                  <div className="text-lg font-semibold text-[#138A96]">#{orderLabel}</div>
                   <div className="text-sm text-muted-foreground mt-1">{customerName}</div>
 
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -214,8 +219,8 @@ export default function WorkerWashingOrderDetailPage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border p-4">
-                  <div className="font-semibold mb-2">Hitung Ulang Item</div>
+                <div className="rounded-xl border border-[#1DACBC]/20 p-4">
+                  <div className="mb-2 font-semibold text-[#138A96]">Hitung Ulang Item</div>
                   {isReadOnly ? (
                     <div className="mb-3 text-sm text-muted-foreground">
                       Mode detail read-only. Aksi perubahan dinonaktifkan.
@@ -234,7 +239,7 @@ export default function WorkerWashingOrderDetailPage() {
                         return (
                           <div
                             key={`${it.itemId}-${it.name}`}
-                            className="rounded-lg border px-3 py-2 text-sm"
+                            className="rounded-lg border border-[#1DACBC]/15 px-3 py-2 text-sm transition-shadow hover:shadow-[0_12px_28px_rgba(29,172,188,0.1)]"
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0">
@@ -249,6 +254,7 @@ export default function WorkerWashingOrderDetailPage() {
                                   type="button"
                                   variant="outline"
                                   size="icon-sm"
+                                  className="border-[#1DACBC]/30 text-[#1DACBC] hover:bg-[#1DACBC]/5"
                                   onClick={() => setQty(it.itemId, it.actualQty - 1)}
                                   disabled={isReadOnly || actionLoading || it.actualQty <= 0}
                                 >
@@ -261,6 +267,7 @@ export default function WorkerWashingOrderDetailPage() {
                                   type="button"
                                   variant="outline"
                                   size="icon-sm"
+                                  className="border-[#1DACBC]/30 text-[#1DACBC] hover:bg-[#1DACBC]/5"
                                   onClick={() => setQty(it.itemId, it.actualQty + 1)}
                                   disabled={isReadOnly || actionLoading}
                                 >
@@ -286,9 +293,10 @@ export default function WorkerWashingOrderDetailPage() {
                 </div>
 
                 {!isReadOnly && !isMatched ? (
-                  <div className="rounded-xl border p-4 space-y-2">
-                    <div className="text-sm font-medium">Alasan Request ke Outlet Admin</div>
+                  <div className="space-y-2 rounded-xl border border-[#1DACBC]/20 p-4">
+                    <div className="text-sm font-medium text-[#138A96]">Alasan Request ke Outlet Admin</div>
                     <Textarea
+                      className="border-[#1DACBC]/20 focus-visible:ring-[#1DACBC]/30"
                       placeholder="Contoh: ada pakaian rusak / item tidak ditemukan / qty berbeda"
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
@@ -299,7 +307,7 @@ export default function WorkerWashingOrderDetailPage() {
 
                 {!isReadOnly ? (
                   <Button
-                    className="w-full rounded-xl"
+                    className="w-full rounded-xl bg-[#1DACBC] text-white hover:bg-[#1697A5]"
                     onClick={onSubmit}
                     disabled={
                       actionLoading ||
@@ -321,11 +329,12 @@ export default function WorkerWashingOrderDetailPage() {
                 ) : null}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      <BottomNav role="WORKER" workerHomePath="/worker/washing" />
+        <BottomNav role="WORKER" workerHomePath="/worker/washing" />
+      </div>
     </RequireCheckInRQ>
   );
 }

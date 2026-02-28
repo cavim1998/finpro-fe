@@ -2,7 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Bell, Clock3 } from "lucide-react";
+import * as React from "react";
 
 export type WorkerHeaderTheme = {
   headerBgClass?: string;
@@ -24,12 +32,15 @@ type Props = {
 
   theme?: WorkerHeaderTheme;
   clockOutLabel?: string;
+  incomingCount?: number;
+  notificationOpen?: boolean;
+  onNotificationOpenChange?: (open: boolean) => void;
+  notificationContent?: React.ReactNode;
 };
 
 export default function WorkerHeader({
   displayName,
   headerTitle,
-  headerSubtitle,
   loadingToday,
   isCheckedIn,
   isCompleted,
@@ -38,6 +49,10 @@ export default function WorkerHeader({
   clockOutLoading,
   theme,
   clockOutLabel = "Check Out",
+  incomingCount = 0,
+  notificationOpen = false,
+  onNotificationOpenChange,
+  notificationContent,
 }: Props) {
   const badgeText = loadingToday
     ? "Loading..."
@@ -71,8 +86,18 @@ export default function WorkerHeader({
           ) : null} */}
         </div>
 
-        <Button variant="ghost" size="icon" className="rounded-full">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative rounded-full bg-white text-[#1dacbc] hover:bg-[#1dacbc] hover:text-white"
+          onClick={() => onNotificationOpenChange?.(true)}
+        >
           <Bell className="h-5 w-5" />
+          {incomingCount > 0 ? (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+              {incomingCount > 99 ? "99+" : incomingCount}
+            </span>
+          ) : null}
         </Button>
       </div>
 
@@ -103,6 +128,22 @@ export default function WorkerHeader({
           </Button>
         </div>
       </Card>
+
+      <Dialog open={notificationOpen} onOpenChange={onNotificationOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Incoming Tasks</DialogTitle>
+            <DialogDescription>
+              {incomingCount > 0
+                ? `Ada ${incomingCount} task masuk untuk station ini.`
+                : "Belum ada task masuk saat ini."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {notificationContent}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

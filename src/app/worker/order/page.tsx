@@ -25,13 +25,20 @@ export default function WorkerOrderPage() {
         profileQ.data?.staff?.workerStation,
     );
     const orderId = searchParams.get("orderId");
+    const outletStaffId = Number(
+      profileQ.data?.outletStaffId ?? profileQ.data?.outletStaff?.id ?? profileQ.data?.staff?.id ?? 0,
+    );
 
     if (orderId) {
       router.replace(`/worker/${station}/order/${encodeURIComponent(orderId)}`);
       return;
     }
 
-    router.replace(`/worker/${station}/orders`);
+    router.replace(
+      outletStaffId > 0
+        ? `/worker/${station}/orders/${outletStaffId}`
+        : `/worker/${station}/orders`,
+    );
   }, [profileQ.data, router, searchParams]);
 
   return null;

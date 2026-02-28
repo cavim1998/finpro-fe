@@ -39,13 +39,13 @@ export default function DriverTaskList({
   };
 
   return (
-    <Card className="shadow-card">
+    <Card className="border-orange-200 shadow-card transition-shadow hover:shadow-[0_16px_36px_rgba(249,115,22,0.16)]">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-xl">{title}</CardTitle>
+        <CardTitle className="text-xl text-orange-500">{title}</CardTitle>
         {showViewAll ? (
           <Link
             href={viewAllHref}
-            className="text-l text-primary font-medium border p-1.5 rounded-xl"
+            className="rounded-xl border border-orange-200 p-1.5 text-l font-medium text-orange-500 transition-colors hover:bg-orange-50"
           >
             View all
           </Link>

@@ -4,13 +4,11 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { useClaimDeliveryMutation, useClaimPickupMutation } from "@/features/driver/driver.hooks";
 import type { DriverDashboardParams } from "@/features/driver/driver.api";
-import { toast } from "sonner";
 
 type Props = {
   pickup: unknown;
   dashboardParams: DriverDashboardParams;
   disabled?: boolean;
-  hasActiveTask?: boolean;
 };
 
 function formatDateTime(v?: string | Date | null) {
@@ -43,7 +41,7 @@ function getAddressText(pickup: Record<string, unknown>) {
   return String(a.addressText ?? a.label ?? a.receiverName ?? a.receiverPhone ?? "-");
 }
 
-export default function DriverPickupRequestCard({ pickup, dashboardParams, disabled, hasActiveTask = false }: Props) {
+export default function DriverPickupRequestCard({ pickup, dashboardParams, disabled }: Props) {
   const [open, setOpen] = React.useState(false);
   const p = getObj(pickup);
   const claimPickupM = useClaimPickupMutation(dashboardParams);
@@ -79,10 +77,6 @@ export default function DriverPickupRequestCard({ pickup, dashboardParams, disab
 
   const onClaim = async () => {
     if (!canClaim) return;
-    if (hasActiveTask) {
-      toast.error("Selesaikan task aktif terlebih dahulu sebelum claim task baru.");
-      return;
-    }
     if (isDelivery) {
       await claimDeliveryM.mutateAsync(orderId);
     } else {
@@ -92,7 +86,7 @@ export default function DriverPickupRequestCard({ pickup, dashboardParams, disab
   };
 
   return (
-    <div className="rounded-xl border p-3">
+    <div className="rounded-xl border p-3 transition-shadow hover:shadow-[0_12px_28px_rgba(29,172,188,0.12)]">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <p className="font-semibold text-base line-clamp-1">{customerName}</p>
@@ -116,7 +110,7 @@ export default function DriverPickupRequestCard({ pickup, dashboardParams, disab
 
           <Button
             className="w-full"
-            disabled={disabled || actionLoading || !canClaim || hasActiveTask}
+            disabled={disabled || actionLoading || !canClaim}
             onClick={onClaim}
           >
             {actionLoading ? "Memproses..." : isDelivery ? "Deliver" : "Pickup"}

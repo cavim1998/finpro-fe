@@ -4,6 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMe } from "@/features/auth/useMe";
+import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
+import { useProfileQuery } from "@/hooks/api/useProfile";
 import {
   Home,
   Truck,
@@ -29,26 +31,44 @@ type GetNavItemsOptions = {
    * home path bisa di-override dari page.
    */
   workerHomePath?: string;
+  workerDashboardPath?: string;
+  workerOrdersPath?: string;
+  workerHistoryPath?: string;
+  workerAttendancePath?: string;
+  driverHomePath?: string;
+  driverTasksPath?: string;
+  driverHistoryPath?: string;
+  driverAttendancePath?: string;
 };
 
 function getNavItems(role: RoleCode, opts?: GetNavItemsOptions): NavItem[] {
   switch (role) {
     case "DRIVER":
+      {
+        const homePath = opts?.driverHomePath ?? "/driver";
+        const tasksPath = opts?.driverTasksPath ?? "/driver/pickups";
+        const historyPath = opts?.driverHistoryPath ?? "/driver/history";
+        const attendancePath = opts?.driverAttendancePath ?? "/driver/attendance-history";
       return [
-        { path: "/driver", icon: Home, label: "Home" },
-        { path: "/driver/pickups", icon: Truck, label: "Tasks" },
-        { path: "/driver/history", icon: Clock, label: "History" },
-        { path: "/driver/attendance-history", icon: CalendarDays, label: "Attendance" },
+        { path: homePath, icon: Home, label: "Home" },
+        { path: tasksPath, icon: Truck, label: "Tasks" },
+        { path: historyPath, icon: Clock, label: "History" },
+        { path: attendancePath, icon: CalendarDays, label: "Attendance" },
         { path: "/profile", icon: User, label: "Profile" },
       ];
+      }
 
     case "WORKER": {
       const base = opts?.workerHomePath ?? "/worker";
+      const dashboardPath = opts?.workerDashboardPath ?? base;
+      const ordersPath = opts?.workerOrdersPath ?? `${base}/orders`;
+      const historyPath = opts?.workerHistoryPath ?? "/worker/history";
+      const attendancePath = opts?.workerAttendancePath ?? `${base}/attendance-history`;
       return [
-        { path: base, icon: Home, label: "Home" },
-        { path: `${base}/orders`, icon: ClipboardList, label: "Orders" },
-        { path: `${base}/history`, icon: Clock, label: "History" },
-        { path: `${base}/attendance-history`, icon: CalendarDays, label: "Attendance" },
+        { path: dashboardPath, icon: Home, label: "Home" },
+        { path: ordersPath, icon: ClipboardList, label: "Orders" },
+        { path: historyPath, icon: Clock, label: "History" },
+        { path: attendancePath, icon: CalendarDays, label: "Attendance" },
         { path: "/profile", icon: User, label: "Profile" },
       ];
     }
@@ -81,11 +101,89 @@ export function BottomNav({ role, workerHomePath }: BottomNavProps) {
   const pathname = usePathname();
 
   const meQ = useMe();
+  const profileQ = useProfileQuery();
   const effectiveRole = role ?? (meQ.data?.role as RoleCode | undefined);
+  const attendanceTodayQ = useAttendanceTodayQuery({
+    enabled: effectiveRole === "WORKER",
+  });
+  const workerOutletId = Number(
+    attendanceTodayQ.data?.outletId ??
+      profileQ.data?.outletId ??
+      profileQ.data?.outletStaff?.outletId ??
+      profileQ.data?.staff?.outletId ??
+      meQ.data?.outletId ??
+      meQ.data?.outletStaff?.outletId ??
+      meQ.data?.staff?.outletId ??
+      0,
+  );
+  const workerOutletStaffId = Number(
+    attendanceTodayQ.data?.outletStaffId ??
+      profileQ.data?.outletStaffId ??
+      profileQ.data?.outletStaff?.id ??
+      profileQ.data?.staff?.id ??
+      meQ.data?.outletStaffId ??
+      meQ.data?.outletStaff?.id ??
+      meQ.data?.staff?.id ??
+      0,
+  );
+  const workerHistoryPath =
+    Number.isFinite(workerOutletStaffId) && workerOutletStaffId > 0
+      ? workerHomePath
+        ? `${workerHomePath}/history/${workerOutletStaffId}`
+        : `/worker/history/${workerOutletStaffId}`
+      : "/worker/history";
+  const workerDashboardPath =
+    Number.isFinite(workerOutletStaffId) && workerOutletStaffId > 0
+      ? workerHomePath
+        ? `${workerHomePath}/${workerOutletStaffId}`
+        : `/worker/${workerOutletStaffId}`
+      : workerHomePath ?? "/worker";
+  const workerOrdersPath =
+    Number.isFinite(workerOutletId) && workerOutletId > 0
+      ? workerHomePath
+        ? `${workerHomePath}/orders/${workerOutletId}`
+        : `/worker/orders/${workerOutletId}`
+      : workerHomePath
+        ? `${workerHomePath}/orders`
+        : "/worker/orders";
+  const workerAttendancePath =
+    Number.isFinite(workerOutletStaffId) && workerOutletStaffId > 0
+      ? workerHomePath
+        ? `${workerHomePath}/attendance-history/${workerOutletStaffId}`
+        : `/worker/attendance-history/${workerOutletStaffId}`
+      : workerHomePath
+        ? `${workerHomePath}/attendance-history`
+      : "/worker/attendance-history";
+  const driverHomePath =
+    Number.isFinite(workerOutletStaffId) && workerOutletStaffId > 0
+      ? `/driver/${workerOutletStaffId}`
+      : "/driver";
+  const driverTasksPath =
+    Number.isFinite(workerOutletId) && workerOutletId > 0
+      ? `/driver/pickups/${workerOutletId}`
+      : "/driver/pickups";
+  const driverHistoryPath =
+    Number.isFinite(workerOutletStaffId) && workerOutletStaffId > 0
+      ? `/driver/history/${workerOutletStaffId}`
+      : "/driver/history";
+  const driverAttendancePath =
+    Number.isFinite(workerOutletStaffId) && workerOutletStaffId > 0
+      ? `/driver/attendance-history/${workerOutletStaffId}`
+      : "/driver/attendance-history";
 
   if (!effectiveRole) return null;
 
-  const navItems = getNavItems(effectiveRole, { workerHomePath });
+  const navItems = getNavItems(effectiveRole, {
+    workerHomePath,
+    workerDashboardPath,
+    workerOrdersPath,
+    workerHistoryPath,
+    workerAttendancePath,
+    driverHomePath,
+    driverTasksPath,
+    driverHistoryPath,
+    driverAttendancePath,
+  });
 
   const isActivePath = (target: string) =>
     pathname === target || pathname.startsWith(target + "/");

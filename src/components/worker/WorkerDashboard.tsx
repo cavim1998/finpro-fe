@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { useClockOutMutation } from "@/hooks/api/useAttendanceMutations";
 import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
 import { useProfileQuery } from "@/hooks/api/useProfile";
-import { useWorkerStationStatsQuery } from "@/hooks/api/useWorkerStations";
+import {
+  type WorkerOrderListItem,
+  useWorkerStationOrdersQuery,
+  useWorkerStationStatsQuery,
+} from "@/hooks/api/useWorkerStations";
 import { useRouter } from "next/navigation";
 import type { StationType } from "@/types";
+import { Button } from "@/components/ui/button";
 import WorkerHeader, { type WorkerHeaderTheme } from "./WorkerHeader";
 import WorkerLists from "./WorkerLists";
 import WorkerStats from "./WorkerStats";
@@ -59,6 +64,7 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
   const profileQ = useProfileQuery();
   const attendanceQ = useAttendanceTodayQuery();
   const clockOutM = useClockOutMutation();
+  const [notificationOpen, setNotificationOpen] = useState<boolean | null>(null);
 
   const today = attendanceQ.data;
   const isCheckedIn = !!today?.isCheckedIn;
@@ -69,6 +75,13 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
     profileQ.data?.name ||
     profileQ.data?.email ||
     "Worker";
+  const workerOutletId = Number(
+    today?.outletId ??
+      profileQ.data?.outletId ??
+      profileQ.data?.outletStaff?.outletId ??
+      profileQ.data?.staff?.outletId ??
+      0,
+  );
 
   const sinceText = formatTime(today?.log?.clockInAt ?? null);
 
@@ -103,10 +116,27 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
   }, [shouldRedirectToOwnStation, expectedWorkerPath, router]);
 
   const statsQ = useWorkerStationStatsQuery(station, { enabled: isAllowed });
+  const incomingQ = useWorkerStationOrdersQuery(station, "incoming", {
+    enabled: isAllowed,
+    outletId: workerOutletId,
+    page: 1,
+    limit: 5,
+  });
+  const myTasksQ = useWorkerStationOrdersQuery(station, "my", {
+    enabled: isAllowed,
+    outletId: workerOutletId,
+    page: 1,
+    limit: 1,
+  });
 
   const incoming = statsQ.data?.incoming ?? 0;
   const inProgress = statsQ.data?.inProgress ?? 0;
   const completed = statsQ.data?.completed ?? 0;
+  const incomingItems = incomingQ.data ?? [];
+  const currentTask = (myTasksQ.data?.[0] ?? null) as WorkerOrderListItem | null;
+
+  const resolvedNotificationOpen =
+    notificationOpen ?? (isAllowed && incomingItems.length > 0);
 
   const onClockOut = async () => {
     await clockOutM.mutateAsync();
@@ -123,7 +153,7 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
       completed: "Completed",
     },
     listsLabels: {
-      myTasksTitle: "My Tasks / Station",
+      myTasksTitle: "My Tasks - Station",
       incomingTitle: "Incoming Orders",
       viewAll: "View all",
       emptyMyTasks: "Belum ada task.",
@@ -156,14 +186,64 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
         clockOutLoading={clockOutM.isPending}
         clockOutLabel={mergedCopy.clockOutLabel}
         theme={theme}
+        incomingCount={incoming}
+        notificationOpen={resolvedNotificationOpen}
+        onNotificationOpenChange={setNotificationOpen}
+        notificationContent={
+          incomingItems.length > 0 ? (
+            <div className="space-y-2">
+              {incomingItems.map((item) => (
+                <div key={item.orderStationId} className="rounded-xl border p-3 text-sm">
+                  <p className="font-semibold">#{item.orderNo}</p>
+                  <p className="text-muted-foreground">{item.customerName}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {item.clothesCount} pakaian • {item.totalKg} kg
+                  </p>
+                </div>
+              ))}
+              {workerOutletId > 0 ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setNotificationOpen(false);
+                    router.push(`/worker/${station.toLowerCase()}/orders/${workerOutletId}`);
+                  }}
+                >
+                  Lihat Semua Incoming
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">Tidak ada task masuk.</div>
+          )
+        }
       />
 
       <div className="p-1 space-y-5 -mt-4 pr-4 pl-4">
         <WorkerStats
+          station={station}
           incoming={incoming}
           inProgress={inProgress}
           completed={completed}
-          onCompletedClick={() => router.push(`/worker/${station.toLowerCase()}/orders`)}
+          onIncomingClick={() =>
+            router.push(
+              workerOutletId > 0
+                ? `/worker/${station.toLowerCase()}/orders/${workerOutletId}`
+                : `/worker/${station.toLowerCase()}/orders`,
+            )
+          }
+          onInProgressClick={() => {
+            if (!currentTask?.orderId) return;
+            router.push(`/worker/${station.toLowerCase()}/order/${encodeURIComponent(currentTask.orderId)}`);
+          }}
+          onCompletedClick={() =>
+            router.push(
+              workerOutletId > 0
+                ? `/worker/${station.toLowerCase()}/orders/${workerOutletId}`
+                : `/worker/${station.toLowerCase()}/orders`,
+            )
+          }
         />
 
         <WorkerLists

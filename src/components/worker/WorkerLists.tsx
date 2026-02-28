@@ -11,6 +11,8 @@ import {
   useClaimWorkerOrderMutation,
   type WorkerOrderListItem,
 } from "@/hooks/api/useWorkerStations";
+import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
+import { useProfileQuery } from "@/hooks/api/useProfile";
 
 type Props = {
   station: StationType;
@@ -32,15 +34,19 @@ function formatEnteredAt(iso: string) {
 
 function OrderRow({
   item,
+  hoverClassName,
   right,
 }: {
   item: WorkerOrderListItem;
+  hoverClassName?: string;
   right?: React.ReactNode;
 }) {
   const totalKg = typeof item.totalKg === "string" ? Number(item.totalKg) : item.totalKg;
 
   return (
-    <div className="flex items-start justify-between gap-3 py-3 border rounded-2xl p-2.5 last:border-b-0">
+    <div
+      className={`flex items-start justify-between gap-3 rounded-2xl border p-2.5 py-3 last:border-b-0 transition-all ${hoverClassName ?? ""}`}
+    >
       <div className="min-w-0">
         <div className="font-semibold truncate">
           #{item.orderNo} • {item.customerName}
@@ -60,6 +66,21 @@ function OrderRow({
 export default function WorkerLists({ station, isAllowed, labels }: Props) {
   const [incomingPage, setIncomingPage] = React.useState(1);
   const incomingLimit = 3;
+  const attendanceTodayQ = useAttendanceTodayQuery({
+    enabled: isAllowed,
+  });
+  const profileQ = useProfileQuery();
+  const workerOutletId = Number(
+    attendanceTodayQ.data?.outletId ??
+      profileQ.data?.outletId ??
+      profileQ.data?.outletStaff?.outletId ??
+      profileQ.data?.staff?.outletId ??
+      0,
+  );
+  const ordersHref =
+    workerOutletId > 0
+      ? `/worker/${station.toLowerCase()}/orders/${workerOutletId}`
+      : `/worker/${station.toLowerCase()}/orders`;
 
   const l = {
     myTasksTitle: labels?.myTasksTitle ?? "My Tasks / Station",
@@ -68,10 +89,39 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
     emptyMyTasks: labels?.emptyMyTasks ?? "Belum ada task.",
     emptyIncoming: labels?.emptyIncoming ?? "Belum ada incoming order.",
   };
+  const stationAccentClass =
+    station === "WASHING"
+      ? "text-blue-500"
+      : station === "IRONING"
+        ? "text-red-500"
+        : "text-[#1dacbc]";
+  const stationContainerClass =
+    station === "WASHING"
+      ? "border-blue-200 hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]"
+      : station === "IRONING"
+        ? "border-red-200 hover:border-red-500 hover:shadow-[0_0_0_3px_rgba(239,68,68,0.12)]"
+        : "border-cyan-200 hover:border-[#1dacbc] hover:shadow-[0_0_0_3px_rgba(29,172,188,0.12)]";
+  const incomingAccentClass = "text-[#1dacbc]";
+  const incomingContainerClass =
+    "border-cyan-200 hover:border-[#1dacbc] hover:shadow-[0_0_0_3px_rgba(29,172,188,0.12)]";
+  const stationItemHoverClass =
+    station === "WASHING"
+      ? "hover:shadow-[0_0_0_3px_rgba(59,130,246,0.10)]"
+      : station === "IRONING"
+        ? "hover:shadow-[0_0_0_3px_rgba(239,68,68,0.10)]"
+        : "hover:shadow-[0_0_0_3px_rgba(29,172,188,0.10)]";
+  const incomingItemHoverClass =
+    "hover:shadow-[0_0_0_3px_rgba(29,172,188,0.10)]";
 
-  const myQ = useWorkerStationOrdersQuery(station, "my", { enabled: isAllowed, limit: 3, page: 1 });
+  const myQ = useWorkerStationOrdersQuery(station, "my", {
+    enabled: isAllowed,
+    outletId: workerOutletId,
+    limit: 3,
+    page: 1,
+  });
   const incomingQ = useWorkerStationOrdersQuery(station, "incoming", {
     enabled: isAllowed,
+    outletId: workerOutletId,
     limit: incomingLimit,
     page: incomingPage,
   });
@@ -112,15 +162,16 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* MY TASKS */}
-      <Card className="rounded-2xl">
+      <Card className={`rounded-2xl transition-all ${stationContainerClass}`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">{l.myTasksTitle}</CardTitle>
+          <CardTitle className={`text-base ${stationAccentClass}`}>{l.myTasksTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           {renderBody(myQ, l.emptyMyTasks, (it) => (
             <OrderRow
               key={it.orderStationId}
               item={it}
+              hoverClassName={stationItemHoverClass}
               right={
                 <Button asChild size="sm" variant="outline" className="rounded-xl">
                   <Link href={`/worker/${station.toLowerCase()}/order/${encodeURIComponent(it.orderId)}`}>
@@ -134,11 +185,13 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
       </Card>
 
       {/* INCOMING */}
-      <Card className="rounded-2xl">
+      <Card className={`rounded-2xl transition-all ${incomingContainerClass}`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">{l.incomingTitle}</CardTitle>
-          <Button variant="ghost" size="sm" className="gap-1" type="button">
-            {l.viewAll} <ChevronRight className="h-4 w-4" />
+          <CardTitle className={`text-base ${incomingAccentClass}`}>{l.incomingTitle}</CardTitle>
+          <Button asChild variant="ghost" size="sm" className="gap-1">
+            <Link href={ordersHref}>
+              {l.viewAll} <ChevronRight className="h-4 w-4" />
+            </Link>
           </Button>
         </CardHeader>
 
@@ -171,6 +224,7 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
                   <OrderRow
                     key={it.orderStationId}
                     item={it}
+                    hoverClassName={incomingItemHoverClass}
                     right={
                       <Button
                         size="sm"
