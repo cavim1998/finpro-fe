@@ -2,9 +2,18 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { StationType } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ChevronRight, Loader2 } from "lucide-react";
 import {
   useWorkerStationOrdersQuery,
@@ -64,7 +73,9 @@ function OrderRow({
 }
 
 export default function WorkerLists({ station, isAllowed, labels }: Props) {
+  const router = useRouter();
   const [incomingPage, setIncomingPage] = React.useState(1);
+  const [claimWarningOpen, setClaimWarningOpen] = React.useState(false);
   const incomingLimit = 3;
   const attendanceTodayQ = useAttendanceTodayQuery({
     enabled: isAllowed,
@@ -127,6 +138,7 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
   });
 
   const claimM = useClaimWorkerOrderMutation();
+  const myItems = myQ.data ?? [];
   const incomingItems = incomingQ.data ?? [];
   const hasNextIncomingPage = incomingItems.length === incomingLimit;
 
@@ -230,7 +242,26 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
                         size="sm"
                         className="rounded-xl"
                         disabled={claimM.isPending}
-                        onClick={() => claimM.mutate({ stationType: station, orderStationId: it.orderStationId })}
+                        onClick={() => {
+                          if (myItems.length > 0) {
+                            setClaimWarningOpen(true);
+                            return;
+                          }
+
+                          claimM.mutate(
+                            { stationType: station, orderStationId: it.orderStationId },
+                            {
+                              onSuccess: async () => {
+                                await Promise.all([
+                                  myQ.refetch(),
+                                  incomingQ.refetch(),
+                                  attendanceTodayQ.refetch(),
+                                ]);
+                                router.refresh();
+                              },
+                            },
+                          );
+                        }}
                       >
                         {claimM.isPending ? "..." : "Claim"}
                       </Button>
@@ -264,6 +295,20 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={claimWarningOpen} onOpenChange={setClaimWarningOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Task masih berjalan</DialogTitle>
+            <DialogDescription>
+              silakan selesaikan task sebelumnya sebelum mengambil task baru
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setClaimWarningOpen(false)}>Mengerti</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -177,22 +177,25 @@ export function useClaimWorkerOrderMutation() {
   return useMutation({
     mutationFn: claimOrder,
     onSuccess: async (_data, vars) => {
-      // setelah claim: refresh stats + orders incoming + my
+      // setelah claim: refresh stats + semua query order di station terkait
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["worker", "station-stats", vars.stationType] }),
-        qc.invalidateQueries({ queryKey: ["worker", "station-orders", vars.stationType, "incoming"] }),
-        qc.invalidateQueries({ queryKey: ["worker", "station-orders", vars.stationType, "my"] }),
+        qc.invalidateQueries({ queryKey: ["worker", "station-orders", vars.stationType] }),
       ]);
     },
   });
 }
 
-export function useWorkerOrderDetailQuery(orderId: string, options?: { enabled?: boolean }) {
+export function useWorkerOrderDetailQuery(
+  orderId: string,
+  options?: { enabled?: boolean; refetchInterval?: number | false }
+) {
   return useQuery({
     queryKey: ["worker", "order-detail", orderId],
     queryFn: () => getWorkerOrderDetail(orderId),
     enabled: (options?.enabled ?? true) && !!orderId,
     staleTime: 3_000,
+    refetchInterval: options?.refetchInterval ?? false,
   });
 }
 

@@ -2,11 +2,12 @@
 
 import WorkerStationOrderDetailPage from "@/components/worker/WorkerStationOrderDetailPage";
 
-export default function WorkerIroningOrderDetailRoute() {
+export default function WorkerWashingHistoryOrderDetailRoute() {
   return (
     <WorkerStationOrderDetailPage
-      station="IRONING"
-      stationPath="/worker/ironing"
+      station="WASHING"
+      stationPath="/worker/washing"
+      historyMode
     />
   );
 }
