@@ -84,71 +84,60 @@ export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
 
         fileName = `Laporan_Performa_Pegawai_${hook.startDate || "Semua"}.xlsx`;
       } else {
-        if (roleCode === "SUPER_ADMIN") {
-          const exportLimit = 100;
-          let exportPage = 1;
-          let totalPages = 1;
-          const items: unknown[] = [];
+        const exportLimit = 100;
+        let exportPage = 1;
+        let totalPages = 1;
+        const items: unknown[] = [];
 
-          while (exportPage <= totalPages) {
-            const res = await getAdminAttendanceReport({
-              page: exportPage,
-              limit: exportLimit,
-              startDate: hook.startDate,
-              endDate: hook.endDate,
-            });
+        while (exportPage <= totalPages) {
+          const res = roleCode === "SUPER_ADMIN"
+            ? await getAdminAttendanceReport({
+                page: exportPage,
+                limit: exportLimit,
+                outletId: hook.outletId,
+                startDate: hook.startDate,
+                endDate: hook.endDate,
+              })
+            : await getAttendanceReport({
+                page: exportPage,
+                limit: exportLimit,
+                outletId: hook.outletId,
+                startDate: hook.startDate,
+                endDate: hook.endDate,
+              });
+          const payload = toObject(res);
+          const nestedData = toObject(payload.data);
+          const pagination = toObject(payload.pagination);
+          const nestedPagination = toObject(nestedData.pagination);
+          const currentPagination =
+            Object.keys(pagination).length > 0 ? pagination : nestedPagination;
 
-            const payload = toObject(res?.data ?? res);
-            const pageItems: unknown[] = Array.isArray(payload.items) ? payload.items : [];
-            const pagination = toObject(payload.pagination);
-
-            items.push(...pageItems);
-            totalPages = Number(pagination.totalPages ?? exportPage);
-            exportPage += 1;
-          }
-
-          excelData = items.map((item: unknown) => {
-            const row = mapAttendanceReportRow(item, true);
-            return {
-              Tanggal: row.date,
-              "Nama Pegawai": row.employeeName,
-              Posisi: row.position,
-              Outlet: row.outletName,
-              "Clock In": row.clockInAt,
-              "Clock Out": row.clockOutAt,
-            };
-          });
-        } else {
-          const exportLimit = 100;
-          let exportPage = 1;
-          let totalPages = 1;
-          const items: unknown[] = [];
-
-          while (exportPage <= totalPages) {
-            const res = await getAttendanceReport({
-              page: exportPage,
-              limit: exportLimit,
-              startDate: hook.startDate,
-              endDate: hook.endDate,
-            });
-
-            const pageItems: unknown[] = Array.isArray(res?.data) ? res.data : [];
-            items.push(...pageItems);
-            totalPages = Number(res?.meta?.totalPages ?? exportPage);
-            exportPage += 1;
-          }
-
-          excelData = items.map((item: unknown) => {
-            const row = mapAttendanceReportRow(item);
-            return {
-              "Nama Pegawai": row.employeeName,
-              Posisi: row.position,
-              Outlet: row.outletName,
-              "Jumlah Clock In": row.totalClockIn,
-              "Jumlah Clock Out": row.totalClockOut,
-            };
-          });
+          const pageItems: unknown[] = roleCode === "SUPER_ADMIN"
+            ? (Array.isArray(payload.items)
+                ? payload.items
+                : Array.isArray(nestedData.items)
+                  ? nestedData.items
+                  : [])
+            : (Array.isArray(res?.data) ? res.data : []);
+          items.push(...pageItems);
+          totalPages = Number(
+            roleCode === "SUPER_ADMIN"
+              ? (currentPagination.totalPages ?? exportPage)
+              : (res?.meta?.totalPages ?? exportPage),
+          );
+          exportPage += 1;
         }
+
+        excelData = items.map((item: unknown) => {
+          const row = mapAttendanceReportRow(item);
+          return {
+            "Nama Pegawai": row.employeeName,
+            Posisi: row.position,
+            Outlet: row.outletName,
+            "Jumlah Clock In": row.totalClockIn,
+            "Jumlah Clock Out": row.totalClockOut,
+          };
+        });
 
         fileName = `Laporan_Attendance_${hook.startDate || "Semua"}.xlsx`;
       }
@@ -204,7 +193,6 @@ export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
         <AttendanceView
           data={hook.data}
           meta={hook.meta}
-          roleCode={roleCode}
           loading={hook.loading}
           onPageChange={hook.setPage}
         />
