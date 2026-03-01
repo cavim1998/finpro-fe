@@ -59,6 +59,16 @@ export const BypassListItem = ({ item, onRefresh }: BypassListItemProps) => {
     }
   };
 
+  const requestedAtLabel = (() => {
+    const value = item.requestedAt ?? item.createdAt;
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return date.toLocaleString("id-ID");
+  })();
+
   return (
     <div
       className={`bg-white rounded-xl border transition-all duration-300 ${expanded ? "border-blue-300 ring-1 ring-blue-100 shadow-md" : "border-gray-200 hover:border-blue-200 shadow-sm"}`}
@@ -99,8 +109,7 @@ export const BypassListItem = ({ item, onRefresh }: BypassListItemProps) => {
 
         <div className="flex items-center gap-4 text-sm text-gray-400">
           <div className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-lg">
-            <Clock size={14} />{" "}
-            {new Date(item.requestedAt || item.createdAt).toLocaleString("id-ID")}
+            <Clock size={14} /> {requestedAtLabel}
           </div>
           {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
