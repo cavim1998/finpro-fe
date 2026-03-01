@@ -7,12 +7,17 @@ import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getAttendanceHistoryDetailReport } from "@/services/report.service";
+import {
+  getAdminAttendanceHistoryDetailReport,
+  getAttendanceHistoryDetailReport,
+} from "@/services/report.service";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import type { RoleCode } from "@/types";
 
 type Props = {
   outletStaffId: number;
+  roleCode: RoleCode | null;
 };
 
 type HistoryItem = {
@@ -70,32 +75,47 @@ function toObject(value: unknown): Record<string, unknown> {
 function normalizeResponse(data: unknown) {
   const payload = toObject(data);
   const nestedData = toObject(payload.data);
+  const contentData = toObject(nestedData.data);
   const items = Array.isArray(payload.items)
     ? payload.items
     : Array.isArray(nestedData.items)
       ? nestedData.items
+      : Array.isArray(contentData.items)
+        ? contentData.items
       : Array.isArray(payload.data)
         ? (payload.data as unknown[])
         : [];
-  const pagination = toObject(payload.meta);
+  const pagination = toObject(payload.pagination);
+  const legacyPagination = toObject(payload.meta);
   const nestedPagination = toObject(nestedData.pagination);
+  const contentPagination = toObject(contentData.pagination);
   const filter = toObject(payload.filter);
   const nestedFilter = toObject(nestedData.filter);
+  const contentFilter = toObject(contentData.filter);
 
   return {
     items: items.map((item) => item as HistoryItem),
     pagination:
       Object.keys(pagination).length > 0
         ? pagination
-        : nestedPagination,
+        : Object.keys(legacyPagination).length > 0
+          ? legacyPagination
+          : Object.keys(nestedPagination).length > 0
+            ? nestedPagination
+            : contentPagination,
     filter:
       Object.keys(filter).length > 0
         ? filter
-        : nestedFilter,
+        : Object.keys(nestedFilter).length > 0
+          ? nestedFilter
+          : contentFilter,
   };
 }
 
-export default function AttendanceHistoryDetailView({ outletStaffId }: Props) {
+export default function AttendanceHistoryDetailView({
+  outletStaffId,
+  roleCode,
+}: Props) {
   const defaults = useMemo(() => getCurrentMonthRange(), []);
   const [draftStartDate, setDraftStartDate] = useState(defaults.startDate);
   const [draftEndDate, setDraftEndDate] = useState(defaults.endDate);
@@ -110,18 +130,26 @@ export default function AttendanceHistoryDetailView({ outletStaffId }: Props) {
       "reports",
       "attendance",
       "history",
+      roleCode,
       outletStaffId,
       page,
       startDate,
       endDate,
     ],
     queryFn: async () =>
-      getAttendanceHistoryDetailReport(outletStaffId, {
-        page,
-        limit,
-        startDate,
-        endDate,
-      }),
+      roleCode === "SUPER_ADMIN"
+        ? getAdminAttendanceHistoryDetailReport(outletStaffId, {
+            page,
+            limit,
+            startDate,
+            endDate,
+          })
+        : getAttendanceHistoryDetailReport(outletStaffId, {
+            page,
+            limit,
+            startDate,
+            endDate,
+          }),
     enabled: outletStaffId > 0,
   });
 
@@ -158,12 +186,19 @@ export default function AttendanceHistoryDetailView({ outletStaffId }: Props) {
       const collectedItems: HistoryItem[] = [];
 
       while (exportPage <= totalPagesForExport) {
-        const response = await getAttendanceHistoryDetailReport(outletStaffId, {
-          page: exportPage,
-          limit: exportLimit,
-          startDate,
-          endDate,
-        });
+        const response = roleCode === "SUPER_ADMIN"
+          ? await getAdminAttendanceHistoryDetailReport(outletStaffId, {
+              page: exportPage,
+              limit: exportLimit,
+              startDate,
+              endDate,
+            })
+          : await getAttendanceHistoryDetailReport(outletStaffId, {
+              page: exportPage,
+              limit: exportLimit,
+              startDate,
+              endDate,
+            });
         const normalizedResponse = normalizeResponse(response);
         collectedItems.push(...normalizedResponse.items);
 

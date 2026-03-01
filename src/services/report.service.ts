@@ -31,6 +31,7 @@ export const getPerformanceReport = async (params: {
 export const getAttendanceReport = async (params: {
   page?: number;
   limit?: number;
+  outletId?: number;
   startDate?: string;
   endDate?: string;
 }) => {
@@ -43,6 +44,7 @@ export const getAttendanceReport = async (params: {
 export const getAdminAttendanceReport = async (params: {
   page?: number;
   limit?: number;
+  outletId?: number;
   startDate?: string;
   endDate?: string;
 }) => {
@@ -63,6 +65,24 @@ export const getAttendanceHistoryDetailReport = async (
 ) => {
   const response = await axiosInstance.get(
     `/reports/attendance/${outletStaffId}/history`,
+    {
+      params: buildReportParams(params),
+    },
+  );
+  return response.data;
+};
+
+export const getAdminAttendanceHistoryDetailReport = async (
+  outletStaffId: number,
+  params: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+  },
+) => {
+  const response = await axiosInstance.get(
+    `/attendance/admin/history/${outletStaffId}`,
     {
       params: buildReportParams(params),
     },

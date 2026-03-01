@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Eye } from "lucide-react";
 import PaginationSection from "@/components/PaginationSection";
-import type { RoleCode } from "@/types";
 
 type AttendanceMeta = {
   page?: number;
@@ -16,7 +15,6 @@ type AttendanceMeta = {
 type AttendanceViewProps = {
   data: unknown;
   meta: AttendanceMeta | null;
-  roleCode: RoleCode | null;
   loading?: boolean;
   onPageChange: (page: number) => void;
 };
@@ -90,11 +88,9 @@ export function mapAttendanceReportRow(
 export const AttendanceView = ({
   data,
   meta,
-  roleCode,
   loading,
   onPageChange,
 }: AttendanceViewProps) => {
-  const isSuperAdmin = roleCode === "SUPER_ADMIN";
   const rows = useMemo(() => {
     const payload = toObject(data);
     const items = Array.isArray(data)
@@ -102,8 +98,8 @@ export const AttendanceView = ({
       : Array.isArray(payload.items)
         ? payload.items
         : [];
-    return items.map((item) => mapAttendanceReportRow(item, isSuperAdmin));
-  }, [data, isSuperAdmin]);
+    return items.map((item) => mapAttendanceReportRow(item));
+  }, [data]);
 
   const currentMeta = {
     page: meta?.page ?? 1,
@@ -122,24 +118,11 @@ export const AttendanceView = ({
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
-                {isSuperAdmin ? (
-                  <>
-                    <th className="px-6 py-4">Tanggal</th>
-                    <th className="px-6 py-4">Nama Pegawai</th>
-                    <th className="px-6 py-4">Posisi</th>
-                    <th className="px-6 py-4">Outlet</th>
-                    <th className="px-6 py-4 text-center">Clock In</th>
-                    <th className="px-6 py-4 text-center">Clock Out</th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-6 py-4">Nama Pegawai</th>
-                    <th className="px-6 py-4">Posisi</th>
-                    <th className="px-6 py-4">Outlet</th>
-                    <th className="px-6 py-4 text-center">Jumlah Clock In</th>
-                    <th className="px-6 py-4 text-center">Jumlah Clock Out</th>
-                  </>
-                )}
+                <th className="px-6 py-4">Nama Pegawai</th>
+                <th className="px-6 py-4">Posisi</th>
+                <th className="px-6 py-4">Outlet</th>
+                <th className="px-6 py-4 text-center">Jumlah Clock In</th>
+                <th className="px-6 py-4 text-center">Jumlah Clock Out</th>
                 <th className="px-6 py-4 text-center">Detail</th>
               </tr>
             </thead>
@@ -154,47 +137,28 @@ export const AttendanceView = ({
               ) : rows.length > 0 ? (
                 rows.map((row) => (
                   <tr
-                    key={isSuperAdmin ? `${row.id}-${row.outletStaffId}` : `${row.outletStaffId}-${row.userId}`}
+                    key={`${row.outletStaffId}-${row.userId}`}
                     className="transition-colors hover:bg-gray-50"
                   >
-                    {isSuperAdmin ? (
-                      <>
-                        <td className="px-6 py-4 text-gray-500">{row.date}</td>
-                        <td className="px-6 py-4 font-bold text-gray-800">
-                          {row.employeeName}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="rounded border bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                            {row.position}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-500">{row.outletName}</td>
-                        <td className="px-6 py-4 text-center text-gray-600">{row.clockInAt}</td>
-                        <td className="px-6 py-4 text-center text-gray-600">{row.clockOutAt}</td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4 font-bold text-gray-800">
-                          {row.employeeName}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="rounded border bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                            {row.position}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-500">{row.outletName}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="rounded bg-cyan-50 px-2 py-1 font-medium text-[#17A2B8]">
-                            {row.totalClockIn}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="rounded bg-emerald-50 px-2 py-1 font-medium text-emerald-600">
-                            {row.totalClockOut}
-                          </span>
-                        </td>
-                      </>
-                    )}
+                    <td className="px-6 py-4 font-bold text-gray-800">
+                      {row.employeeName}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="rounded border bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                        {row.position}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">{row.outletName}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="rounded bg-cyan-50 px-2 py-1 font-medium text-[#17A2B8]">
+                        {row.totalClockIn}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className="rounded bg-emerald-50 px-2 py-1 font-medium text-emerald-600">
+                        {row.totalClockOut}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <Link
                         href={`/admin/attendance/${row.outletStaffId}`}
