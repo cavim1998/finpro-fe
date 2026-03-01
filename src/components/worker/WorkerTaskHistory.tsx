@@ -27,14 +27,6 @@ function formatDateTime(value?: string | null) {
   });
 }
 
-function normalizeStationLabel(value?: string | null) {
-  const raw = String(value ?? "").toUpperCase();
-  if (raw.includes("IRONING")) return "Ironing";
-  if (raw.includes("PACKING")) return "Packing";
-  if (raw.includes("WASHING")) return "Washing";
-  return value || "-";
-}
-
 function getStatus(item: WorkerTaskHistoryItem) {
   return item.stationStatus || item.status || "COMPLETED";
 }
@@ -59,21 +51,20 @@ function getPrimaryTimestamp(item: WorkerTaskHistoryItem) {
   );
 }
 
-function getDetailHref(item: WorkerTaskHistoryItem) {
+function getDetailHref(item: WorkerTaskHistoryItem, stationPath: string) {
   if (!item.orderId) return null;
 
-  const params = new URLSearchParams({ orderId: item.orderId });
-  if (item.stationType) {
-    params.set("stationType", item.stationType);
-  }
-
-  return `/worker/order?${params.toString()}`;
+  return `${stationPath}/history/order/${encodeURIComponent(item.orderId)}`;
 }
 
-function HistoryRow({ item }: { item: WorkerTaskHistoryItem }) {
-  const totalKg =
-    typeof item.totalKg === "string" ? Number(item.totalKg) : item.totalKg;
-  const detailHref = getDetailHref(item);
+function HistoryRow({
+  item,
+  stationPath,
+}: {
+  item: WorkerTaskHistoryItem;
+  stationPath: string;
+}) {
+  const detailHref = getDetailHref(item, stationPath);
 
   return (
     <div className="rounded-2xl border border-green-200 p-3 transition-shadow hover:shadow-[0_16px_36px_rgba(34,197,94,0.14)]">
@@ -83,14 +74,7 @@ function HistoryRow({ item }: { item: WorkerTaskHistoryItem }) {
             #{getOrderNumber(item)} • {getCustomerName(item)}
           </div>
           <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-            <div>Station: {normalizeStationLabel(item.stationType)}</div>
             <div>Status: {getStatus(item)}</div>
-            <div>
-              Jumlah pakaian: {typeof item.clothesCount === "number" ? item.clothesCount : "-"}
-            </div>
-            <div>
-              Total: {Number.isFinite(totalKg) ? totalKg : item.totalKg ?? "-"} kg
-            </div>
             <div>Waktu: {formatDateTime(getPrimaryTimestamp(item))}</div>
           </div>
         </div>
@@ -112,16 +96,19 @@ function HistoryRow({ item }: { item: WorkerTaskHistoryItem }) {
 
 type Props = {
   outletStaffId: number;
+  stationPath: "/worker/washing" | "/worker/ironing" | "/worker/packing";
   title?: string;
   subtitle?: string;
 };
 
 export default function WorkerTaskHistory({
   outletStaffId,
+  stationPath,
   title = "Task History",
   subtitle = "Semua riwayat task yang pernah dikerjakan oleh worker ini.",
 }: Props) {
   const [page, setPage] = React.useState(1);
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
   const [draftStartDate, setDraftStartDate] = React.useState("");
   const [draftEndDate, setDraftEndDate] = React.useState("");
   const [startDate, setStartDate] = React.useState("");
@@ -146,7 +133,17 @@ export default function WorkerTaskHistory({
     { enabled: outletStaffId > 0 },
   );
 
-  const items = historyQ.data?.items ?? [];
+  const items = React.useMemo(() => {
+    const rows = [...(historyQ.data?.items ?? [])];
+
+    return rows.sort((a, b) => {
+      const left = new Date(getPrimaryTimestamp(a) ?? "").getTime();
+      const right = new Date(getPrimaryTimestamp(b) ?? "").getTime();
+
+      if (Number.isNaN(left) || Number.isNaN(right)) return 0;
+      return sortOrder === "asc" ? left - right : right - left;
+    });
+  }, [historyQ.data?.items, sortOrder]);
   const totalPages = Number(historyQ.data?.pagination?.totalPages ?? 0);
   const canNext = totalPages > 0 ? page < totalPages : items.length === limit;
 
@@ -219,6 +216,17 @@ export default function WorkerTaskHistory({
             >
               Reset
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPage(1);
+                setSortOrder((current) => (current === "asc" ? "desc" : "asc"));
+              }}
+              disabled={historyQ.isFetching}
+              className="border-green-200 text-green-600 hover:bg-green-50"
+            >
+              Sort: {sortOrder === "asc" ? "Terlama" : "Terbaru"}
+            </Button>
           </div>
 
           {historyQ.isLoading ? (
@@ -237,6 +245,7 @@ export default function WorkerTaskHistory({
                 <HistoryRow
                   key={String(item.id ?? item.orderStationId ?? item.orderId ?? `${page}-${index}`)}
                   item={item}
+                  stationPath={stationPath}
                 />
               ))}
             </div>

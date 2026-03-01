@@ -3,9 +3,16 @@ import {
   getSalesReport,
   getPerformanceReport,
   getAttendanceReport,
+  getAdminAttendanceReport,
 } from "@/services/report.service";
 import { toast } from "sonner";
 import { RoleCode } from "@/types";
+
+function toObject(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
 export const useReportData = (
   roleCode: RoleCode | null,
@@ -38,21 +45,42 @@ export const useReportData = (
     setLoading(true);
     try {
       if (reportType === "ATTENDANCE") {
-        const res = await getAttendanceReport({
-          page,
-          limit,
-          startDate,
-          endDate,
-        });
-        setData(res?.data ?? []);
-        setMeta(
-          res?.meta ?? {
+        if (roleCode === "SUPER_ADMIN") {
+          const res = await getAdminAttendanceReport({
             page,
             limit,
-            total: 0,
-            totalPages: 0,
-          },
-        );
+            startDate,
+            endDate,
+          });
+          const payload = toObject(res?.data ?? res);
+          const pagination = toObject(payload.pagination);
+
+          setData({
+            items: Array.isArray(payload.items) ? payload.items : [],
+          });
+          setMeta({
+            page: Number(pagination.page ?? page),
+            limit: Number(pagination.limit ?? limit),
+            total: Number(pagination.total ?? 0),
+            totalPages: Number(pagination.totalPages ?? 0),
+          });
+        } else {
+          const res = await getAttendanceReport({
+            page,
+            limit,
+            startDate,
+            endDate,
+          });
+          setData(res?.data ?? []);
+          setMeta(
+            res?.meta ?? {
+              page,
+              limit,
+              total: 0,
+              totalPages: 0,
+            },
+          );
+        }
         return;
       }
 
@@ -69,7 +97,7 @@ export const useReportData = (
     } finally {
       setLoading(false);
     }
-  }, [reportType, outletId, startDate, endDate, page]);
+  }, [reportType, outletId, startDate, endDate, page, roleCode]);
 
   useEffect(() => {
     if (roleCode) fetchReport();

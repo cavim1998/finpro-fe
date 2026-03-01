@@ -59,6 +59,23 @@ type Props = {
   theme?: WorkerDashboardTheme;
 };
 
+function getOutletStaffId(profile: unknown): number | null {
+  const data = (profile ?? {}) as {
+    outletStaffId?: number | string | null;
+    outletStaff?: { id?: number | string | null };
+    staff?: { id?: number | string | null };
+  };
+
+  const value =
+    data.outletStaffId ??
+    data.outletStaff?.id ??
+    data.staff?.id ??
+    null;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 export default function WorkerDashboard({ station, copy, theme }: Props) {
   const router = useRouter();
   const profileQ = useProfileQuery();
@@ -75,6 +92,14 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
     profileQ.data?.name ||
     profileQ.data?.email ||
     "Worker";
+  const workerOutletStaffId = (() => {
+    const fromAttendance = Number(today?.outletStaffId ?? 0);
+    if (Number.isFinite(fromAttendance) && fromAttendance > 0) {
+      return fromAttendance;
+    }
+
+    return getOutletStaffId(profileQ.data);
+  })();
   const workerOutletId = Number(
     today?.outletId ??
       profileQ.data?.outletId ??
@@ -239,9 +264,9 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
           }}
           onCompletedClick={() =>
             router.push(
-              workerOutletId > 0
-                ? `/worker/${station.toLowerCase()}/orders/${workerOutletId}`
-                : `/worker/${station.toLowerCase()}/orders`,
+              workerOutletStaffId
+                ? `/worker/${station.toLowerCase()}/history/${workerOutletStaffId}`
+                : `/worker/${station.toLowerCase()}/history`,
             )
           }
         />

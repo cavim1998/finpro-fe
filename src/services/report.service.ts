@@ -40,6 +40,18 @@ export const getAttendanceReport = async (params: {
   return response.data;
 };
 
+export const getAdminAttendanceReport = async (params: {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  const response = await axiosInstance.get("/attendance/admin/history", {
+    params: buildReportParams(params),
+  });
+  return response.data;
+};
+
 export const getAttendanceHistoryDetailReport = async (
   outletStaffId: number,
   params: {

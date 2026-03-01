@@ -14,6 +14,7 @@ import {
   getSalesReport,
   getPerformanceReport,
   getAttendanceReport,
+  getAdminAttendanceReport,
 } from "@/services/report.service";
 
 interface ReportProps {
@@ -83,35 +84,71 @@ export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
 
         fileName = `Laporan_Performa_Pegawai_${hook.startDate || "Semua"}.xlsx`;
       } else {
-        const exportLimit = 100;
-        let exportPage = 1;
-        let totalPages = 1;
-        const items: unknown[] = [];
+        if (roleCode === "SUPER_ADMIN") {
+          const exportLimit = 100;
+          let exportPage = 1;
+          let totalPages = 1;
+          const items: unknown[] = [];
 
-        while (exportPage <= totalPages) {
-          const res = await getAttendanceReport({
-            page: exportPage,
-            limit: exportLimit,
-            startDate: hook.startDate,
-            endDate: hook.endDate,
+          while (exportPage <= totalPages) {
+            const res = await getAdminAttendanceReport({
+              page: exportPage,
+              limit: exportLimit,
+              startDate: hook.startDate,
+              endDate: hook.endDate,
+            });
+
+            const payload = toObject(res?.data ?? res);
+            const pageItems: unknown[] = Array.isArray(payload.items) ? payload.items : [];
+            const pagination = toObject(payload.pagination);
+
+            items.push(...pageItems);
+            totalPages = Number(pagination.totalPages ?? exportPage);
+            exportPage += 1;
+          }
+
+          excelData = items.map((item: unknown) => {
+            const row = mapAttendanceReportRow(item, true);
+            return {
+              Tanggal: row.date,
+              "Nama Pegawai": row.employeeName,
+              Posisi: row.position,
+              Outlet: row.outletName,
+              "Clock In": row.clockInAt,
+              "Clock Out": row.clockOutAt,
+            };
           });
+        } else {
+          const exportLimit = 100;
+          let exportPage = 1;
+          let totalPages = 1;
+          const items: unknown[] = [];
 
-          const pageItems: unknown[] = Array.isArray(res?.data) ? res.data : [];
-          items.push(...pageItems);
-          totalPages = Number(res?.meta?.totalPages ?? exportPage);
-          exportPage += 1;
+          while (exportPage <= totalPages) {
+            const res = await getAttendanceReport({
+              page: exportPage,
+              limit: exportLimit,
+              startDate: hook.startDate,
+              endDate: hook.endDate,
+            });
+
+            const pageItems: unknown[] = Array.isArray(res?.data) ? res.data : [];
+            items.push(...pageItems);
+            totalPages = Number(res?.meta?.totalPages ?? exportPage);
+            exportPage += 1;
+          }
+
+          excelData = items.map((item: unknown) => {
+            const row = mapAttendanceReportRow(item);
+            return {
+              "Nama Pegawai": row.employeeName,
+              Posisi: row.position,
+              Outlet: row.outletName,
+              "Jumlah Clock In": row.totalClockIn,
+              "Jumlah Clock Out": row.totalClockOut,
+            };
+          });
         }
-
-        excelData = items.map((item: unknown) => {
-          const row = mapAttendanceReportRow(item);
-          return {
-            "Nama Pegawai": row.employeeName,
-            Posisi: row.position,
-            Outlet: row.outletName,
-            "Jumlah Clock In": row.totalClockIn,
-            "Jumlah Clock Out": row.totalClockOut,
-          };
-        });
 
         fileName = `Laporan_Attendance_${hook.startDate || "Semua"}.xlsx`;
       }
@@ -167,6 +204,7 @@ export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
         <AttendanceView
           data={hook.data}
           meta={hook.meta}
+          roleCode={roleCode}
           loading={hook.loading}
           onPageChange={hook.setPage}
         />

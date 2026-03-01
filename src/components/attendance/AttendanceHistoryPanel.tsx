@@ -55,6 +55,16 @@ function getDatesInRange(startDate?: string, endDate?: string) {
   return dates;
 }
 
+function getTargetPageForDate(
+  dates: string[],
+  targetDate: string,
+  pageSize: number,
+) {
+  const targetIndex = dates.indexOf(targetDate);
+  if (targetIndex === -1) return 1;
+  return Math.floor(targetIndex / pageSize) + 1;
+}
+
 function formatDate(v?: string | null) {
   if (!v) return "-";
   const d = new Date(v);
@@ -82,9 +92,18 @@ export default function AttendanceHistoryPanel() {
   const [draftEndDate, setDraftEndDate] = useState(monthDefaults.endDate);
   const [startDate, setStartDate] = useState(monthDefaults.startDate);
   const [endDate, setEndDate] = useState(monthDefaults.endDate);
-  const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const pageSize = 7;
   const fetchLimit = 31;
+  const todayKey = useMemo(() => getDateKey(new Date()), []);
+  const allDateKeys = useMemo(() => {
+    const dates = getDatesInRange(startDate, endDate);
+    if (sortOrder === "asc") {
+      return [...dates].reverse();
+    }
+    return dates;
+  }, [endDate, sortOrder, startDate]);
+  const [page, setPage] = useState(() => getTargetPageForDate(allDateKeys, todayKey, pageSize));
 
   const historyQ = useAttendanceHistoryQuery({
     page: 1,
@@ -94,15 +113,13 @@ export default function AttendanceHistoryPanel() {
   });
 
   const visibleDateKeys = useMemo(() => {
-    const allDates = getDatesInRange(startDate, endDate);
     const startIndex = (page - 1) * pageSize;
-    return allDates.slice(startIndex, startIndex + pageSize);
-  }, [endDate, page, startDate]);
+    return allDateKeys.slice(startIndex, startIndex + pageSize);
+  }, [allDateKeys, page]);
 
   const totalPages = useMemo(() => {
-    const totalDays = getDatesInRange(startDate, endDate).length;
-    return Math.max(1, Math.ceil(totalDays / pageSize));
-  }, [endDate, startDate]);
+    return Math.max(1, Math.ceil(allDateKeys.length / pageSize));
+  }, [allDateKeys]);
 
   const itemsByDate = useMemo(() => {
     const map = new Map<string, AttendanceHistoryItem>();
@@ -135,18 +152,31 @@ export default function AttendanceHistoryPanel() {
   const canNext = page < totalPages;
 
   const onApply = () => {
-    setPage(1);
     setStartDate(draftStartDate);
     setEndDate(draftEndDate);
+    const nextDates = getDatesInRange(draftStartDate, draftEndDate);
+    const orderedDates =
+      sortOrder === "asc" ? [...nextDates].reverse() : nextDates;
+    setPage(getTargetPageForDate(orderedDates, todayKey, pageSize));
   };
 
   const onResetMonth = () => {
     const next = getCurrentMonthRange();
-    setPage(1);
     setDraftStartDate(next.startDate);
     setDraftEndDate(next.endDate);
     setStartDate(next.startDate);
     setEndDate(next.endDate);
+    const nextDates = getDatesInRange(next.startDate, next.endDate);
+    const orderedDates =
+      sortOrder === "asc" ? [...nextDates].reverse() : nextDates;
+    setPage(getTargetPageForDate(orderedDates, todayKey, pageSize));
+  };
+
+  const onToggleSortOrder = () => {
+    const nextSortOrder = sortOrder === "asc" ? "desc" : "asc";
+    const orderedDates = [...allDateKeys].reverse();
+    setSortOrder(nextSortOrder);
+    setPage(getTargetPageForDate(orderedDates, todayKey, pageSize));
   };
 
   return (
@@ -189,6 +219,14 @@ export default function AttendanceHistoryPanel() {
             className="border-[#1DACBC]/30 text-[#1DACBC] hover:bg-[#1DACBC]/5"
           >
             Bulan Ini
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onToggleSortOrder}
+            disabled={historyQ.isFetching}
+            className="border-[#1DACBC]/30 text-[#1DACBC] hover:bg-[#1DACBC]/5"
+          >
+            Sort: {sortOrder === "asc" ? "Terlama" : "Terbaru"}
           </Button>
         </div>
 

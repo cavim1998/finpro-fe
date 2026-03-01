@@ -9,10 +9,10 @@ import {
   MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
-import { decisionBypass } from "@/services/bypass.service";
+import { decisionBypass, type BypassRequest } from "@/services/bypass.service";
 
 interface BypassListItemProps {
-  item: any;
+  item: BypassRequest;
   onRefresh: () => void;
 }
 
@@ -33,8 +33,16 @@ export const BypassListItem = ({ item, onRefresh }: BypassListItemProps) => {
         `Request berhasil di-${action === "APPROVE" ? "setujui" : "tolak"}`,
       );
       onRefresh();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Gagal memproses");
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { error?: string } } }).response?.data?.error ===
+          "string"
+          ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+          : "Gagal memproses";
+      toast.error(message);
     } finally {
       setProcessing(false);
     }
@@ -50,6 +58,16 @@ export const BypassListItem = ({ item, onRefresh }: BypassListItemProps) => {
         return "bg-yellow-50 text-yellow-700 border-yellow-200";
     }
   };
+
+  const requestedAtLabel = (() => {
+    const value = item.requestedAt ?? item.createdAt;
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return date.toLocaleString("id-ID");
+  })();
 
   return (
     <div
@@ -91,8 +109,7 @@ export const BypassListItem = ({ item, onRefresh }: BypassListItemProps) => {
 
         <div className="flex items-center gap-4 text-sm text-gray-400">
           <div className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-lg">
-            <Clock size={14} />{" "}
-            {new Date(item.createdAt).toLocaleString("id-ID")}
+            <Clock size={14} /> {requestedAtLabel}
           </div>
           {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
@@ -108,7 +125,7 @@ export const BypassListItem = ({ item, onRefresh }: BypassListItemProps) => {
                 <p className="text-xs font-bold text-red-500 mb-1">
                   ALASAN WORKER:
                 </p>
-                <p className="text-sm text-gray-700 italic">"{item.reason}"</p>
+                <p className="text-sm text-gray-700 italic">&quot;{item.reason}&quot;</p>
               </div>
 
               <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -122,7 +139,7 @@ export const BypassListItem = ({ item, onRefresh }: BypassListItemProps) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {item.diffs?.map((diff: any) => (
+                    {item.diffs?.map((diff) => (
                       <tr key={diff.id}>
                         <td className="px-3 py-2 font-medium">
                           {diff.item?.name}
@@ -192,7 +209,7 @@ export const BypassListItem = ({ item, onRefresh }: BypassListItemProps) => {
                   </p>
                   {item.adminNote && (
                     <p className="text-sm text-gray-600 mt-2 bg-white p-2 rounded border border-gray-200 italic">
-                      "{item.adminNote}"
+                      &quot;{item.adminNote}&quot;
                     </p>
                   )}
                 </div>

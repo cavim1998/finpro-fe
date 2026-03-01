@@ -129,6 +129,7 @@ export default function WorkerCompletedOrders({
   subtitle,
 }: Props) {
   const [page, setPage] = React.useState(1);
+  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
   const [draftStartDate, setDraftStartDate] = React.useState("");
   const [draftEndDate, setDraftEndDate] = React.useState("");
   const [startDate, setStartDate] = React.useState("");
@@ -152,17 +153,25 @@ export default function WorkerCompletedOrders({
   const filteredItems = React.useMemo(() => {
     const items = ordersQ.data ?? [];
 
-    return items.filter((item) => {
-      const matchesSearch =
-        !search ||
-        item.orderId.toLowerCase().includes(search) ||
-        item.orderNo.toLowerCase().includes(search);
-      const matchesDate =
-        (!startDate && !endDate) || isInDateRange(item.enteredAt, startDate, endDate);
+    return items
+      .filter((item) => {
+        const matchesSearch =
+          !search ||
+          item.orderId.toLowerCase().includes(search) ||
+          item.orderNo.toLowerCase().includes(search);
+        const matchesDate =
+          (!startDate && !endDate) || isInDateRange(item.enteredAt, startDate, endDate);
 
-      return matchesSearch && matchesDate;
-    });
-  }, [endDate, ordersQ.data, search, startDate]);
+        return matchesSearch && matchesDate;
+      })
+      .sort((a, b) => {
+        const left = new Date(a.enteredAt).getTime();
+        const right = new Date(b.enteredAt).getTime();
+
+        if (Number.isNaN(left) || Number.isNaN(right)) return 0;
+        return sortOrder === "asc" ? left - right : right - left;
+      });
+  }, [endDate, ordersQ.data, search, sortOrder, startDate]);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / limit));
   const currentPage = Math.min(page, totalPages);
   const paginatedItems = filteredItems.slice((currentPage - 1) * limit, currentPage * limit);
@@ -244,6 +253,17 @@ export default function WorkerCompletedOrders({
               disabled={ordersQ.isFetching}
             >
               Reset
+            </Button>
+            <Button
+              variant="outline"
+              className={theme.ghostButtonClass}
+              onClick={() => {
+                setPage(1);
+                setSortOrder((current) => (current === "asc" ? "desc" : "asc"));
+              }}
+              disabled={ordersQ.isFetching}
+            >
+              Sort: {sortOrder === "asc" ? "Terlama" : "Terbaru"}
             </Button>
           </div>
 
