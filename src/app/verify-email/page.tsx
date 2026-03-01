@@ -3,11 +3,15 @@
 import React, { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { axiosInstance } from '@/lib/axios';
+import { useSession } from 'next-auth/react';
 
 const VerifyEmailPage = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { status } = useSession();
     const emailFromParams = searchParams.get('email') || '';
+    const source = searchParams.get('source') || '';
+    const isChangeEmailFlow = source === 'change-email';
 
     const [email, setEmail] = useState(emailFromParams);
     const [verificationCode, setVerificationCode] = useState('');
@@ -23,11 +27,19 @@ const VerifyEmailPage = () => {
         setLoading(true);
 
         try {
-            const response = await axiosInstance.post('/auth/verify-email', {
+            await axiosInstance.post('/auth/verify-email', {
                 email,
                 verificationCode,
                 password,
             });
+
+            if (isChangeEmailFlow && status === 'authenticated') {
+                setSuccess('Email verified successfully! Redirecting to profile...');
+                setTimeout(() => {
+                    router.push('/profile');
+                }, 1200);
+                return;
+            }
 
             setSuccess('Email verified successfully! Redirecting to login...');
             setTimeout(() => {

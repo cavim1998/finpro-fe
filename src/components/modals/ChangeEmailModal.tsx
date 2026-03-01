@@ -7,7 +7,7 @@ interface ChangeEmailModalProps {
     isOpen: boolean;
     onClose: () => void;
     currentEmail: string;
-    onSubmit: (newEmail: string, password: string) => void;
+    onSubmit: (newEmail: string, password: string) => Promise<void> | void;
 }
 
 const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({ isOpen, onClose, currentEmail, onSubmit }) => {
@@ -36,13 +36,15 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({ isOpen, onClose, cu
         }
 
         setLoading(true);
-        
-        // Simulasi API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        setLoading(false);
-        onSubmit(newEmail, password);
-        handleClose();
+
+        try {
+            await onSubmit(newEmail, password);
+            handleClose();
+        } catch {
+            // Error handling is managed by parent via toast
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleClose = () => {

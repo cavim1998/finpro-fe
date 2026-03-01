@@ -1,15 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { axiosInstance } from '@/lib/axios';
 import { formatRupiah } from '@/lib/currency';
-import { IoRefresh, IoCaretDown } from 'react-icons/io5';
 import { Loader2 } from 'lucide-react';
 import { FaCircleChevronLeft } from 'react-icons/fa6';
 import Link from 'next/link';
@@ -63,13 +60,54 @@ interface PaginatedResponse<T> {
     };
 }
 
+function buildDateFilterParams(dateFrom?: string, dateTo?: string) {
+    const params: Record<string, string> = {};
+
+    if (dateFrom) {
+        params.dateFrom = dateFrom;
+        params.startDate = dateFrom;
+    }
+
+    if (dateTo) {
+        params.dateTo = dateTo;
+        params.endDate = dateTo;
+    }
+
+    return params;
+}
+
+function toLocalDateKey(iso?: string) {
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function matchesDateRange(iso: string | undefined, from: string, to: string) {
+    if (!from && !to) return true;
+    const dateKey = toLocalDateKey(iso);
+    if (!dateKey) return false;
+    if (from && dateKey < from) return false;
+    if (to && dateKey > to) return false;
+    return true;
+}
+
 export default function CheckStatusHistoryPage() {
-    const router = useRouter();
     const { data: session, status } = useSession();
     const [showAccountSection, setShowAccountSection] = useState(false);
     const [activeTab, setActiveTab] = useState<'pickups' | 'orders'>('pickups');
-    const [filterDateFrom, setFilterDateFrom] = useState('');
-    const [filterDateTo, setFilterDateTo] = useState('');
+    const [draftFilterDateFrom, setDraftFilterDateFrom] = useState('');
+    const [draftFilterDateTo, setDraftFilterDateTo] = useState('');
+    const [draftPickupStatus, setDraftPickupStatus] = useState('');
+    const [draftOrderStatus, setDraftOrderStatus] = useState('');
+    const [appliedFilterDateFrom, setAppliedFilterDateFrom] = useState('');
+    const [appliedFilterDateTo, setAppliedFilterDateTo] = useState('');
+    const [appliedPickupStatus, setAppliedPickupStatus] = useState('');
+    const [appliedOrderStatus, setAppliedOrderStatus] = useState('');
     const observerTarget = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -85,13 +123,14 @@ export default function CheckStatusHistoryPage() {
         hasNextPage: hasNextPickups,
         isFetchingNextPage: isFetchingNextPickups,
         isLoading: isLoadingPickups,
-        refetch: refetchPickups,
     } = useInfiniteQuery<PaginatedResponse<PickupRequestListItem>>({
-        queryKey: ['pickup-history', { filterDateFrom, filterDateTo }],
+        queryKey: ['pickup-history', { appliedFilterDateFrom, appliedFilterDateTo, appliedPickupStatus }],
         queryFn: async ({ pageParam = 1 }) => {
             const params: any = { page: pageParam, limit: 10 };
-            if (filterDateFrom) params.dateFrom = filterDateFrom;
-            if (filterDateTo) params.dateTo = filterDateTo;
+            Object.assign(params, buildDateFilterParams(appliedFilterDateFrom, appliedFilterDateTo));
+            if (appliedPickupStatus) {
+                params.status = appliedPickupStatus;
+            }
             const response = await axiosInstance.get('/pickup-requests', { params });
             const responseData = response?.data ?? {};
             const data = responseData.data ?? [];
@@ -116,14 +155,12 @@ export default function CheckStatusHistoryPage() {
         hasNextPage: hasNextOrders,
         isFetchingNextPage: isFetchingNextOrders,
         isLoading: isLoadingOrders,
-        refetch: refetchOrders,
     } = useInfiniteQuery<PaginatedResponse<OrderListItem>>({
-        queryKey: ['orders-history', { filterDateFrom, filterDateTo }],
+        queryKey: ['orders-history', { appliedFilterDateFrom, appliedFilterDateTo }],
         queryFn: async ({ pageParam = 1 }) => {
             // Step 1: Fetch pickups with orders
             const pickupParams: any = { page: pageParam, limit: 20 };
-            if (filterDateFrom) pickupParams.dateFrom = filterDateFrom;
-            if (filterDateTo) pickupParams.dateTo = filterDateTo;
+            Object.assign(pickupParams, buildDateFilterParams(appliedFilterDateFrom, appliedFilterDateTo));
 
             const pickupResponse = await axiosInstance.get('/pickup-requests', { params: pickupParams });
             const pickupData = pickupResponse?.data?.data ?? [];
@@ -201,16 +238,21 @@ export default function CheckStatusHistoryPage() {
     }, [activeTab, hasNextPickups, hasNextOrders, isFetchingNextPickups, isFetchingNextOrders, fetchNextPickups, fetchNextOrders]);
 
     const handleApplyFilter = () => {
-        if (activeTab === 'pickups') {
-            refetchPickups();
-        } else {
-            refetchOrders();
-        }
+        setAppliedFilterDateFrom(draftFilterDateFrom);
+        setAppliedFilterDateTo(draftFilterDateTo);
+        setAppliedPickupStatus(draftPickupStatus);
+        setAppliedOrderStatus(draftOrderStatus);
     };
 
     const handleClearFilter = () => {
-        setFilterDateFrom('');
-        setFilterDateTo('');
+        setDraftFilterDateFrom('');
+        setDraftFilterDateTo('');
+        setDraftPickupStatus('');
+        setDraftOrderStatus('');
+        setAppliedFilterDateFrom('');
+        setAppliedFilterDateTo('');
+        setAppliedPickupStatus('');
+        setAppliedOrderStatus('');
     };
 
     const formatStatusLabel = (status?: string) => {
@@ -270,12 +312,48 @@ export default function CheckStatusHistoryPage() {
         }
     };
 
-    // Merge pages and sort by createdAt descending (newest first)
-    const pickupRequests = (pickupData?.pages.flatMap((page) => page.data) ?? [])
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const pickupStatusOptions = useMemo(() => {
+        const statuses = new Set<string>();
+        for (const page of pickupData?.pages ?? []) {
+            for (const item of page.data ?? []) {
+                if (item?.status) statuses.add(item.status);
+            }
+        }
+        return Array.from(statuses).sort((a, b) => a.localeCompare(b));
+    }, [pickupData?.pages]);
 
-    const orders = (ordersData?.pages.flatMap((page) => page.data) ?? [])
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const orderStatusOptions = useMemo(() => {
+        const statuses = new Set<string>();
+        for (const page of ordersData?.pages ?? []) {
+            for (const item of page.data ?? []) {
+                if (item?.status) statuses.add(item.status);
+            }
+        }
+        return Array.from(statuses).sort((a, b) => a.localeCompare(b));
+    }, [ordersData?.pages]);
+
+    // Merge pages, apply client-side fallback filtering, then sort newest first
+    const pickupRequests = useMemo(() => {
+        const merged = pickupData?.pages.flatMap((page) => page.data) ?? [];
+        return merged
+            .filter((request) => {
+                const matchesStatus = !appliedPickupStatus || request.status === appliedPickupStatus;
+                const matchesDate = matchesDateRange(request.createdAt, appliedFilterDateFrom, appliedFilterDateTo);
+                return matchesStatus && matchesDate;
+            })
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [pickupData?.pages, appliedPickupStatus, appliedFilterDateFrom, appliedFilterDateTo]);
+
+    const orders = useMemo(() => {
+        const merged = ordersData?.pages.flatMap((page) => page.data) ?? [];
+        return merged
+            .filter((orderItem) => {
+                const matchesStatus = !appliedOrderStatus || orderItem.status === appliedOrderStatus;
+                const matchesDate = matchesDateRange(orderItem.createdAt, appliedFilterDateFrom, appliedFilterDateTo);
+                return matchesStatus && matchesDate;
+            })
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [ordersData?.pages, appliedOrderStatus, appliedFilterDateFrom, appliedFilterDateTo]);
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
@@ -320,8 +398,8 @@ export default function CheckStatusHistoryPage() {
                                         <label className="block text-gray-700 text-xs font-semibold mb-1">From Date</label>
                                         <input
                                             type="date"
-                                            value={filterDateFrom}
-                                            onChange={(e) => setFilterDateFrom(e.target.value)}
+                                            value={draftFilterDateFrom}
+                                            onChange={(e) => setDraftFilterDateFrom(e.target.value)}
                                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
                                         />
                                     </div>
@@ -329,10 +407,33 @@ export default function CheckStatusHistoryPage() {
                                         <label className="block text-gray-700 text-xs font-semibold mb-1">To Date</label>
                                         <input
                                             type="date"
-                                            value={filterDateTo}
-                                            onChange={(e) => setFilterDateTo(e.target.value)}
+                                            value={draftFilterDateTo}
+                                            onChange={(e) => setDraftFilterDateTo(e.target.value)}
                                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
                                         />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 text-xs font-semibold mb-1">
+                                            Status {activeTab === 'pickups' ? 'Pickup' : 'Order'}
+                                        </label>
+                                        <select
+                                            value={activeTab === 'pickups' ? draftPickupStatus : draftOrderStatus}
+                                            onChange={(e) => {
+                                                if (activeTab === 'pickups') {
+                                                    setDraftPickupStatus(e.target.value);
+                                                } else {
+                                                    setDraftOrderStatus(e.target.value);
+                                                }
+                                            }}
+                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none bg-white"
+                                        >
+                                            <option value="">All Status</option>
+                                            {(activeTab === 'pickups' ? pickupStatusOptions : orderStatusOptions).map((status) => (
+                                                <option key={status} value={status}>
+                                                    {formatStatusLabel(status)}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="flex items-end gap-2">
                                         <button
@@ -341,7 +442,7 @@ export default function CheckStatusHistoryPage() {
                                         >
                                             Apply Filter
                                         </button>
-                                        {(filterDateFrom || filterDateTo) && (
+                                        {(draftFilterDateFrom || draftFilterDateTo || draftPickupStatus || draftOrderStatus) && (
                                             <button
                                                 onClick={handleClearFilter}
                                                 className="px-3 py-2 text-sm bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition font-semibold"

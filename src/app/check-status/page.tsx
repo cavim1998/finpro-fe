@@ -405,7 +405,7 @@ export default function CheckStatusPage() {
             setSearchType('order');
             setSearched(true);
         } catch (err: any) {
-            const message = err?.response?.data?.message || 'Order not found. Please check the order ID.';
+            const message = err?.response?.data?.message || 'Order not found. Please check the order ID or order number.';
             toast.error(message);
             setOrder(null);
             setPickupDetail(null);
@@ -416,11 +416,43 @@ export default function CheckStatusPage() {
         }
     };
 
+    const findOrderFromLoadedList = (query: string) => {
+        const normalizedQuery = query.trim().toUpperCase();
+        if (!normalizedQuery) return null;
+
+        return orders.find((item) => {
+            const candidates = [item.id, item.orderNo, item.orderNumber];
+            return candidates.some((candidate) => String(candidate ?? '').trim().toUpperCase() === normalizedQuery);
+        }) ?? null;
+    };
+
+    const isUuid = (value: string) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim());
+
     const handleSearch = async () => {
         const query = orderNumber.trim();
         if (!query) {
-            toast.error('Please enter an order ID');
+            toast.error('Please enter an order ID or order number');
             return;
+        }
+
+        const localMatch = findOrderFromLoadedList(query);
+        if (localMatch) {
+            setOrder(localMatch as unknown as Order);
+            setSearchType('order');
+            setSearched(true);
+            return;
+        }
+
+        if (!isUuid(query)) {
+            await loadOrders();
+            const refreshedLocalMatch = findOrderFromLoadedList(query);
+            if (refreshedLocalMatch) {
+                setOrder(refreshedLocalMatch as unknown as Order);
+                setSearchType('order');
+                setSearched(true);
+                return;
+            }
         }
 
         await fetchOrderById(query);
@@ -698,14 +730,14 @@ export default function CheckStatusPage() {
                                 <div className="space-y-3">
                                     <div>
                                         <label className="block text-gray-700 text-xs font-semibold mb-1">
-                                            Search Order ID
+                                            Search Order ID / Order Number
                                         </label>
                                         <input
                                             type="text"
                                             value={orderNumber}
                                             onChange={(e) => setOrderNumber(e.target.value)}
                                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                            placeholder="Enter order ID"
+                                            placeholder="Enter order ID or INV number"
                                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none"
                                         />
                                     </div>
@@ -729,7 +761,7 @@ export default function CheckStatusPage() {
                                     {/* Search Result */}
                                     <div className="mt-4 pt-4 border-t border-gray-200">
                                         {!searched && (
-                                            <p className="text-gray-500 text-xs">Enter order ID above to search</p>
+                                            <p className="text-gray-500 text-xs">Enter order ID or order number above to search</p>
                                         )}
                                         {searched && !order && !loading && (
                                             <p className="text-red-500 text-xs">Order not found</p>

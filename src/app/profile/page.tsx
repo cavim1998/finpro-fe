@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import UploadPhotoModal from '@/components/modals/UploadPhotoModal';
 import ChangeEmailModal from '@/components/modals/ChangeEmailModal';
@@ -27,6 +28,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+    const router = useRouter();
     const { data: session, update } = useSession();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [name, setName] = useState('');
@@ -138,9 +140,13 @@ export default function ProfilePage() {
                 password,
             });
             toast.success('Verification code sent to your new email. Please verify to complete the change.');
+            setTimeout(() => {
+                router.push(`/verify-email?email=${encodeURIComponent(newEmail)}&source=change-email`);
+            }, 600);
         } catch (err: any) {
             const message = err?.response?.data?.message || 'Failed to change email.';
             toast.error(message);
+            throw err;
         }
     };
 
