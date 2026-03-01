@@ -516,6 +516,16 @@ export default function ReservationPage() {
                                 <h2 className="text-2xl font-bold text-[#1dacbc] mb-6">
                                     Service Details
                                 </h2>
+                                <div className="mt-4 mb-6 rounded-lg border border-[#1dacbc]/20 bg-[#e8f8fa] p-4">
+                                    <ul className="space-y-1 text-sm text-gray-700">
+                                        <li>
+                                            <span className="font-semibold">Regular Wash</span> — estimasi selesai 2-3 hari.
+                                        </li>
+                                        <li>
+                                            <span className="font-semibold">Premium Wash</span> — estimasi selesai 1 hari.
+                                        </li>
+                                    </ul>
+                                </div>
                                 <div>
                                     <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700 mb-2">
                                         <FaTshirt className="inline mr-2 text-[#1dacbc]" />
@@ -529,8 +539,8 @@ export default function ReservationPage() {
                                         required
                                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent"
                                     >
-                                        <option value="regular">Regular Wash (2-3 days)</option>
-                                        <option value="express">Premium Wash (1 day)</option>
+                                        <option value="regular">Regular Wash</option>
+                                        <option value="express">Premium Wash</option>
                                     </select>
                                 </div>
                             </div>
