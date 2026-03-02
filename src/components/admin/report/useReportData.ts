@@ -18,9 +18,9 @@ export const useReportData = (
   roleCode: RoleCode | null,
   userOutletId?: number,
 ) => {
-  const [reportType, setReportType] = useState<"SALES" | "PERFORMANCE" | "ATTENDANCE">(
-    "SALES",
-  );
+  const [reportType, setReportType] = useState<
+    "SALES" | "PERFORMANCE" | "ATTENDANCE"
+  >("SALES");
   const [outletId, setOutletId] = useState<number | undefined>(userOutletId);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");

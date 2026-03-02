@@ -15,12 +15,7 @@ function getOutletStaffId(profile: unknown): number | null {
     staff?: { id?: number | string | null };
   };
 
-  const value =
-    data.outletStaffId ??
-    data.outletStaff?.id ??
-    data.staff?.id ??
-    null;
-
+  const value = data.outletStaffId ?? data.outletStaff?.id ?? data.staff?.id ?? null;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
@@ -37,7 +32,8 @@ export default function WorkerStationTaskHistoryPage({ stationPath }: Props) {
   const routeOutletStaffId = Number(params?.outletStaffId ?? 0);
   const ownOutletStaffId = getOutletStaffId(profileQ.data);
   const effectiveOutletStaffId =
-    ownOutletStaffId || (Number.isFinite(routeOutletStaffId) && routeOutletStaffId > 0 ? routeOutletStaffId : 0);
+    ownOutletStaffId ||
+    (Number.isFinite(routeOutletStaffId) && routeOutletStaffId > 0 ? routeOutletStaffId : 0);
 
   useEffect(() => {
     if (!ownOutletStaffId) return;

@@ -15,12 +15,7 @@ function getOutletId(profile: unknown): number | null {
     staff?: { outletId?: number | string | null };
   };
 
-  const value =
-    data.outletId ??
-    data.outletStaff?.outletId ??
-    data.staff?.outletId ??
-    null;
-
+  const value = data.outletId ?? data.outletStaff?.outletId ?? data.staff?.outletId ?? null;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
