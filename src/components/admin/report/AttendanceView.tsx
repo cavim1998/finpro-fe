@@ -20,6 +20,7 @@ type AttendanceViewProps = {
 };
 
 type AttendanceReportRow = {
+  id?: number;
   outletStaffId: number;
   userId: number;
   employeeName: string;
@@ -27,6 +28,9 @@ type AttendanceReportRow = {
   outletName: string;
   totalClockIn: number;
   totalClockOut: number;
+  date: string;
+  clockInAt: string;
+  clockOutAt: string;
 };
 
 function toObject(value: unknown): Record<string, unknown> {
@@ -40,18 +44,44 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export function mapAttendanceReportRow(row: unknown): AttendanceReportRow {
+function formatDateTime(value: unknown) {
+  if (!value) return "-";
+
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function mapAttendanceReportRow(
+  row: unknown,
+  isHistoryMode = false,
+): AttendanceReportRow {
   const record = toObject(row);
   const outlet = toObject(record.outlet);
 
   return {
+    id: toNumber(record.id),
     outletStaffId: toNumber(record.outletStaffId),
     userId: toNumber(record.userId),
     employeeName: String(record.employeeName ?? "Tanpa Nama"),
     position: String(record.position ?? "-"),
     outletName: String(outlet.name ?? "-"),
-    totalClockIn: toNumber(record.totalClockIn),
-    totalClockOut: toNumber(record.totalClockOut),
+    totalClockIn: isHistoryMode
+      ? (record.clockInAt ? 1 : 0)
+      : toNumber(record.totalClockIn),
+    totalClockOut: isHistoryMode
+      ? (record.clockOutAt ? 1 : 0)
+      : toNumber(record.totalClockOut),
+    date: formatDateTime(record.date),
+    clockInAt: record.clockInAt ? formatDateTime(record.clockInAt) : "-",
+    clockOutAt: record.clockOutAt ? formatDateTime(record.clockOutAt) : "-",
   };
 }
 

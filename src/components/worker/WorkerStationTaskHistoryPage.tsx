@@ -55,6 +55,7 @@ export default function WorkerStationTaskHistoryPage({ stationPath }: Props) {
         {effectiveOutletStaffId > 0 ? (
           <WorkerTaskHistory
             outletStaffId={effectiveOutletStaffId}
+            stationPath={stationPath}
             title="Task History"
             subtitle="Semua riwayat task yang pernah dikerjakan oleh worker ini."
           />

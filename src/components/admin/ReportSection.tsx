@@ -14,6 +14,7 @@ import {
   getSalesReport,
   getPerformanceReport,
   getAttendanceReport,
+  getAdminAttendanceReport,
 } from "@/services/report.service";
 
 interface ReportProps {
@@ -89,16 +90,41 @@ export default function ReportSection({ roleCode, userOutletId }: ReportProps) {
         const items: unknown[] = [];
 
         while (exportPage <= totalPages) {
-          const res = await getAttendanceReport({
-            page: exportPage,
-            limit: exportLimit,
-            startDate: hook.startDate,
-            endDate: hook.endDate,
-          });
+          const res = roleCode === "SUPER_ADMIN"
+            ? await getAdminAttendanceReport({
+                page: exportPage,
+                limit: exportLimit,
+                outletId: hook.outletId,
+                startDate: hook.startDate,
+                endDate: hook.endDate,
+              })
+            : await getAttendanceReport({
+                page: exportPage,
+                limit: exportLimit,
+                outletId: hook.outletId,
+                startDate: hook.startDate,
+                endDate: hook.endDate,
+              });
+          const payload = toObject(res);
+          const nestedData = toObject(payload.data);
+          const pagination = toObject(payload.pagination);
+          const nestedPagination = toObject(nestedData.pagination);
+          const currentPagination =
+            Object.keys(pagination).length > 0 ? pagination : nestedPagination;
 
-          const pageItems: unknown[] = Array.isArray(res?.data) ? res.data : [];
+          const pageItems: unknown[] = roleCode === "SUPER_ADMIN"
+            ? (Array.isArray(payload.items)
+                ? payload.items
+                : Array.isArray(nestedData.items)
+                  ? nestedData.items
+                  : [])
+            : (Array.isArray(res?.data) ? res.data : []);
           items.push(...pageItems);
-          totalPages = Number(res?.meta?.totalPages ?? exportPage);
+          totalPages = Number(
+            roleCode === "SUPER_ADMIN"
+              ? (currentPagination.totalPages ?? exportPage)
+              : (res?.meta?.totalPages ?? exportPage),
+          );
           exportPage += 1;
         }
 

@@ -4,11 +4,18 @@ export interface BypassRequest {
   id: number;
   reason: string;
   status: "REQUESTED" | "APPROVED" | "REJECTED";
-  createdAt: string;
+  requestedAt: string;
+  createdAt?: string;
+  decidedAt?: string | null;
+  adminNote?: string | null;
   requestedBy: {
     profile: { fullName: string };
     email: string;
   };
+  approvedBy?: {
+    profile?: { fullName?: string | null };
+    email?: string;
+  } | null;
   orderStation: {
     stationType: string;
     order: {
@@ -29,6 +36,9 @@ interface GetBypassParams {
   limit?: number;
   outletId?: number;
   status?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 export const getBypassRequests = async (params: GetBypassParams) => {
@@ -39,13 +49,13 @@ export const getBypassRequests = async (params: GetBypassParams) => {
 export const decisionBypass = async (
   id: number,
   action: "APPROVE" | "REJECT",
-  notes?: string,
+  adminNote?: string,
 ) => {
   const response = await axiosInstance.patch(
     `/bypass-requests/${id}/decision`,
     {
       action,
-      notes,
+      adminNote,
     },
   );
   return response.data;
