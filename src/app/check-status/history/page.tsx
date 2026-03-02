@@ -10,6 +10,7 @@ import { formatRupiah } from '@/lib/currency';
 import { Loader2 } from 'lucide-react';
 import { FaCircleChevronLeft } from 'react-icons/fa6';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface PickupRequestListItem {
     id: string;
@@ -17,11 +18,32 @@ interface PickupRequestListItem {
     outletId?: number;
     outletName?: string;
     distanceKm?: number;
+    customerName?: string;
     status: string;
     scheduledPickupAt: string;
+    serviceType?: string;
+    addressText?: string;
     notes?: string;
     createdAt: string;
     arrivedAt?: string;
+    customer?: {
+        fullName?: string;
+        name?: string;
+        profile?: {
+            fullName?: string;
+        };
+    };
+    user?: {
+        fullName?: string;
+        name?: string;
+        profile?: {
+            fullName?: string;
+        };
+    };
+    address?: {
+        addressText?: string;
+        label?: string;
+    };
     outlet?: {
         id: number;
         name: string;
@@ -48,6 +70,19 @@ interface OrderListItem {
     deliveredAt?: string;
     receivedConfirmedAt?: string;
     isPaid?: boolean;
+    outlet?: {
+        id?: number;
+        name?: string;
+        address?: string;
+    };
+    items?: Array<{
+        laundryItemName?: string;
+        quantity?: number;
+        qty?: number;
+        item?: {
+            name?: string;
+        };
+    }>;
 }
 
 interface PaginatedResponse<T> {
@@ -60,40 +95,20 @@ interface PaginatedResponse<T> {
     };
 }
 
+type SortOrder = 'asc' | 'desc';
+
 function buildDateFilterParams(dateFrom?: string, dateTo?: string) {
     const params: Record<string, string> = {};
 
     if (dateFrom) {
-        params.dateFrom = dateFrom;
         params.startDate = dateFrom;
     }
 
     if (dateTo) {
-        params.dateTo = dateTo;
         params.endDate = dateTo;
     }
 
     return params;
-}
-
-function toLocalDateKey(iso?: string) {
-    if (!iso) return '';
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return '';
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-function matchesDateRange(iso: string | undefined, from: string, to: string) {
-    if (!from && !to) return true;
-    const dateKey = toLocalDateKey(iso);
-    if (!dateKey) return false;
-    if (from && dateKey < from) return false;
-    if (to && dateKey > to) return false;
-    return true;
 }
 
 export default function CheckStatusHistoryPage() {
@@ -104,11 +119,17 @@ export default function CheckStatusHistoryPage() {
     const [draftFilterDateTo, setDraftFilterDateTo] = useState('');
     const [draftPickupStatus, setDraftPickupStatus] = useState('');
     const [draftOrderStatus, setDraftOrderStatus] = useState('');
+    const [draftPickupSortOrder, setDraftPickupSortOrder] = useState<SortOrder>('desc');
+    const [draftOrderSortOrder, setDraftOrderSortOrder] = useState<SortOrder>('desc');
     const [appliedFilterDateFrom, setAppliedFilterDateFrom] = useState('');
     const [appliedFilterDateTo, setAppliedFilterDateTo] = useState('');
     const [appliedPickupStatus, setAppliedPickupStatus] = useState('');
     const [appliedOrderStatus, setAppliedOrderStatus] = useState('');
+    const [appliedPickupSortOrder, setAppliedPickupSortOrder] = useState<SortOrder>('desc');
+    const [appliedOrderSortOrder, setAppliedOrderSortOrder] = useState<SortOrder>('desc');
     const observerTarget = useRef<HTMLDivElement>(null);
+    const defaultSortBy = 'createdAt';
+    const defaultSortOrder: 'asc' | 'desc' = 'desc';
 
     useEffect(() => {
         if (status === 'authenticated' && session?.user) {
@@ -124,9 +145,14 @@ export default function CheckStatusHistoryPage() {
         isFetchingNextPage: isFetchingNextPickups,
         isLoading: isLoadingPickups,
     } = useInfiniteQuery<PaginatedResponse<PickupRequestListItem>>({
-        queryKey: ['pickup-history', { appliedFilterDateFrom, appliedFilterDateTo, appliedPickupStatus }],
+        queryKey: ['pickup-history', { appliedFilterDateFrom, appliedFilterDateTo, appliedPickupStatus, appliedPickupSortOrder }],
         queryFn: async ({ pageParam = 1 }) => {
-            const params: any = { page: pageParam, limit: 10 };
+            const params: any = {
+                page: pageParam,
+                limit: 10,
+                sortBy: defaultSortBy,
+                sortOrder: appliedPickupSortOrder,
+            };
             Object.assign(params, buildDateFilterParams(appliedFilterDateFrom, appliedFilterDateTo));
             if (appliedPickupStatus) {
                 params.status = appliedPickupStatus;
@@ -148,7 +174,7 @@ export default function CheckStatusHistoryPage() {
         enabled: showAccountSection,
     });
 
-    // Fetch orders by fetching pickup requests with orders, then fetch each order
+    // Fetch customer orders directly via /orders/my
     const {
         data: ordersData,
         fetchNextPage: fetchNextOrders,
@@ -156,52 +182,36 @@ export default function CheckStatusHistoryPage() {
         isFetchingNextPage: isFetchingNextOrders,
         isLoading: isLoadingOrders,
     } = useInfiniteQuery<PaginatedResponse<OrderListItem>>({
-        queryKey: ['orders-history', { appliedFilterDateFrom, appliedFilterDateTo }],
+        queryKey: ['orders-history', { appliedFilterDateFrom, appliedFilterDateTo, appliedOrderStatus, appliedOrderSortOrder }],
         queryFn: async ({ pageParam = 1 }) => {
-            // Step 1: Fetch pickups with orders
-            const pickupParams: any = { page: pageParam, limit: 20 };
-            Object.assign(pickupParams, buildDateFilterParams(appliedFilterDateFrom, appliedFilterDateTo));
-
-            const pickupResponse = await axiosInstance.get('/pickup-requests', { params: pickupParams });
-            const pickupData = pickupResponse?.data?.data ?? [];
-
-            // Step 2: Filter pickups yang ARRIVED_OUTLET dan punya order
-            const pickupsWithOrders = Array.isArray(pickupData)
-                ? pickupData.filter((p: any) => p.status === 'ARRIVED_OUTLET' && p.order?.id)
-                : [];
-
-            // Step 3: Fetch each order detail
-            const orderIds = pickupsWithOrders.map((p: any) => p.order.id);
-            const orders: OrderListItem[] = [];
-
-            for (const orderId of orderIds) {
-                try {
-                    const orderResponse = await axiosInstance.get(`/orders/${orderId}`);
-                    const orderData = orderResponse?.data?.data;
-                    if (orderData) {
-                        orders.push({
-                            ...orderData,
-                            orderNumber: orderData.orderNumber || orderData.orderNo || orderData.id,
-                            status: orderData.orderStatus || orderData.status,
-                            deliveryDate: orderData.deliveryDate || orderData.deliveredAt,
-                            isPaid: orderData.isPaid ?? false,
-                        });
-                    }
-                } catch (error) {
-                    console.error(`Failed to fetch order ${orderId}:`, error);
-                }
+            const params: any = {
+                page: pageParam,
+                limit: 10,
+                sortBy: defaultSortBy,
+                sortOrder: appliedOrderSortOrder,
+            };
+            Object.assign(params, buildDateFilterParams(appliedFilterDateFrom, appliedFilterDateTo));
+            if (appliedOrderStatus) {
+                params.status = appliedOrderStatus;
             }
 
-            // Sort orders by createdAt descending (newest first)
-            const sortedOrders = orders.sort((a, b) => {
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            });
-
-            // Step 4: Return with meta from pickup response
-            const pickupMeta = pickupResponse?.data?.meta ?? pickupResponse?.data?.pagination;
+            const response = await axiosInstance.get('/orders/my', { params });
+            const responseData = response?.data ?? {};
+            const rawData = Array.isArray(responseData.data) ? responseData.data : [];
+            const normalizedData: OrderListItem[] = rawData.map((item: any) => ({
+                ...item,
+                orderNumber: item.orderNumber || item.orderNo || item.invoiceNumber || item.id,
+                orderNo: item.orderNo || item.orderNumber,
+                status: item.orderStatus || item.status,
+                totalAmount: Number(item.totalAmount ?? item.totalPrice ?? item.total ?? 0),
+                outletName: item.outletName || item.outlet?.name,
+                deliveryDate: item.deliveryDate || item.deliveredAt,
+                isPaid: item.isPaid ?? false,
+            }));
+            const meta = responseData.meta ?? { total: 0, page: pageParam, limit: 10, totalPages: 1 };
             return {
-                data: sortedOrders,
-                meta: pickupMeta ?? { total: sortedOrders.length, page: pageParam, limit: 20, totalPages: 1 },
+                data: normalizedData,
+                meta,
             };
         },
         getNextPageParam: (lastPage) => {
@@ -238,10 +248,16 @@ export default function CheckStatusHistoryPage() {
     }, [activeTab, hasNextPickups, hasNextOrders, isFetchingNextPickups, isFetchingNextOrders, fetchNextPickups, fetchNextOrders]);
 
     const handleApplyFilter = () => {
+        if (draftFilterDateFrom && draftFilterDateTo && draftFilterDateFrom > draftFilterDateTo) {
+            toast.error('Start date tidak boleh lebih besar dari end date.');
+            return;
+        }
         setAppliedFilterDateFrom(draftFilterDateFrom);
         setAppliedFilterDateTo(draftFilterDateTo);
         setAppliedPickupStatus(draftPickupStatus);
         setAppliedOrderStatus(draftOrderStatus);
+        setAppliedPickupSortOrder(draftPickupSortOrder);
+        setAppliedOrderSortOrder(draftOrderSortOrder);
     };
 
     const handleClearFilter = () => {
@@ -249,10 +265,14 @@ export default function CheckStatusHistoryPage() {
         setDraftFilterDateTo('');
         setDraftPickupStatus('');
         setDraftOrderStatus('');
+        setDraftPickupSortOrder('desc');
+        setDraftOrderSortOrder('desc');
         setAppliedFilterDateFrom('');
         setAppliedFilterDateTo('');
         setAppliedPickupStatus('');
         setAppliedOrderStatus('');
+        setAppliedPickupSortOrder('desc');
+        setAppliedOrderSortOrder('desc');
     };
 
     const formatStatusLabel = (status?: string) => {
@@ -268,6 +288,72 @@ export default function CheckStatusHistoryPage() {
             dateStyle: 'medium',
             timeStyle: 'short',
         });
+    };
+
+    const parsePickupNotes = (notes?: string) => {
+        const raw = (notes || '').trim();
+        if (!raw) {
+            return {
+                serviceType: undefined as string | undefined,
+                outletPreference: undefined as string | undefined,
+                note: '-',
+            };
+        }
+
+        const lines = raw.split('\n').map((line) => line.trim()).filter(Boolean);
+        let serviceType: string | undefined;
+        let outletPreference: string | undefined;
+        const noteLines: string[] = [];
+
+        for (const line of lines) {
+            if (/^Service\s*:/i.test(line)) {
+                serviceType = line.replace(/^Service\s*:/i, '').trim() || undefined;
+                continue;
+            }
+            if (/^Outlet\s*Preference\s*:/i.test(line)) {
+                outletPreference = line.replace(/^Outlet\s*Preference\s*:/i, '').trim() || undefined;
+                continue;
+            }
+            noteLines.push(line);
+        }
+
+        return {
+            serviceType,
+            outletPreference,
+            note: noteLines.join(' ') || '-',
+        };
+    };
+
+    const getPickupCustomerName = (request: PickupRequestListItem) => {
+        return (
+            request.customerName ||
+            request.customer?.profile?.fullName ||
+            request.customer?.fullName ||
+            request.customer?.name ||
+            request.user?.profile?.fullName ||
+            request.user?.fullName ||
+            request.user?.name ||
+            session?.user?.name ||
+            '-'
+        );
+    };
+
+    const getPickupAddress = (request: PickupRequestListItem) => {
+        return (
+            request.addressText ||
+            request.address?.addressText ||
+            request.outlet?.address ||
+            '-'
+        );
+    };
+
+    const getPickupOutletChoice = (request: PickupRequestListItem, outletPreference?: string) => {
+        return (
+            request.outletName ||
+            request.outlet?.name ||
+            outletPreference ||
+            '-'
+        );
     };
 
     const getPickupRequestStatusColor = (status: string) => {
@@ -332,28 +418,14 @@ export default function CheckStatusHistoryPage() {
         return Array.from(statuses).sort((a, b) => a.localeCompare(b));
     }, [ordersData?.pages]);
 
-    // Merge pages, apply client-side fallback filtering, then sort newest first
+    // Merge pages from server-side paginated responses
     const pickupRequests = useMemo(() => {
-        const merged = pickupData?.pages.flatMap((page) => page.data) ?? [];
-        return merged
-            .filter((request) => {
-                const matchesStatus = !appliedPickupStatus || request.status === appliedPickupStatus;
-                const matchesDate = matchesDateRange(request.createdAt, appliedFilterDateFrom, appliedFilterDateTo);
-                return matchesStatus && matchesDate;
-            })
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [pickupData?.pages, appliedPickupStatus, appliedFilterDateFrom, appliedFilterDateTo]);
+        return pickupData?.pages.flatMap((page) => page.data) ?? [];
+    }, [pickupData?.pages]);
 
     const orders = useMemo(() => {
-        const merged = ordersData?.pages.flatMap((page) => page.data) ?? [];
-        return merged
-            .filter((orderItem) => {
-                const matchesStatus = !appliedOrderStatus || orderItem.status === appliedOrderStatus;
-                const matchesDate = matchesDateRange(orderItem.createdAt, appliedFilterDateFrom, appliedFilterDateTo);
-                return matchesStatus && matchesDate;
-            })
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [ordersData?.pages, appliedOrderStatus, appliedFilterDateFrom, appliedFilterDateTo]);
+        return ordersData?.pages.flatMap((page) => page.data) ?? [];
+    }, [ordersData?.pages]);
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
@@ -393,7 +465,7 @@ export default function CheckStatusHistoryPage() {
                             {/* Filter Section */}
                             <div className="mb-6 pb-6 border-b border-gray-200">
                                 <h2 className="text-lg font-bold text-gray-800 mb-4">Filters</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div>
                                         <label className="block text-gray-700 text-xs font-semibold mb-1">From Date</label>
                                         <input
@@ -433,6 +505,24 @@ export default function CheckStatusHistoryPage() {
                                                     {formatStatusLabel(status)}
                                                 </option>
                                             ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 text-xs font-semibold mb-1">Sort by Date</label>
+                                        <select
+                                            value={activeTab === 'pickups' ? draftPickupSortOrder : draftOrderSortOrder}
+                                            onChange={(e) => {
+                                                const nextOrder = e.target.value as SortOrder;
+                                                if (activeTab === 'pickups') {
+                                                    setDraftPickupSortOrder(nextOrder);
+                                                } else {
+                                                    setDraftOrderSortOrder(nextOrder);
+                                                }
+                                            }}
+                                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1dacbc] focus:border-transparent outline-none bg-white"
+                                        >
+                                            <option value="desc">Newest First</option>
+                                            <option value="asc">Oldest First</option>
                                         </select>
                                     </div>
                                     <div className="flex items-end gap-2">
@@ -495,8 +585,14 @@ export default function CheckStatusHistoryPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            {pickupRequests.map((request) => (
-                                                <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                                            {pickupRequests.map((request) => {
+                                                const parsedNotes = parsePickupNotes(request.notes);
+                                                const serviceType = request.serviceType || parsedNotes.serviceType || '-';
+                                                const outletChoice = getPickupOutletChoice(request, parsedNotes.outletPreference);
+                                                const customerName = getPickupCustomerName(request);
+                                                const customerAddress = getPickupAddress(request);
+
+                                                return <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                                                         <div>
                                                             <p className="text-xs text-gray-500 mb-1">Pickup ID</p>
@@ -517,15 +613,15 @@ export default function CheckStatusHistoryPage() {
                                                             <p className="text-sm font-medium text-gray-800">{formatDateTime(request.createdAt)}</p>
                                                         </div>
                                                     </div>
-                                                    {(request.outletName || request.distanceKm || request.notes) && (
-                                                        <div className="text-xs text-gray-600 space-y-1 border-t border-gray-100 pt-3">
-                                                            {request.outletName && <p><span className="font-medium">Outlet:</span> {request.outletName}</p>}
-                                                            {request.distanceKm && <p><span className="font-medium">Distance:</span> {Number(request.distanceKm).toFixed(2)} km</p>}
-                                                            {request.notes && <p><span className="font-medium">Notes:</span> {request.notes}</p>}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                    <div className="text-xs text-gray-600 space-y-1 border-t border-gray-100 pt-3">
+                                                        <p><span className="font-medium">Name:</span> {customerName}</p>
+                                                        <p><span className="font-medium">Address:</span> {customerAddress}</p>
+                                                        <p><span className="font-medium">Outlet:</span> {outletChoice}</p>
+                                                        <p><span className="font-medium">Service Type:</span> {serviceType}</p>
+                                                        <p><span className="font-medium">Note:</span> {parsedNotes.note}</p>
+                                                    </div>
+                                                </div>;
+                                            })}
                                             {(isFetchingNextPickups || hasNextPickups) && <div ref={observerTarget} className="py-4 text-center" />}
                                             {isFetchingNextPickups && (
                                                 <div className="text-center py-4">
@@ -554,8 +650,9 @@ export default function CheckStatusHistoryPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            {orders.map((orderItem) => (
-                                                <div key={orderItem.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                                            {orders.map((orderItem) => {
+                                                const outletName = orderItem.outletName || orderItem.outlet?.name || '-';
+                                                return <div key={orderItem.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                                                         <div>
                                                             <p className="text-xs text-gray-500 mb-1">Order Number</p>
@@ -576,20 +673,33 @@ export default function CheckStatusHistoryPage() {
                                                             <p className="text-sm font-medium text-gray-800">{formatDateTime(orderItem.createdAt)}</p>
                                                         </div>
                                                     </div>
-                                                    {(orderItem.outletName || orderItem.isPaid) && (
-                                                        <div className="text-xs text-gray-600 space-y-1 border-t border-gray-100 pt-3 flex items-center justify-between">
-                                                            <div>
-                                                                {orderItem.outletName && <p><span className="font-medium">Outlet:</span> {orderItem.outletName}</p>}
-                                                            </div>
+                                                    <div className="text-xs text-gray-600 space-y-1 border-t border-gray-100 pt-3">
+                                                        <div className="flex items-center justify-between gap-3">
+                                                            <p><span className="font-medium">Order ID:</span> {orderItem.id}</p>
                                                             {orderItem.isPaid && (
-                                                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">
+                                                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold whitespace-nowrap">
                                                                     ✅ PAID
                                                                 </span>
                                                             )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                        <p><span className="font-medium">Outlet:</span> {outletName}</p>
+                                                        {orderItem.items && orderItem.items.length > 0 && (
+                                                            <div className="pt-1">
+                                                                <p className="font-medium mb-1">Items:</p>
+                                                                <div className="space-y-0.5">
+                                                                    {orderItem.items.map((item, idx) => {
+                                                                        const itemName = item.laundryItemName || item.item?.name || 'Unknown Item';
+                                                                        const qty = item.quantity || item.qty || 0;
+                                                                        return (
+                                                                            <p key={idx}>• {itemName} x{qty}</p>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>;
+                                            })}
                                             {(isFetchingNextOrders || hasNextOrders) && <div ref={observerTarget} className="py-4 text-center" />}
                                             {isFetchingNextOrders && (
                                                 <div className="text-center py-4">

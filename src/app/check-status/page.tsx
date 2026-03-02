@@ -66,11 +66,32 @@ type PickupRequestListItem = {
     outletId?: number;
     outletName?: string;
     distanceKm?: number;
+    customerName?: string;
     status: string;
     scheduledPickupAt: string;
+    serviceType?: string;
+    addressText?: string;
     notes?: string;
     createdAt: string;
     arrivedAt?: string;
+    customer?: {
+        fullName?: string;
+        name?: string;
+        profile?: {
+            fullName?: string;
+        };
+    };
+    user?: {
+        fullName?: string;
+        name?: string;
+        profile?: {
+            fullName?: string;
+        };
+    };
+    address?: {
+        addressText?: string;
+        label?: string;
+    };
     outlet?: {
         id: number;
         name: string;
@@ -617,6 +638,70 @@ export default function CheckStatusPage() {
         });
     };
 
+    const parsePickupNotes = (notes?: string) => {
+        const raw = (notes || '').trim();
+        if (!raw) {
+            return { serviceType: undefined as string | undefined, outletPreference: undefined as string | undefined, note: '-' };
+        }
+
+        const lines = raw.split('\n').map((line) => line.trim()).filter(Boolean);
+        let serviceType: string | undefined;
+        let outletPreference: string | undefined;
+        const noteLines: string[] = [];
+
+        for (const line of lines) {
+            if (/^Service\s*:/i.test(line)) {
+                serviceType = line.replace(/^Service\s*:/i, '').trim() || undefined;
+                continue;
+            }
+
+            if (/^Outlet\s*Preference\s*:/i.test(line)) {
+                outletPreference = line.replace(/^Outlet\s*Preference\s*:/i, '').trim() || undefined;
+                continue;
+            }
+
+            noteLines.push(line);
+        }
+
+        return {
+            serviceType,
+            outletPreference,
+            note: noteLines.join(' ') || '-',
+        };
+    };
+
+    const getPickupCustomerName = (request: PickupRequestListItem) => {
+        return (
+            request.customerName ||
+            request.customer?.profile?.fullName ||
+            request.customer?.fullName ||
+            request.customer?.name ||
+            request.user?.profile?.fullName ||
+            request.user?.fullName ||
+            request.user?.name ||
+            session?.user?.name ||
+            '-'
+        );
+    };
+
+    const getPickupAddress = (request: PickupRequestListItem) => {
+        return (
+            request.addressText ||
+            request.address?.addressText ||
+            request.outlet?.address ||
+            '-'
+        );
+    };
+
+    const getPickupOutletChoice = (request: PickupRequestListItem, outletPreference?: string) => {
+        return (
+            request.outletName ||
+            request.outlet?.name ||
+            outletPreference ||
+            '-'
+        );
+    };
+
     const getOrderTrackingSteps = () => [
         'WAITING_DRIVER_PICKUP',
         'ON_THE_WAY_TO_OUTLET',
@@ -997,32 +1082,40 @@ export default function CheckStatusPage() {
                                     <div className="space-y-3">
                                         {getTopPickupRequests().map((request) => (
                                             <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-                                                <div className="grid grid-cols-2 gap-4 mb-3">
-                                                    <div>
-                                                        <p className="text-xs text-gray-500 mb-1">Pickup ID</p>
-                                                        <p className="text-sm font-semibold text-gray-800">{request.id}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-xs text-gray-500 mb-1">Scheduled</p>
-                                                        <p className="text-sm font-medium text-gray-800">{formatDateTime(request.scheduledPickupAt)}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="mb-3 pb-3 border-b border-gray-100">
-                                                    <span className={`px-2 py-1 text-xs font-semibold rounded inline-block ${getPickupRequestStatusColor(request.status)}`}>
-                                                        {formatStatusLabel(request.status)}
-                                                    </span>
-                                                </div>
-                                                {(request.outletName || (request.distanceKm !== undefined && !Number.isNaN(Number(request.distanceKm))) || request.notes) && (
-                                                    <div className="text-xs text-gray-600 space-y-1">
-                                                        {request.outletName && <p><span className="font-medium">Outlet:</span> {request.outletName}</p>}
-                                                        {request.distanceKm !== undefined && !Number.isNaN(Number(request.distanceKm)) && (
-                                                            <p><span className="font-medium">Distance:</span> {Number(request.distanceKm).toFixed(2)} km</p>
-                                                        )}
-                                                        {request.notes && (
-                                                            <p><span className="font-medium">Notes:</span> {request.notes}</p>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                {(() => {
+                                                    const parsedNotes = parsePickupNotes(request.notes);
+                                                    const serviceType = request.serviceType || parsedNotes.serviceType || '-';
+                                                    const outletChoice = getPickupOutletChoice(request, parsedNotes.outletPreference);
+                                                    const customerName = getPickupCustomerName(request);
+                                                    const customerAddress = getPickupAddress(request);
+
+                                                    return (
+                                                        <>
+                                                            <div className="grid grid-cols-2 gap-4 mb-3">
+                                                                <div>
+                                                                    <p className="text-xs text-gray-500 mb-1">Pickup ID</p>
+                                                                    <p className="text-sm font-semibold text-gray-800">{request.id}</p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-xs text-gray-500 mb-1">Scheduled</p>
+                                                                    <p className="text-sm font-medium text-gray-800">{formatDateTime(request.scheduledPickupAt)}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="mb-3 pb-3 border-b border-gray-100">
+                                                                <span className={`px-2 py-1 text-xs font-semibold rounded inline-block ${getPickupRequestStatusColor(request.status)}`}>
+                                                                    {formatStatusLabel(request.status)}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-xs text-gray-600 space-y-1 mb-4">
+                                                                <p><span className="font-medium">Nama:</span> {customerName}</p>
+                                                                <p><span className="font-medium">Alamat:</span> {customerAddress}</p>
+                                                                <p><span className="font-medium">Outlet:</span> {outletChoice}</p>
+                                                                <p><span className="font-medium">Service:</span> {serviceType}</p>
+                                                                <p><span className="font-medium">Notes:</span> {parsedNotes.note}</p>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                         ))}
                                         {pickupRequests.length > 5 && (
