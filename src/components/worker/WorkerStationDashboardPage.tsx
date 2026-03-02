@@ -4,12 +4,10 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import RequireCheckInRQ from "@/components/guards/RequireCheckIn";
 import NavbarWorker from "@/components/Navbarworker";
-import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
-import WorkerDashboard, {
-  type WorkerDashboardCopy,
-  type WorkerDashboardTheme,
-} from "@/components/worker/WorkerDashboard";
+import WorkerDashboard from "@/components/worker/WorkerDashboard";
+import type { WorkerDashboardCopy, WorkerDashboardTheme } from "@/components/worker/dashboard/shared";
 import type { StationType } from "@/types";
+import { useAttendanceTodayQuery } from "@/hooks/api/useAttendanceToday";
 
 type Props = {
   station: StationType;
@@ -39,10 +37,7 @@ export default function WorkerStationDashboardPage({
   }, [ownOutletStaffId, routeOutletStaffId, router, stationPath]);
 
   return (
-    <RequireCheckInRQ
-      roles={["WORKER"]}
-      redirectTo={`/attendance?next=${stationPath}`}
-    >
+    <RequireCheckInRQ roles={["WORKER"]} redirectTo={`/attendance?next=${stationPath}`}>
       <div className="min-h-screen bg-[#F8F9FA]">
         <div className="border-b-1">
           <NavbarWorker />
