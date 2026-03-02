@@ -46,8 +46,7 @@ export const useReportData = (
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     setLoading(true);
-    console.log(requestIdRef.current);
-    console.log(requestId);
+
     const applyIfLatest = (callback: () => void) => {
       if (requestIdRef.current !== requestId) return;
       callback();
