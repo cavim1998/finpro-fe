@@ -66,11 +66,9 @@ export default function CreateOutletModal({
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
-        const categoryValue = 
-          initialData.locationCategory || 
-          initialData.location_category || 
-          "";
-        
+        const categoryValue =
+          initialData.locationCategory || initialData.location_category || "";
+
         reset({
           name: initialData.name,
           addressText: initialData.addressText || initialData.address,
@@ -97,12 +95,7 @@ export default function CreateOutletModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/gif",
-    ];
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
 
     if (!validTypes.includes(file.type)) {
       setPhotoError("Hanya JPG, PNG, atau GIF (maks 1MB)");
@@ -141,8 +134,6 @@ export default function CreateOutletModal({
       locationCategory: data.locationCategory?.trim() || undefined,
     };
 
-    console.log("[CreateOutletModal] Submitting payload:", payload);
-
     const options = {
       onSuccess: async (response: any) => {
         const createdData = response?.data || response;
@@ -166,7 +157,7 @@ export default function CreateOutletModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-2xl p-6 relative animate-in fade-in zoom-in duration-200">
+      <div className="bg-white w-full max-w-lg rounded-2xl relative animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
         <button
           onClick={onClose}
           disabled={isPending}
@@ -175,115 +166,119 @@ export default function CreateOutletModal({
           <X size={20} />
         </button>
 
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-blue-50 p-3 rounded-full text-[#17A2B8]">
-            <Store size={24} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-800">
-              {initialData ? "Edit Outlet" : "Outlet Baru"}
-            </h2>
-            <p className="text-sm text-gray-500">
-              Kelola informasi cabang laundry
-            </p>
+        <div className="p-6 pb-4 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-50 p-3 rounded-full text-[#17A2B8]">
+              <Store size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">
+                {initialData ? "Edit Outlet" : "Outlet Baru"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                Kelola informasi cabang laundry
+              </p>
+            </div>
           </div>
         </div>
 
-        <form 
-          key={initialData?.id || 'new'}
-          onSubmit={handleSubmit(onSubmit)} 
-          className="space-y-4"
+        <form
+          key={initialData?.id || "new"}
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col overflow-hidden"
         >
-          <FormInput
-            label="Nama Outlet"
-            registration={register("name")}
-            error={errors.name?.message}
-            disabled={isPending}
-            placeholder="Contoh: LaundryQ Cabang Binjai"
-          />
-
-          <div className="space-y-1">
-            <label className="block text-sm font-semibold text-gray-700">
-              Alamat Lengkap <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              {...register("addressText")}
+          <div className="p-6 overflow-y-auto space-y-4 custom-scrollbar">
+            <FormInput
+              label="Nama Outlet"
+              registration={register("name")}
+              error={errors.name?.message}
               disabled={isPending}
-              rows={2}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17A2B8] outline-none resize-none disabled:bg-gray-100"
-              placeholder="Jl. Soekarno Hatta..."
+              placeholder="Contoh: LaundryQ Cabang Binjai"
             />
-            {errors.addressText && (
-              <p className="text-xs text-red-500">
-                {errors.addressText.message}
-              </p>
-            )}
-          </div>
 
-          <FormInput
-            label="Kategori Lokasi"
-            registration={register("locationCategory")}
-            error={errors.locationCategory?.message}
-            disabled={isPending}
-            placeholder="Contoh: Jakarta, Bandung, Surabaya"
-          />
+            <div className="space-y-1">
+              <label className="block text-sm font-semibold text-gray-700">
+                Alamat Lengkap <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                {...register("addressText")}
+                disabled={isPending}
+                rows={2}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#17A2B8] outline-none resize-none disabled:bg-gray-100"
+                placeholder="Jl. Soekarno Hatta..."
+              />
+              {errors.addressText && (
+                <p className="text-xs text-red-500">
+                  {errors.addressText.message}
+                </p>
+              )}
+            </div>
 
-          <div className={isPending ? "opacity-50 pointer-events-none" : ""}>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Pin Lokasi <span className="text-red-500">*</span>
-            </label>
-            <LocationPicker
-              defaultPosition={initialData && lat ? [lat, lng] : undefined}
-              onLocationSelect={(lat, lng) => {
-                setValue("latitude", lat, { shouldValidate: true });
-                setValue("longitude", lng, { shouldValidate: true });
-              }}
-            />
-            {errors.latitude && (
-              <p className="text-xs text-red-500 mt-1">
-                Lokasi wajib dipilih di peta.
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">
-              Foto Outlet
-            </label>
-            {photoPreview ? (
-              <div className="w-full h-40 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                <img
-                  src={photoPreview}
-                  alt="Outlet"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="w-full h-40 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-sm text-gray-500">
-                Belum ada foto
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/gif"
-              onChange={handlePhotoChange}
+            <FormInput
+              label="Kategori Lokasi"
+              registration={register("locationCategory")}
+              error={errors.locationCategory?.message}
               disabled={isPending}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              placeholder="Contoh: Jakarta, Bandung, Surabaya"
             />
-            {photoError && (
-              <p className="text-xs text-red-500">{photoError}</p>
-            )}
-            <p className="text-xs text-gray-500">
-              Upload foto akan dilakukan setelah outlet disimpan. Maks 1MB.
-            </p>
+
+            <div className={isPending ? "opacity-50 pointer-events-none" : ""}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Pin Lokasi <span className="text-red-500">*</span>
+              </label>
+              <LocationPicker
+                defaultPosition={initialData && lat ? [lat, lng] : undefined}
+                onLocationSelect={(lat, lng) => {
+                  setValue("latitude", lat, { shouldValidate: true });
+                  setValue("longitude", lng, { shouldValidate: true });
+                }}
+              />
+              {errors.latitude && (
+                <p className="text-xs text-red-500 mt-1">
+                  Lokasi wajib dipilih di peta.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Foto Outlet
+              </label>
+              {photoPreview ? (
+                <div className="w-full h-40 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  <img
+                    src={photoPreview}
+                    alt="Outlet"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-40 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-sm text-gray-500">
+                  Belum ada foto
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif"
+                onChange={handlePhotoChange}
+                disabled={isPending}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+              {photoError && (
+                <p className="text-xs text-red-500">{photoError}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                Upload foto akan dilakukan setelah outlet disimpan. Maks 1MB.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <CoordinateDisplay label="Latitude" value={lat} />
+              <CoordinateDisplay label="Longitude" value={lng} />
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-            <CoordinateDisplay label="Latitude" value={lat} />
-            <CoordinateDisplay label="Longitude" value={lng} />
-          </div>
-
-          <div className="pt-4 flex gap-3">
+          <div className="p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
