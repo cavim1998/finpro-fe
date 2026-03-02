@@ -18,9 +18,9 @@ export const useReportData = (
   roleCode: RoleCode | null,
   userOutletId?: number,
 ) => {
-  const [reportType, setReportType] = useState<"SALES" | "PERFORMANCE" | "ATTENDANCE">(
-    "SALES",
-  );
+  const [reportType, setReportType] = useState<
+    "SALES" | "PERFORMANCE" | "ATTENDANCE"
+  >("SALES");
   const [outletId, setOutletId] = useState<number | undefined>(userOutletId);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -46,7 +46,8 @@ export const useReportData = (
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     setLoading(true);
-
+    console.log(requestIdRef.current);
+    console.log(requestId);
     const applyIfLatest = (callback: () => void) => {
       if (requestIdRef.current !== requestId) return;
       callback();
