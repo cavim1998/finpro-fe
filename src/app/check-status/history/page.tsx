@@ -448,7 +448,7 @@ export default function CheckStatusHistoryPage() {
                 {/* Back Button */}
                 <div className="bg-white border-b">
                     <div className="container mx-auto px-4 py-4">
-                        <Link href="/check-status" className="text-[#1dacbc] text-lg hover:underline flex items-center gap-2">
+                        <Link href="/check-status" className="text-[#1dacbc] text-base md:text-lg hover:underline flex items-center gap-2">
                             <FaCircleChevronLeft /> Back to Check Status
                         </Link>
                     </div>
@@ -546,7 +546,7 @@ export default function CheckStatusHistoryPage() {
 
                             {/* Tabs */}
                             <div className="mb-6">
-                                <div className="flex gap-4 border-b border-gray-200">
+                                <div className="flex gap-2 sm:gap-4 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
                                     <button
                                         onClick={() => setActiveTab('pickups')}
                                         className={`px-4 py-3 font-semibold text-sm transition border-b-2 ${activeTab === 'pickups'
@@ -593,10 +593,10 @@ export default function CheckStatusHistoryPage() {
                                                 const customerAddress = getPickupAddress(request);
 
                                                 return <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
                                                         <div>
                                                             <p className="text-xs text-gray-500 mb-1">Pickup ID</p>
-                                                            <p className="text-sm font-semibold text-gray-800 truncate">{request.id}</p>
+                                                            <p className="text-sm font-semibold text-gray-800 break-all">{request.id}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-xs text-gray-500 mb-1">Status</p>
@@ -613,7 +613,7 @@ export default function CheckStatusHistoryPage() {
                                                             <p className="text-sm font-medium text-gray-800">{formatDateTime(request.createdAt)}</p>
                                                         </div>
                                                     </div>
-                                                    <div className="text-xs text-gray-600 space-y-1 border-t border-gray-100 pt-3">
+                                                    <div className="text-xs text-gray-600 space-y-1.5 border-t border-gray-100 pt-3">
                                                         <p><span className="font-medium">Name:</span> {customerName}</p>
                                                         <p><span className="font-medium">Address:</span> {customerAddress}</p>
                                                         <p><span className="font-medium">Outlet:</span> {outletChoice}</p>
@@ -653,10 +653,10 @@ export default function CheckStatusHistoryPage() {
                                             {orders.map((orderItem) => {
                                                 const outletName = orderItem.outletName || orderItem.outlet?.name || '-';
                                                 return <div key={orderItem.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
                                                         <div>
                                                             <p className="text-xs text-gray-500 mb-1">Order Number</p>
-                                                            <p className="text-sm font-semibold text-gray-800 truncate">{orderItem.orderNumber}</p>
+                                                            <p className="text-sm font-semibold text-gray-800 break-all">{orderItem.orderNumber}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-xs text-gray-500 mb-1">Amount</p>
@@ -673,15 +673,8 @@ export default function CheckStatusHistoryPage() {
                                                             <p className="text-sm font-medium text-gray-800">{formatDateTime(orderItem.createdAt)}</p>
                                                         </div>
                                                     </div>
-                                                    <div className="text-xs text-gray-600 space-y-1 border-t border-gray-100 pt-3">
-                                                        <div className="flex items-center justify-between gap-3">
-                                                            <p><span className="font-medium">Order ID:</span> {orderItem.id}</p>
-                                                            {orderItem.isPaid && (
-                                                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold whitespace-nowrap">
-                                                                    ✅ PAID
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                                    <div className="text-xs text-gray-600 space-y-1.5 border-t border-gray-100 pt-3">
+                                                        <p className="break-all"><span className="font-medium">Order ID:</span> {orderItem.id}</p>
                                                         <p><span className="font-medium">Outlet:</span> {outletName}</p>
                                                         {orderItem.items && orderItem.items.length > 0 && (
                                                             <div className="pt-1">
@@ -695,6 +688,13 @@ export default function CheckStatusHistoryPage() {
                                                                         );
                                                                     })}
                                                                 </div>
+                                                            </div>
+                                                        )}
+                                                        {orderItem.isPaid && (
+                                                            <div className="pt-3 pb-1">
+                                                                <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold whitespace-nowrap">
+                                                                    ✅ PAID
+                                                                </span>
                                                             </div>
                                                         )}
                                                     </div>

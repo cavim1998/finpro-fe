@@ -27,11 +27,31 @@ export default function AddressList({
   const handleDelete = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this address?')) return;
 
+    const targetAddress = addresses.find((addr) => addr.id === id);
+    const remainingAddresses = addresses.filter((addr) => addr.id !== id);
+
     setDeletingId(id);
     try {
       await addressService.delete(id);
       toast.success('Address deleted successfully');
       onAddressDeleted(id);
+
+      if (targetAddress?.isPrimary && remainingAddresses.length > 0) {
+        const fallbackPrimary = [...remainingAddresses].sort((a, b) => {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        })[0];
+
+        try {
+          await addressService.setPrimary(fallbackPrimary.id);
+          onAddressPrimary(fallbackPrimary.id);
+          toast.info(`Primary address switched to ${fallbackPrimary.label || 'another address'}.`);
+        } catch (primaryError: any) {
+          const primaryMessage =
+            primaryError?.response?.data?.message ||
+            'Primary address could not be switched automatically. Please set it manually.';
+          toast.error(primaryMessage);
+        }
+      }
     } catch (error: any) {
       const message =
         error.response?.data?.message ||
@@ -84,9 +104,9 @@ export default function AddressList({
           className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
         >
           {/* Header dengan badge primary */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-lg text-gray-800">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-semibold text-xl text-gray-800 leading-tight">
                 {address.label || 'Alamat'}
               </h3>
               {address.isPrimary && (
@@ -122,17 +142,17 @@ export default function AddressList({
           )}
 
           {/* Koordinat */}
-          <div className="text-xs text-gray-500 mb-4">
+          <div className="text-xs text-gray-500 mb-4 break-all">
             📍 Lat: {typeof address.latitude === 'number' ? address.latitude.toFixed(5) : parseFloat(String(address.latitude)).toFixed(5)}, Lng:{' '}
             {typeof address.longitude === 'number' ? address.longitude.toFixed(5) : parseFloat(String(address.longitude)).toFixed(5)}
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-col gap-2">
             <button
               onClick={() => onEditAddress(address)}
               disabled={isLoading || deletingId === address.id}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full inline-flex justify-center items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Edit2 className="w-4 h-4" />
               Edit
@@ -142,7 +162,7 @@ export default function AddressList({
               <button
                 onClick={() => handleSetPrimary(address.id)}
                 disabled={settingPrimaryId === address.id || isLoading}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded hover:bg-amber-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full inline-flex justify-center items-center gap-2 px-3 py-2 bg-amber-50 text-amber-600 rounded hover:bg-amber-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Star className="w-4 h-4" />
                 Set as Primary
@@ -152,7 +172,7 @@ export default function AddressList({
             <button
               onClick={() => handleDelete(address.id)}
               disabled={deletingId === address.id || isLoading}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full inline-flex justify-center items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="w-4 h-4" />
               {deletingId === address.id ? 'Deleting...' : 'Delete'}

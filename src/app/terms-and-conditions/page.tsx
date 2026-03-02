@@ -48,9 +48,9 @@ const page = () => {
             <div className='min-h-screen bg-[#f9f9f9]'>
 
                 {/* Hero Section */}
-                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-20">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-14 md:py-20">
                     <div className="container mx-auto px-4 text-center">
-                        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
+                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">
                             Terms & Conditions
                         </h1>
                     </div>
@@ -61,7 +61,7 @@ const page = () => {
                     <div className="flex flex-wrap gap-3 justify-center mb-8">
                         <button
                             onClick={() => setActiveTab('order')}
-                            className={`px-5 py-2 rounded-full text-sm font-semibold transition ${
+                            className={`w-full sm:w-auto px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition ${
                                 activeTab === 'order'
                                     ? 'bg-[#1dacbc] text-white shadow-md'
                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -71,7 +71,7 @@ const page = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('kiloan')}
-                            className={`px-5 py-2 rounded-full text-sm font-semibold transition ${
+                            className={`w-full sm:w-auto px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition ${
                                 activeTab === 'kiloan'
                                     ? 'bg-[#1dacbc] text-white shadow-md'
                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -81,11 +81,11 @@ const page = () => {
                         </button>
                     </div>
 
-                    <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-10">
+                    <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-10">
                         <h2 className="text-xl md:text-2xl font-bold text-[#1dacbc] mb-6">
                             {currentSection.title}
                         </h2>
-                        <ol className="list-decimal ml-5 space-y-3 text-gray-700 leading-relaxed">
+                        <ol className="list-decimal ml-5 space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
                             {currentSection.items.map((item, index) => (
                                 <li key={index}>{item}</li>
                             ))}

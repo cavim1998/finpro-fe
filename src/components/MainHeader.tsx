@@ -3,23 +3,23 @@ import React from 'react'
 const MainHeader = () => {
     return (
         <div className='bg-[#f9f9f9]'>
-            <div className='container mx-auto px-12 py-20'>
-                <div className='grid grid-cols-2 items-center gap-6'>
+            <div className='container mx-auto px-4 md:px-8 xl:px-12 py-10 md:py-16 lg:py-20'>
+                <div className='grid grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-10'>
 
                     {/* Text Section */}
                     <div className='flex flex-col justify-center text-left space-y-4'>
-                        <h1 className='text-6xl font-extrabold text-[#1dacbc] tracking-tight'>
+                        <h1 className='text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-extrabold text-[#1dacbc] tracking-tight'>
                             No.1 Laundry Service in Indonesia
                         </h1>
 
-                        <p className='text-[#1dacbc] text-xl tracking-tight'>
+                        <p className='text-[#1dacbc] text-base sm:text-lg xl:text-xl tracking-tight'>
                             <span className='font-semibold italic text-[#14939e]'>LaundryQ</span> is a professional
                             laundry service offering both per-kilogram and individual item washing.
                             We apply high cleanliness standards to ensure your clothes are clean,
                             neat, fresh, hygienic, and completed on time.
                         </p>
 
-                        <p className='text-[#1dacbc] text-xl tracking-tight'>
+                        <p className='text-[#1dacbc] text-base sm:text-lg xl:text-xl tracking-tight'>
                             <span className='font-semibold italic text-[#14939e]'>LaundryQ</span> is committed to
                             delivering consistent and reliable service.
                             Customer trust is our top priority, which is why every item is handled
@@ -29,7 +29,7 @@ const MainHeader = () => {
                     </div>
 
                     {/* Image Section */}
-                    <div className='flex-1'>
+                    <div className='flex-1 max-w-2xl mx-auto lg:max-w-none'>
                         <img
                             src="/imgAssets/main-header.png"
                             alt="Laundry Service Illustration"

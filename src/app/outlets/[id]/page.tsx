@@ -97,19 +97,6 @@ export default function OutletDetailPage() {
         );
     }
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-[#f9f9f9]">
-                <Navbar />
-                <div className="flex flex-col items-center justify-center py-12">
-                    <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
-                    <p className="text-gray-500">Loading outlet details...</p>
-                </div>
-                <Footer />
-            </div>
-        );
-    }
-
     const latitude = outlet ? Number(outlet.latitude) : null;
     const longitude = outlet ? Number(outlet.longitude) : null;
     const hasValidCoords = Number.isFinite(latitude) && Number.isFinite(longitude);
@@ -135,10 +122,15 @@ export default function OutletDetailPage() {
             </div>
 
             {/* Outlet Detail */}
-            {outlet && (
-                <div className="bg-[#f9f9f9]">
-                    <div className="container mx-auto px-4 py-12">
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+            <div className="bg-[#f9f9f9]">
+                <div className="container mx-auto px-4 py-12">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 min-h-90">
+                        {loading ? (
+                            <div className="h-full min-h-75 flex flex-col items-center justify-center">
+                                <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
+                                <p className="text-gray-500">Loading outlet details...</p>
+                            </div>
+                        ) : outlet ? (
                             <div className="flex flex-col lg:flex-row lg:items-start gap-10">
                                 <div className="w-full lg:w-[55%]">
                                     {outlet.photoUrl && (
@@ -150,7 +142,7 @@ export default function OutletDetailPage() {
                                             />
                                         </div>
                                     )}
-                                    <div className="rounded-2xl overflow-hidden h-80 md:h-[460px] bg-gray-100">
+                                    <div className="rounded-2xl overflow-hidden h-80 md:h-115 bg-gray-100">
                                         {hasValidCoords ? (
                                             <MapContainer
                                                 center={[latitude as number, longitude as number]}
@@ -187,7 +179,7 @@ export default function OutletDetailPage() {
                                     )}
 
                                     <div className="flex items-start gap-3 mt-4 text-gray-600">
-                                        <MapPin className="w-5 h-5 text-[#1dacbc] flex-shrink-0 mt-0.5" />
+                                        <MapPin className="w-5 h-5 text-[#1dacbc] shrink-0 mt-0.5" />
                                         <p className="text-base md:text-lg">{outlet.addressText}</p>
                                     </div>
 
@@ -200,7 +192,7 @@ export default function OutletDetailPage() {
                                     <div className="mt-6 space-y-3">
                                         {outlet.phone && (
                                             <div className="flex items-start gap-3 text-gray-700">
-                                                <Phone className="w-5 h-5 text-[#1dacbc] flex-shrink-0 mt-0.5" />
+                                                <Phone className="w-5 h-5 text-[#1dacbc] shrink-0 mt-0.5" />
                                                 <div>
                                                     <p className="text-xs font-semibold text-gray-500">Phone</p>
                                                     <p className="text-base">{outlet.phone}</p>
@@ -210,7 +202,7 @@ export default function OutletDetailPage() {
 
                                         {outlet.operatingHours && (
                                             <div className="flex items-start gap-3 text-gray-700">
-                                                <Clock className="w-5 h-5 text-[#1dacbc] flex-shrink-0 mt-0.5" />
+                                                <Clock className="w-5 h-5 text-[#1dacbc] shrink-0 mt-0.5" />
                                                 <div>
                                                     <p className="text-xs font-semibold text-gray-500">Operating Hours</p>
                                                     <p className="text-base">{outlet.operatingHours}</p>
@@ -220,10 +212,10 @@ export default function OutletDetailPage() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        ) : null}
                     </div>
                 </div>
-            )}
+            </div>
 
             <Footer />
         </div>

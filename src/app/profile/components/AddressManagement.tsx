@@ -78,16 +78,18 @@ export default function AddressManagement() {
     );
   };
 
+  const primaryAddress = addresses.find((a) => a.isPrimary) || null;
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <MapPin className="w-6 h-6 text-[#1dacbc]" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-3 bg-blue-50 rounded-lg shrink-0">
+            <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-[#1dacbc]" />
           </div>
-          <div className='flex flex-col'>
-            <h2 className="text-2xl font-bold text-[#1dacbc]">My Addresses</h2>
+          <div className='flex flex-col min-w-0'>
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#1dacbc]">My Addresses</h2>
             <p className="text-gray-500 text-sm">
               Manage your delivery addresses
             </p>
@@ -97,7 +99,7 @@ export default function AddressManagement() {
         <button
           onClick={() => handleOpenForm()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-medium hover:bg-[#14939e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-medium hover:bg-[#14939e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         >
           <Plus className="w-5 h-5" />
           Add Address
@@ -129,6 +131,8 @@ export default function AddressManagement() {
         isOpen={isFormOpen}
         onClose={handleCloseForm}
         onAddressSaved={handleAddressSaved}
+        hasPrimaryAddress={!!primaryAddress}
+        primaryAddressId={primaryAddress?.id ?? null}
       />
     </div>
   );

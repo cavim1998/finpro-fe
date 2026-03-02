@@ -3,13 +3,14 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { OutletListTypes } from '@/types/outlet';
+import Link from 'next/link';
 
 interface OutletsMapProps {
     outlets: OutletListTypes[];
-    loading?: boolean;
+    queryString?: string;
 }
 
-export default function OutletsMap({ outlets, loading }: OutletsMapProps) {
+export default function OutletsMap({ outlets, queryString }: OutletsMapProps) {
     const [isMounted, setIsMounted] = useState(false);
 
     const MapContainer = useMemo(
@@ -51,14 +52,6 @@ export default function OutletsMap({ outlets, loading }: OutletsMapProps) {
         );
     }
 
-    if (loading) {
-        return (
-            <div className="w-full h-96 bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1dacbc]"></div>
-            </div>
-        );
-    }
-
     // Filter outlets with valid coordinates
     const validOutlets = outlets.filter(
         outlet => outlet.latitude && outlet.longitude && !isNaN(Number(outlet.latitude)) && !isNaN(Number(outlet.longitude))
@@ -93,9 +86,45 @@ export default function OutletsMap({ outlets, loading }: OutletsMapProps) {
                         position={[Number(outlet.latitude), Number(outlet.longitude)]}
                     >
                         <Popup>
-                            <div className="p-2 text-sm">
-                                <p className="font-bold text-[#1dacbc]">{outlet.name}</p>
-                                <p className="text-gray-600 text-xs mt-1">{outlet.addressText}</p>
+                            <div className="w-64 h-72 rounded-2xl overflow-hidden shadow-xl relative isolate">
+                                {outlet.photoUrl ? (
+                                    <img
+                                        src={outlet.photoUrl}
+                                        alt={outlet.name}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="absolute inset-0 bg-linear-to-br from-[#1dacbc]/30 to-[#14939e]/30" />
+                                )}
+
+                                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
+
+                                <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-semibold bg-[#1dacbc] text-white">
+                                    {outlet.isActive ? 'Aktif' : 'Nonaktif'}
+                                </div>
+
+                                <div className="absolute bottom-0 p-3 text-white w-full space-y-0">
+                                    <p className="text-lg font-bold leading-[1.05] line-clamp-2">
+                                        {outlet.name}
+                                    </p>
+
+                                    {outlet.locationCategory && (
+                                        <p className="mt-0.5 text-[11px] leading-[1.05] text-gray-200 font-medium">
+                                            {outlet.locationCategory}
+                                        </p>
+                                    )}
+
+                                    <p className="mt-0 text-[11px] leading-[1.05] text-gray-300 line-clamp-1">
+                                        {outlet.addressText}
+                                    </p>
+
+                                    <Link
+                                        href={`/outlets/${outlet.id}?${queryString || 'page=1&pageSize=12'}`}
+                                        className="mt-0.5 block w-full bg-[#1dacbc] text-white! hover:text-white! focus:text-white! py-1.5 rounded-lg font-semibold hover:bg-[#14939e] transition-colors duration-200 text-center"
+                                    >
+                                        Lihat Detail
+                                    </Link>
+                                </div>
                             </div>
                         </Popup>
                     </Marker>

@@ -789,20 +789,20 @@ export default function CheckStatusPage() {
             {/* Main Content */}
             <div className="grow">
                 {/* Hero Section */}
-                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-10">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-8 md:py-10">
                     <div className="container mx-auto px-4">
-                        <h1 className="text-3xl md:text-4xl font-bold">Check Status</h1>
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Check Status</h1>
                         <p className="text-teal-50 text-sm mt-1">Track your laundry orders and pickup requests</p>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="container mx-auto px-4 py-10">
+                <div className="container mx-auto px-4 py-8 md:py-10">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
                         {/* Sidebar - Track Order Card */}
                         <div className="lg:col-span-1">
-                            <div className="bg-white rounded-lg shadow-sm p-6">
+                            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                                 <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
                                     <svg className="w-5 h-5 mr-2 text-[#1dacbc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -906,8 +906,8 @@ export default function CheckStatusPage() {
                         {/* Main Content - History */}
                         <div className="lg:col-span-3 space-y-6">
                             {/* Orders Section */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <div className="flex items-center justify-between mb-4">
+                            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
                                     <h2 className="text-lg font-bold text-gray-800 flex items-center">
                                         <svg className="w-5 h-5 mr-2 text-[#1dacbc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -946,12 +946,12 @@ export default function CheckStatusPage() {
                                     <div className="space-y-3">
                                         {getTopOrders().map((orderItem) => (
                                             <div key={orderItem.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-                                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
                                                     <div>
                                                         <p className="text-xs text-gray-500 mb-1">Order Number</p>
                                                         <p className="text-sm text-gray-800">{orderItem.orderNumber}</p>
                                                     </div>
-                                                    <div className="text-right">
+                                                    <div className="sm:text-right">
                                                         <p className="text-xs text-gray-500 mb-1">Amount</p>
                                                         <p className="text-sm font-semibold text-[#1dacbc]">{formatRupiah(orderItem.totalAmount)}</p>
                                                     </div>
@@ -987,7 +987,7 @@ export default function CheckStatusPage() {
                                                     </div>
                                                 )}
 
-                                                <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center gap-2">
+                                                <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-2">
                                                     {isPaidOrder(orderItem.isPaid ?? false) ? (
                                                         <div className="text-xs font-semibold px-3 py-1 rounded bg-green-100 text-green-700">
                                                             ✅ PAID
@@ -997,7 +997,7 @@ export default function CheckStatusPage() {
                                                             type="button"
                                                             onClick={() => handlePayOrder(orderItem.id)}
                                                             disabled={payingOrderId === orderItem.id}
-                                                            className="px-3 py-1 bg-[#1dacbc] text-white text-xs rounded-md font-semibold hover:bg-[#14939e] transition disabled:bg-gray-400 whitespace-nowrap"
+                                                            className="w-full sm:w-auto px-3 py-1 bg-[#1dacbc] text-white text-xs rounded-md font-semibold hover:bg-[#14939e] transition disabled:bg-gray-400"
                                                         >
                                                             {payingOrderId === orderItem.id ? 'Processing...' : 'Pay Here'}
                                                         </button>
@@ -1013,7 +1013,7 @@ export default function CheckStatusPage() {
                                                                 type="button"
                                                                 onClick={() => handleConfirmReceipt(orderItem.id)}
                                                                 disabled={confirmingOrderId === orderItem.id}
-                                                                className="px-3 py-1 bg-green-600 text-white text-xs rounded-md font-semibold hover:bg-green-700 transition disabled:bg-gray-400 whitespace-nowrap"
+                                                                className="w-full sm:w-auto px-3 py-1 bg-green-600 text-white text-xs rounded-md font-semibold hover:bg-green-700 transition disabled:bg-gray-400"
                                                             >
                                                                 {confirmingOrderId === orderItem.id ? 'Confirming...' : 'I Received It'}
                                                             </button>
@@ -1035,8 +1035,8 @@ export default function CheckStatusPage() {
                             </div>
 
                             {/* Pickup Requests Section */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <div className="flex items-center justify-between mb-4">
+                            <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
                                     <h2 className="text-lg font-bold text-gray-800 flex items-center">
                                         <svg className="w-5 h-5 mr-2 text-[#1dacbc]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1091,12 +1091,12 @@ export default function CheckStatusPage() {
 
                                                     return (
                                                         <>
-                                                            <div className="grid grid-cols-2 gap-4 mb-3">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
                                                                 <div>
                                                                     <p className="text-xs text-gray-500 mb-1">Pickup ID</p>
                                                                     <p className="text-sm font-semibold text-gray-800">{request.id}</p>
                                                                 </div>
-                                                                <div className="text-right">
+                                                                <div className="sm:text-right">
                                                                     <p className="text-xs text-gray-500 mb-1">Scheduled</p>
                                                                     <p className="text-sm font-medium text-gray-800">{formatDateTime(request.scheduledPickupAt)}</p>
                                                                 </div>

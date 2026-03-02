@@ -12,16 +12,16 @@ const Payments = () => {
 
     return (
         <div className='bg-[#f9f9f9]'>
-            <div className='container mx-auto px-12 py-20'>
+            <div className='container mx-auto px-4 md:px-8 xl:px-12 py-10 md:py-20'>
                 {/* Heading Section */}
-                <div className='flex flex-col items-start mb-10'>
-                    <h1 className='text-5xl font-extrabold text-[#1dacbc] tracking-tight leading-tight'>
+                <div className='flex flex-col items-center md:items-start mb-8 md:mb-10'>
+                    <h1 className='text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#1dacbc] tracking-tight leading-tight'>
                         OUR PAYMENTS
                     </h1>
                 </div>
 
                 {/* Payment Methods Grid */}
-                <div className='grid grid-cols-6 gap-6 items-center justify-items-center'>
+                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6 items-center justify-items-center'>
                     {paymentMethods.map((method, index) => (
                         <div
                             key={index}

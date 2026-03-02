@@ -57,8 +57,8 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({ isOpen, onClose, cu
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto max-h-[90vh] overflow-y-auto">
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-200">
                     <h2 className="text-xl font-bold text-gray-800">Change Email Address</h2>
@@ -123,18 +123,18 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({ isOpen, onClose, cu
                     </div>
 
                     {/* Buttons */}
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 bg-white border-2 border-gray-300 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-50 transition"
+                            className="w-full sm:flex-1 bg-white border-2 border-gray-300 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-50 transition"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 bg-[#1dacbc] text-white py-2 px-4 rounded-lg font-semibold hover:bg-[#14939e] transition disabled:opacity-50"
+                            className="w-full sm:flex-1 bg-[#1dacbc] text-white py-2 px-4 rounded-lg font-semibold hover:bg-[#14939e] transition disabled:opacity-50"
                         >
                             {loading ? 'Updating...' : 'Change Email'}
                         </button>

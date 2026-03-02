@@ -128,15 +128,15 @@ export default function PaymentFinishPage() {
             <Navbar />
 
             <main className="flex-1">
-                <div className="bg-gradient-to-r from-[#1dacbc] to-[#14939e] text-white py-10">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-8 md:py-10">
                     <div className="container mx-auto px-4">
-                        <h1 className="text-3xl md:text-4xl font-bold">Payment Status</h1>
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Payment Status</h1>
                         <p className="text-teal-50 text-sm mt-1">Your payment is being verified by Midtrans</p>
                     </div>
                 </div>
 
-                <div className="container mx-auto px-4 py-10 space-y-6">
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="container mx-auto px-4 py-8 md:py-10 space-y-6">
+                    <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                         {loading ? (
                             <p className="text-sm text-gray-500">Loading payment status...</p>
                         ) : error ? (
@@ -162,7 +162,7 @@ export default function PaymentFinishPage() {
                         )}
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                         <h2 className="text-lg font-bold text-gray-800 mb-2">What happens next?</h2>
                         <p className="text-sm text-gray-600">Payment updates are sent by Midtrans. If the status is still pending, refresh later.</p>
                         {isPending && (

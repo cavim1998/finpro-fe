@@ -238,25 +238,25 @@ export default function ReservationPage() {
             <Navbar />
 
             {/* Hero Section */}
-            <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-20">
+            <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-14 md:py-20">
                 <div className="container mx-auto px-4 text-center">
-                    <h1 className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 md:mb-6 tracking-tight">
                         Book Your Laundry Service
                     </h1>
-                    <p className="text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed">
+                    <p className="text-base sm:text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed">
                         Schedule a pickup and let us take care of the rest
                     </p>
                 </div>
             </div>
 
             {/* Form Section */}
-            <div className="container mx-auto px-4 py-12">
+            <div className="container mx-auto px-4 py-8 md:py-12">
                 <div className="max-w-4xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-12">
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Personal Information */}
                             <div>
-                                <h2 className="text-2xl font-bold text-[#1dacbc] mb-6">
+                                <h2 className="text-xl md:text-2xl font-bold text-[#1dacbc] mb-5 md:mb-6">
                                     Personal Information
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -350,7 +350,7 @@ export default function ReservationPage() {
 
                             {/* Outlet Selection */}
                             <div>
-                                <h2 className="text-2xl font-bold text-[#1dacbc] mb-6">
+                                <h2 className="text-xl md:text-2xl font-bold text-[#1dacbc] mb-5 md:mb-6">
                                     Choose Outlet
                                 </h2>
                                 <div>
@@ -360,7 +360,7 @@ export default function ReservationPage() {
                                     {outlets.length > 0 ? (
                                         <div>
                                             {/* Display Top 3 Outlets or All based on toggle */}
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
                                                 {(showAllOutlets ? sortedOutlets : sortedOutlets.slice(0, 3)).map((outlet) => (
                                                     <div
                                                         key={outlet.id}
@@ -414,7 +414,7 @@ export default function ReservationPage() {
 
                             {/* Pickup Schedule */}
                             <div>
-                                <h2 className="text-2xl font-bold text-[#1dacbc] mb-6">
+                                <h2 className="text-xl md:text-2xl font-bold text-[#1dacbc] mb-5 md:mb-6">
                                     Pickup Schedule
                                 </h2>
                                 
@@ -513,7 +513,7 @@ export default function ReservationPage() {
 
                             {/* Service Details */}
                             <div>
-                                <h2 className="text-2xl font-bold text-[#1dacbc] mb-6">
+                                <h2 className="text-xl md:text-2xl font-bold text-[#1dacbc] mb-5 md:mb-6">
                                     Service Details
                                 </h2>
                                 <div className="mt-4 mb-6 rounded-lg border border-[#1dacbc]/20 bg-[#e8f8fa] p-4">
@@ -566,7 +566,7 @@ export default function ReservationPage() {
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white px-12 py-4 rounded-full font-bold text-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                    className="w-full sm:w-auto bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white px-8 sm:px-12 py-3.5 sm:py-4 rounded-full font-bold text-base md:text-lg hover:shadow-xl transition-all duration-300 sm:hover:scale-105"
                                 >
                                     {submitting ? 'Submitting...' : 'Confirm Reservation'}
                                 </button>
@@ -575,7 +575,7 @@ export default function ReservationPage() {
                     </div>
 
                     {/* Additional Info */}
-                    <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
                         <h3 className="font-semibold text-blue-800 mb-3 flex items-center">
                             <FaCalendarAlt className="mr-2" />
                             Important Information
