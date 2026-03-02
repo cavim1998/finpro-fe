@@ -105,9 +105,9 @@ const page = () => {
         }
     };
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-                <h1 className="text-3xl text-black font-semibold text-center mb-8">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-6">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                <h1 className="text-2xl sm:text-3xl text-black font-semibold text-center mb-8">
                     Create Account
                 </h1>
 

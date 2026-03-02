@@ -341,15 +341,15 @@ export default function PaymentPage() {
             <Navbar />
 
             <main className="flex-1">
-                <div className="bg-gradient-to-r from-[#1dacbc] to-[#14939e] text-white py-10">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-8 md:py-10">
                     <div className="container mx-auto px-4">
-                        <h1 className="text-3xl md:text-4xl font-bold">Payment</h1>
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Payment</h1>
                         <p className="text-teal-50 text-sm mt-1">Complete payment securely with Midtrans</p>
                     </div>
                 </div>
 
-                <div className="container mx-auto px-4 py-10 space-y-6">
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="container mx-auto px-4 py-8 md:py-10 space-y-6">
+                    <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                         <h2 className="text-lg font-bold text-gray-800 mb-4">Order Summary</h2>
                         {loadingOrder ? (
                             <p className="text-sm text-gray-500">Loading order...</p>
@@ -374,7 +374,7 @@ export default function PaymentPage() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-bold text-gray-800">Midtrans Snap</h2>
                                 <span className="text-xs font-semibold px-2 py-1 rounded bg-[#e8faf7] text-[#14939e]">Sandbox</span>
@@ -440,7 +440,7 @@ export default function PaymentPage() {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
                             <h2 className="text-lg font-bold text-gray-800 mb-4">Next Steps</h2>
                             <div className="space-y-3 text-sm text-gray-600">
                                 <p>Click “Pay Now” to open the Midtrans Snap popup.</p>

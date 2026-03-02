@@ -30,8 +30,8 @@ const WhyMust = () => {
     return (
         <div className="w-full bg-[#ffffff]">
             <div className="">
-                <div className="container mx-auto px-4 py-20">
-                    <h1 className="text-5xl text-center font-extrabold text-[#1dacbc] tracking-tight mb-4">
+                <div className="container mx-auto px-4 py-10 md:py-20">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl text-center font-extrabold text-[#1dacbc] tracking-tight mb-4">
                         WHY CHOOSE LAUNDRYQ?
                     </h1>
 

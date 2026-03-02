@@ -6,16 +6,27 @@ import {
     FaWhatsapp,
     FaPhoneAlt,
 } from "react-icons/fa";
+import Link from "next/link";
 
 export default function Footer() {
+    const menuItems = [
+        { label: 'Home', href: '/' },
+        { label: 'About Us', href: '/about-us' },
+        { label: 'Outlets', href: '/outlets' },
+        { label: 'Check Laundry Status', href: '/check-status' },
+        { label: 'History', href: '/check-status/history' },
+        { label: 'Terms & Conditions', href: '/terms-and-conditions' },
+        { label: 'User Page', href: '/profile' },
+    ];
+
     return (
         <footer className="bg-[#eef2f4] text-gray-600">
             {/* Main Footer */}
-            <div className="container mx-auto px-4 py-16 grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="container mx-auto px-4 py-12 md:py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
 
                 {/* Brand */}
-                <div>
-                    <h1 className='text-4xl font-bold text-[#1dacbc]'>
+                <div className="text-center sm:text-left sm:col-span-2 lg:col-span-1">
+                    <h1 className='text-3xl md:text-4xl font-bold text-[#1dacbc]'>
                         LAUNDRYQ
                     </h1>
                     <p className="italic text-gray-500 mt-1 text-lg">
@@ -31,7 +42,7 @@ export default function Footer() {
                     </p>
 
                     {/* Social Icons */}
-                    <div className="flex gap-4 mt-6">
+                    <div className="flex gap-4 mt-6 justify-center sm:justify-start">
                         {[
                             <FaFacebookF />,
                             <FaTwitter />,
@@ -49,30 +60,28 @@ export default function Footer() {
                 </div>
 
                 {/* Menu */}
-                <div>
+                <div className="text-center sm:text-left">
                     <h3 className="text-[#1dacbc] font-semibold mb-4">Menu</h3>
-                    <ul className="space-y-3 text-sm">
-                        <li className="hover:text-[#1dacbc] cursor-pointer">Home</li>
-                        <li className="hover:text-[#1dacbc] cursor-pointer">About Us</li>
-                        <li className="hover:text-[#1dacbc] cursor-pointer">Outlets</li>
-                        <li className="hover:text-[#1dacbc] cursor-pointer">
-                            Check Laundry Status
-                        </li>
-                        <li className="hover:text-[#1dacbc] cursor-pointer">
-                            Terms & Conditions
-                        </li>
+                    <ul className="space-y-2.5 text-sm">
+                        {menuItems.map((item) => (
+                            <li key={item.href}>
+                                <Link href={item.href} className="hover:text-[#1dacbc] transition-colors">
+                                    {item.label}
+                                </Link>
+                            </li>
+                        ))}
                     </ul>
                 </div>
 
                 {/* Contact */}
-                <div>
+                <div className="text-center sm:text-left">
                     <h3 className="text-[#1dacbc] font-semibold mb-4">Contact</h3>
                     <div className="space-y-4 text-sm">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center sm:justify-start gap-3">
                             <FaWhatsapp className="text-[#1dacbc]" />
                             <span>0811-2233-4455</span>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center sm:justify-start gap-3">
                             <FaPhoneAlt className="text-[#1dacbc]" />
                             <span>0811-2233-4455</span>
                         </div>
@@ -82,7 +91,7 @@ export default function Footer() {
 
             {/* Bottom Bar */}
             <div className="bg-[#1dacbc] text-white text-sm py-4">
-                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-2">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
                     <span>Copyright © LaundryQ 2026</span>
                     <span className="flex items-center gap-2">
                         Managed by

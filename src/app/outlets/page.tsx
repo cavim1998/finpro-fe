@@ -220,18 +220,9 @@ export default function OutletsPage() {
                 </div>
             </div>
 
-            {/* Loading State */}
-            {loading && (
-                <div className="flex flex-col items-center justify-center py-12">
-                    <Loader2 className="w-12 h-12 text-[#1dacbc] animate-spin mb-4" />
-                    <p className="text-gray-500">Loading...</p>
-                </div>
-            )}
-
-            {/* Error State */}
-            {error && !loading && (
-                <div className="container mx-auto px-4 py-12">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="container mx-auto px-4 py-12">
+                {error && !loading && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center mb-6">
                         <p className="text-red-700 font-semibold mb-4">{error}</p>
                         <button
                             onClick={loadOutlets}
@@ -240,18 +231,25 @@ export default function OutletsPage() {
                             Try Again
                         </button>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Outlets Grid */}
-            {!loading && !error && (
-                <div className="container mx-auto px-4 py-12">
+                {/* Outlets Grid */}
                     {/* Map Section */}
                     <div className="mb-12">
-                        <OutletsMap outlets={outlets} loading={loading} />
-                        {locationCategory && outlets.length === 0 && (
+                        <div className="relative">
+                            <OutletsMap outlets={outlets} queryString={searchParams.toString()} />
+                            {loading && (
+                                <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-lg">
+                                    <div className="flex flex-col items-center gap-2 text-lg text-gray-600">
+                                        <Loader2 className="w-10 h-10 text-[#1dacbc] animate-spin" />
+                                        <span>Loading outlet locations…</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {locationCategory && !loading && outlets.length === 0 && (
                             <div className="mt-4 text-center text-gray-500 text-sm">
-                                Tidak ada outlet dengan kategori "{locationCategory}"
+                                No outlets found for the category "{locationCategory}"
                             </div>
                         )}
                     </div>
@@ -300,30 +298,28 @@ export default function OutletsPage() {
                     </div>
 
                     {/* Results info */}
-                    {outlets.length > 0 && (
+                    {!error && outlets.length > 0 && (
                         <div className="mb-4 text-sm text-gray-600 flex justify-between items-center">
                             <span>
-                                Menampilkan {outlets.length} outlet dari total {pagination.total} outlet
+                                Showing {outlets.length} outlets out of {pagination.total} total outlets
                             </span>
                             <span className="text-xs text-gray-500">
-                                Halaman {page} dari {pagination.totalPages}
+                                Page {page} of {pagination.totalPages}
                             </span>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {outlets.length === 0 && (
-                            <div className="col-span-full text-center py-12">
-                                <div className="text-gray-400 text-6xl mb-4">🏪</div>
-                                <p className="text-gray-600 font-semibold">Tidak ada outlet ditemukan</p>
-                                {locationCategory && (
-                                    <p className="text-gray-500 text-sm mt-2">
-                                        Tidak ada outlet dengan kategori "{locationCategory}"
-                                    </p>
-                                )}
-                            </div>
+                    <div className="relative">
+                        {loading && (
+                                <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-lg">
+                                    <div className="flex flex-col items-center gap-2 text-lg text-gray-600">
+                                        <Loader2 className="w-10 h-10 text-[#1dacbc] animate-spin" />
+                                        <span>Loading outlets…</span>
+                                    </div>
+                                </div>
                         )}
-                        {outlets.map((outlet) => (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {!error && outlets.map((outlet) => (
                             <div
                                 key={outlet.id}
                                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
@@ -378,18 +374,19 @@ export default function OutletsPage() {
                             </div>
                         ))}
                     </div>
+                    </div>
 
-                    {outlets.length === 0 && (
+                    {!loading && !error && outlets.length === 0 && (
                         <div className="text-center py-12">
                             <p className="text-gray-500 text-lg">No outlets available</p>
                         </div>
                     )}
 
-                    {pagination.totalPages > 1 && (
+                    {!error && pagination.totalPages > 1 && (
                         <div className="flex items-center justify-center gap-2 mt-8">
                             <button
                                 onClick={() => handlePageChange(page - 1)}
-                                disabled={page <= 1}
+                                disabled={page <= 1 || loading}
                                 className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                             >
                                 Previous
@@ -399,6 +396,7 @@ export default function OutletsPage() {
                                 <button
                                     key={p}
                                     onClick={() => handlePageChange(p)}
+                                    disabled={loading}
                                     className={`px-3 py-2 rounded-lg text-sm font-medium ${page === p
                                             ? 'bg-[#1dacbc] text-white'
                                             : 'border border-gray-300 hover:bg-gray-50'
@@ -410,7 +408,7 @@ export default function OutletsPage() {
 
                             <button
                                 onClick={() => handlePageChange(page + 1)}
-                                disabled={page >= pagination.totalPages}
+                                disabled={page >= pagination.totalPages || loading}
                                 className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                             >
                                 Next
@@ -418,11 +416,12 @@ export default function OutletsPage() {
                         </div>
                     )}
 
-                    <div className="text-center mt-6 text-sm text-gray-500">
+                    {!error && (
+                        <div className="text-center mt-6 text-sm text-gray-500">
                         Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, pagination.total)} of {pagination.total} outlets
-                    </div>
+                        </div>
+                    )}
                 </div>
-            )}
 
             <Footer />
         </div>

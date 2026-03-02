@@ -171,13 +171,13 @@ export default function ProfilePage() {
                 {/* Hero Section */}
                 <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-8">
                     <div className="container mx-auto px-4">
-                        <h1 className="text-4xl md:text-5xl font-extrabold">My Profile</h1>
-                        <p className="text-[#e8faf7] text-lg mt-2">Manage your personal information</p>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold">My Profile</h1>
+                        <p className="text-[#e8faf7] text-base md:text-lg mt-2">Manage your personal information</p>
                     </div>
                 </div>
 
                 {/* Profile Content */}
-                <div className="container mx-auto px-4 py-12">
+                <div className="container mx-auto px-4 py-8 md:py-12">
                     {!loading && profile && !profile.verified && (
                         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded">
                             <div className="flex">
@@ -193,7 +193,7 @@ export default function ProfilePage() {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                         
                         {/* Sidebar - Profile Image & Quick Actions */}
                         <div className="md:col-span-1 space-y-4">
@@ -207,7 +207,7 @@ export default function ProfilePage() {
                                 ) : (
                                     <>
                                         {/* Profile Image Placeholder */}
-                                        <div className="w-40 h-40 mx-auto bg-gray-300 rounded-full flex items-center justify-center mb-4 overflow-hidden">
+                                        <div className="w-32 h-32 md:w-40 md:h-40 mx-auto bg-gray-300 rounded-full flex items-center justify-center mb-4 overflow-hidden">
                                             {profile?.profileImage ? (
                                                 <img src={profile.profileImage} alt="Profile" className="w-full h-full object-cover" />
                                             ) : (
@@ -241,14 +241,14 @@ export default function ProfilePage() {
                         <div className="md:col-span-2 space-y-6">
                             {/* Personal Data Section */}
                             <div id="personal" className="bg-white rounded-lg shadow-md p-6">
-                                <div className="flex justify-between items-center mb-6">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
                                     <h3 className="text-2xl font-bold text-[#1dacbc] flex items-center">
                                         Personal Data
                                     </h3>
                                     <button
                                         onClick={() => setIsEditPersonalDataOpen(true)}
                                         disabled={loading}
-                                        className="bg-[#1dacbc] text-white py-2 px-4 rounded-lg font-semibold hover:bg-[#14939e] transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full sm:w-auto bg-[#1dacbc] text-white py-2 px-4 rounded-lg font-semibold hover:bg-[#14939e] transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Edit
                                     </button>
@@ -280,11 +280,11 @@ export default function ProfilePage() {
                                             {/* Email */}
                                             <div>
                                                 <label className="block text-gray-600 text-sm font-semibold mb-1">Email Address</label>
-                                                <div className="flex gap-2 items-center">
+                                                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                                                     <p className="text-gray-800 text-lg flex-1">{profile?.email || '—'}</p>
                                                     <button
                                                         disabled={loading}
-                                                        className="px-4 py-2 border border-[#1dacbc] text-[#1dacbc] rounded-lg font-semibold hover:bg-gray-50 transition text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="w-full sm:w-auto px-4 py-2 border border-[#1dacbc] text-[#1dacbc] rounded-lg font-semibold hover:bg-gray-50 transition text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                                         onClick={() => setIsChangeEmailOpen(true)}
                                                     >
                                                         Change Email
@@ -304,11 +304,11 @@ export default function ProfilePage() {
                                             {profile?.provider !== 'google' && (
                                                 <div>
                                                     <label className="block text-gray-600 text-sm font-semibold mb-1">Password</label>
-                                                    <div className="flex gap-2 items-center">
+                                                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                                                         <p className="text-gray-800 text-lg flex-1">••••••••</p>
                                                         <button
                                                             disabled={loading}
-                                                            className="px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-semibold hover:bg-[#14939e] transition text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            className="w-full sm:w-auto px-4 py-2 bg-[#1dacbc] text-white rounded-lg font-semibold hover:bg-[#14939e] transition text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                                             onClick={() => setIsChangePasswordOpen(true)}
                                                         >
                                                             Change Password

@@ -55,7 +55,7 @@ export default function EditPersonalDataModal({
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
+            <div className="bg-white rounded-lg max-w-md w-full p-5 sm:p-6 relative max-h-[90vh] overflow-y-auto">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
@@ -65,7 +65,7 @@ export default function EditPersonalDataModal({
                 </button>
 
                 {/* Header */}
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Personal Data</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6">Edit Personal Data</h2>
 
                 {/* Error Message */}
                 {error && (
@@ -106,11 +106,11 @@ export default function EditPersonalDataModal({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 mt-6">
+                    <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6">
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 bg-[#1dacbc] text-white py-2 px-4 rounded-lg font-semibold hover:bg-[#14939e] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full sm:flex-1 bg-[#1dacbc] text-white py-2 px-4 rounded-lg font-semibold hover:bg-[#14939e] transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? 'Saving...' : 'Save Changes'}
                         </button>
@@ -118,7 +118,7 @@ export default function EditPersonalDataModal({
                             type="button"
                             onClick={onClose}
                             disabled={loading}
-                            className="flex-1 bg-white border-2 border-gray-300 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full sm:flex-1 bg-white border-2 border-gray-300 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Cancel
                         </button>

@@ -14,6 +14,8 @@ interface AddressFormProps {
   isOpen: boolean;
   onClose: () => void;
   onAddressSaved: (address: Address) => void;
+  hasPrimaryAddress?: boolean;
+  primaryAddressId?: number | null;
 }
 
 const DEFAULT_LAT = -6.2088; // Jakarta
@@ -24,6 +26,8 @@ export default function AddressForm({
   isOpen,
   onClose,
   onAddressSaved,
+  hasPrimaryAddress = false,
+  primaryAddressId = null,
 }: AddressFormProps) {
   const [formData, setFormData] = useState<CreateAddressPayload>({
     label: '',
@@ -97,6 +101,10 @@ export default function AddressForm({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
+    const creatingDuplicatePrimary =
+      formData.isPrimary &&
+      hasPrimaryAddress &&
+      (!address || address.id !== primaryAddressId);
 
     if (!formData.addressText.trim()) {
       newErrors.addressText = 'Address cannot be empty';
@@ -110,6 +118,11 @@ export default function AddressForm({
 
     if (formData.longitude < -180 || formData.longitude > 180) {
       newErrors.longitude = 'Longitude must be between -180 and 180';
+    }
+
+    if (creatingDuplicatePrimary) {
+      newErrors.isPrimary =
+        'Primary address already exists. Please use Set as Primary on the desired address.';
     }
 
     setErrors(newErrors);
@@ -149,7 +162,7 @@ export default function AddressForm({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-white w-full sm:max-w-2xl sm:rounded-lg rounded-t-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-4 sm:p-6 flex items-center justify-between">
@@ -174,13 +187,13 @@ export default function AddressForm({
               Select Location on Map
             </label>
             {gettingLocation && (
-              <div className="h-[350px] bg-blue-50 border border-blue-200 rounded-lg flex flex-col items-center justify-center gap-2">
+              <div className="h-87.5 bg-blue-50 border border-blue-200 rounded-lg flex flex-col items-center justify-center gap-2">
                 <Loader2 className="w-6 h-6 animate-spin text-[#1dacbc]" />
                 <p className="text-sm text-gray-600">Getting your GPS location...</p>
               </div>
             )}
             {!gettingLocation && showMap && (
-              <Suspense fallback={<div className="h-[350px] bg-gray-100 rounded-lg flex items-center justify-center">Loading map...</div>}>
+              <Suspense fallback={<div className="h-87.5 bg-gray-100 rounded-lg flex items-center justify-center">Loading map...</div>}>
                 <MapPicker
                   latitude={formData.latitude}
                   longitude={formData.longitude}
@@ -201,7 +214,7 @@ export default function AddressForm({
           </div>
 
           {/* Koordinat Display */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Latitude
@@ -331,27 +344,38 @@ export default function AddressForm({
                   isPrimary: e.target.checked,
                 }))
               }
+              disabled={
+                hasPrimaryAddress && (!address || address.id !== primaryAddressId)
+              }
               className="w-4 h-4 text-blue-600 rounded"
             />
             <label htmlFor="isPrimary" className="ml-3 text-sm text-gray-700">
               Set as primary address
             </label>
           </div>
+          {hasPrimaryAddress && (!address || address.id !== primaryAddressId) && (
+            <p className="text-amber-600 text-xs -mt-3">
+              You already have a primary address. Use "Set as Primary" from the address list to switch it.
+            </p>
+          )}
+          {errors.isPrimary && (
+            <p className="text-red-500 text-xs -mt-3">{errors.isPrimary}</p>
+          )}
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="w-full sm:flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full sm:flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {address ? 'Update Address' : 'Save Address'}

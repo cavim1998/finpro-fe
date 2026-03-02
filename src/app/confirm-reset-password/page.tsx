@@ -59,17 +59,17 @@ export default function ConfirmResetPasswordPage() {
             
             <div className="grow">
                 {/* Hero Section */}
-                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-12">
+                <div className="bg-linear-to-r from-[#1dacbc] to-[#14939e] text-white py-10 md:py-12">
                     <div className="container mx-auto px-4">
-                        <h1 className="text-4xl md:text-5xl font-extrabold">Create New Password</h1>
-                        <p className="text-[#e8faf7] text-lg mt-2">Enter your new password below</p>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold">Create New Password</h1>
+                        <p className="text-[#e8faf7] text-base md:text-lg mt-2">Enter your new password below</p>
                     </div>
                 </div>
 
                 {/* Main Content */}
-                <div className="container mx-auto px-4 py-12">
+                <div className="container mx-auto px-4 py-8 md:py-12">
                     <div className="max-w-md mx-auto">
-                        <div className="bg-white rounded-lg shadow-md p-8">
+                        <div className="bg-white rounded-lg shadow-md p-5 sm:p-8">
                             {!success ? (
                                 <>
                                     <form onSubmit={handleSubmit} className="space-y-4">
