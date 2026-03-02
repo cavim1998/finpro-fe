@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { FaCalendarDays } from "react-icons/fa6";
 import { Menu, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface UserData {
     id: string;
@@ -15,6 +17,7 @@ interface UserData {
 }
 
 const Navbar = () => {
+    const router = useRouter();
     const { data: session, status } = useSession();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -36,8 +39,11 @@ const Navbar = () => {
         { label: 'Outlet', href: '/outlets' },
         { label: 'Check Status', href: '/check-status' },
         { label: 'T&C', href: '/terms-and-conditions' },
-        { label: 'My Profile', href: '/profile' },
     ];
+
+    const navItemsWithAuth = isLoggedIn
+        ? [...navItems, { label: 'My Profile', href: '/profile' }]
+        : navItems;
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -82,6 +88,12 @@ const Navbar = () => {
         await signOut({ callbackUrl: '/signin' });
     };
 
+    const handleReservationClickWhenUnauthorized = () => {
+        setIsMobileNavOpen(false);
+        toast.info('Please sign in first to access reservation.');
+        router.push('/signin');
+    };
+
     // Generate avatar from name
     const getInitials = (name: string) => {
         return name
@@ -105,7 +117,7 @@ const Navbar = () => {
                 </Link>
 
                 <nav className='hidden xl:flex items-center gap-4 2xl:gap-6'>
-                    {navItems.map((item) => (
+                    {navItemsWithAuth.map((item) => (
                         <Link
                             key={item.href}
                             href={item.href}
@@ -184,11 +196,13 @@ const Navbar = () => {
                             </div>
                         </>
                     ) : (
-                        <Link href="/signin">
-                            <button className="bg-[#1dacbc] flex items-center gap-1.5 text-white py-3 px-4 rounded-full font-semibold hover:bg-[#14939e] transition">
+                        <button
+                            type="button"
+                            onClick={handleReservationClickWhenUnauthorized}
+                            className="bg-[#1dacbc] flex items-center gap-1.5 text-white py-3 px-4 rounded-full font-semibold hover:bg-[#14939e] transition"
+                        >
                                 <FaCalendarDays /> Reservation
-                            </button>
-                        </Link>
+                        </button>
                     )}
                 </div>
 
@@ -220,7 +234,7 @@ const Navbar = () => {
             {isMobileNavOpen && (
                 <div className="xl:hidden absolute left-0 right-0 top-full z-50 border-t border-gray-100 bg-white shadow-lg max-h-[calc(100vh-72px)] overflow-y-auto">
                     <div className="px-3 sm:px-4 pt-3 space-y-1">
-                        {navItems.map((item) => (
+                        {navItemsWithAuth.map((item) => (
                             <Link
                                 key={item.href}
                                 href={item.href}
@@ -250,13 +264,29 @@ const Navbar = () => {
                                 </button>
                             </>
                         ) : (
-                            <Link
-                                href="/signin"
-                                onClick={() => setIsMobileNavOpen(false)}
-                                className="w-full bg-[#1dacbc] text-white py-2.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 hover:bg-[#14939e] transition"
-                            >
-                                <FaCalendarDays /> Sign In
-                            </Link>
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={handleReservationClickWhenUnauthorized}
+                                    className="w-full bg-[#1dacbc] text-white py-2.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 hover:bg-[#14939e] transition"
+                                >
+                                    <FaCalendarDays /> Reservation
+                                </button>
+                                <Link
+                                    href="/signin"
+                                    onClick={() => setIsMobileNavOpen(false)}
+                                    className="w-full bg-[#1dacbc] text-white py-2.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 hover:bg-[#14939e] transition"
+                                >
+                                    Sign In
+                                </Link>
+                                <Link
+                                    href="/signup"
+                                    onClick={() => setIsMobileNavOpen(false)}
+                                    className="w-full bg-[#1dacbc] text-white py-2.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 hover:bg-[#14939e] transition"
+                                >
+                                    Register
+                                </Link>
+                            </>
                         )}
                     </div>
                 </div>
