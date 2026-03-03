@@ -12,6 +12,9 @@ type Props = {
   myTasks: TaskLike[];
   page: number;
   hasNextPage: boolean;
+  dashboardMode?: boolean;
+  totalItems?: number | null;
+  pageSize?: number;
   loading?: boolean;
   onPrev: () => void;
   onNext: () => void;
@@ -25,11 +28,14 @@ export default function DriverTaskList({
   myTasks,
   page,
   hasNextPage,
+  dashboardMode = false,
+  totalItems = null,
+  pageSize = myTasks.length,
   loading,
   onPrev,
   onNext,
   showViewAll = true,
-  viewAllHref = "/driver/tasks",
+  viewAllHref = "/driver",
   title = "My Tasks",
 }: Props) {
   const getTaskKey = (task: TaskLike, index: number) => {
@@ -37,10 +43,16 @@ export default function DriverTaskList({
     if (typeof id === "string" || typeof id === "number") return String(id);
     return `task-${page}-${index}`;
   };
+  const pageLabel = getPageLabel(page, pageSize, totalItems, hasNextPage);
 
   return (
-    <Card className="border-orange-200 shadow-card transition-shadow hover:shadow-[0_16px_36px_rgba(249,115,22,0.16)]">
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+    <Card
+      className={[
+        "rounded-2xl border-orange-200 shadow-card transition-shadow hover:shadow-[0_16px_36px_rgba(249,115,22,0.16)]",
+        dashboardMode ? "flex h-full min-h-[25rem] flex-col" : "",
+      ].join(" ")}
+    >
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-xl text-orange-500">{title}</CardTitle>
         {showViewAll ? (
           <Link
@@ -52,51 +64,98 @@ export default function DriverTaskList({
         ) : null}
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent className={dashboardMode ? "flex flex-1 flex-col" : "space-y-6"}>
         {!isAllowed ? (
-          <p className="text-sm text-muted-foreground">
+          <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
             Check-in dulu untuk melihat task.
-          </p>
+          </div>
         ) : loading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
+            Loading...
+          </div>
         ) : myTasks.length > 0 ? (
-          <div className="space-y-2">
-            {myTasks.map((t, index) => (
-              <DriverTaskCard
-                key={getTaskKey(t, index)}
-                task={t}
-                disabled={!isAllowed}
-              />
-            ))}
+          <div className="space-y-6">
+            <div className="space-y-3">
+              {myTasks.map((t, index) => (
+                <DriverTaskCard
+                  key={getTaskKey(t, index)}
+                  task={t}
+                  disabled={!isAllowed}
+                />
+              ))}
+              {dashboardMode && myTasks.length === 1 ? (
+                <div aria-hidden className="min-h-[7.25rem]" />
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onPrev}
+                disabled={page <= 1 || !!loading}
+              >
+                Prev
+              </Button>
+
+              <div className="text-center text-xs text-muted-foreground">{pageLabel}</div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onNext}
+                disabled={!hasNextPage || !!loading}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Belum ada task.</p>
+          <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
+              Belum ada task.
+            </div>
+
+            <div className="flex items-center justify-between pt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onPrev}
+                disabled={page <= 1 || !!loading}
+              >
+                Prev
+              </Button>
+
+              <div className="text-center text-xs text-muted-foreground">{pageLabel}</div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onNext}
+                disabled={!hasNextPage || !!loading}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         )}
-
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onPrev}
-            disabled={page <= 1 || !!loading}
-          >
-            Prev
-          </Button>
-
-          <p className="text-xs text-muted-foreground">
-            Page {page}
-          </p>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onNext}
-            disabled={!hasNextPage || !!loading}
-          >
-            Next
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );
+}
+
+function getPageLabel(
+  currentPage: number,
+  pageSize: number,
+  totalItems: number | null,
+  hasNextPage: boolean,
+) {
+  const totalPages =
+    Number.isFinite(totalItems) && totalItems !== null
+      ? Math.max(1, Math.ceil(totalItems / pageSize))
+      : hasNextPage
+        ? currentPage + 1
+        : currentPage;
+
+  return `Page ${currentPage} dari ${totalPages}`;
 }

@@ -103,8 +103,8 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
   const incoming = statsQ.data?.incoming ?? 0;
   const inProgress = statsQ.data?.inProgress ?? 0;
   const completed = statsQ.data?.completed ?? 0;
-  const incomingItems = incomingQ.data ?? [];
-  const currentTask = (myTasksQ.data?.[0] ?? null) as WorkerOrderListItem | null;
+  const incomingItems = incomingQ.data?.items ?? [];
+  const currentTask = (myTasksQ.data?.items?.[0] ?? null) as WorkerOrderListItem | null;
 
   const resolvedNotificationOpen =
     notificationOpen ?? (isAllowed && incomingItems.length > 0);
@@ -120,7 +120,7 @@ export default function WorkerDashboard({ station, copy, theme }: Props) {
   if (shouldRedirectToOwnStation) return null;
 
   return (
-    <div className="container mx-auto space-y-6 pb-24">
+    <div className="mx-auto w-full max-w-7xl space-y-6 pb-24 px-4">
       <WorkerHeader
         displayName={displayName}
         headerTitle={mergedCopy.headerTitle}

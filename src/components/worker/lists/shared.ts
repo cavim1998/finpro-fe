@@ -22,6 +22,27 @@ export function formatEnteredAt(iso: string) {
   });
 }
 
+export function formatWorkerServiceType(serviceType?: string) {
+  return serviceType?.toUpperCase() === "PREMIUM" ? "Premium" : "Reguler";
+}
+
+export function getWorkerServiceTypeBadgeClass(serviceType?: string) {
+  if (serviceType?.toUpperCase() === "PREMIUM") {
+    return "border-zinc-300 bg-zinc-100 text-zinc-700";
+  }
+
+  return "border-[#1DACBC]/30 bg-[#1DACBC]/10 text-[#138A96]";
+}
+
+export function formatWorkerOrderShortLabel(orderNo?: string) {
+  if (!orderNo) return "-";
+
+  const lastSegment = orderNo.split("-").pop() ?? orderNo;
+  const numericPart = lastSegment.replace(/\D/g, "");
+  const source = numericPart || lastSegment;
+  return source.slice(-5) || source;
+}
+
 export function resolveWorkerListsLabels(
   labels?: Partial<WorkerListsLabels>,
 ): WorkerListsLabels {
@@ -40,6 +61,7 @@ export function getStationListTheme(station: StationType) {
       accentClass: "text-blue-500",
       containerClass:
         "border-blue-200 hover:border-blue-500 hover:shadow-[0_0_0_3px_rgba(59,130,246,0.12)]",
+      itemAccentClass: "border-l-4 border-l-blue-500",
       itemHoverClass: "hover:shadow-[0_0_0_3px_rgba(59,130,246,0.10)]",
     };
   }
@@ -49,6 +71,7 @@ export function getStationListTheme(station: StationType) {
       accentClass: "text-red-500",
       containerClass:
         "border-red-200 hover:border-red-500 hover:shadow-[0_0_0_3px_rgba(239,68,68,0.12)]",
+      itemAccentClass: "border-l-4 border-l-red-500",
       itemHoverClass: "hover:shadow-[0_0_0_3px_rgba(239,68,68,0.10)]",
     };
   }
@@ -57,6 +80,7 @@ export function getStationListTheme(station: StationType) {
     accentClass: "text-[#1dacbc]",
     containerClass:
       "border-cyan-200 hover:border-[#1dacbc] hover:shadow-[0_0_0_3px_rgba(29,172,188,0.12)]",
+    itemAccentClass: "border-l-4 border-l-[#1dacbc]",
     itemHoverClass: "hover:shadow-[0_0_0_3px_rgba(29,172,188,0.10)]",
   };
 }
@@ -66,6 +90,7 @@ export function getIncomingListTheme() {
     accentClass: "text-[#1dacbc]",
     containerClass:
       "border-cyan-200 hover:border-[#1dacbc] hover:shadow-[0_0_0_3px_rgba(29,172,188,0.12)]",
+    itemAccentClass: "border-l-4 border-l-[#1dacbc]",
     itemHoverClass: "hover:shadow-[0_0_0_3px_rgba(29,172,188,0.10)]",
   };
 }

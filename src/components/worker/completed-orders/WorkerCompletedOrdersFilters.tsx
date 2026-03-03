@@ -2,6 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { WorkerCompletedOrdersTheme } from "./shared";
 import { Search } from "lucide-react";
 
@@ -11,6 +18,8 @@ type Props = {
   draftStartDate: string;
   draftEndDate: string;
   sortOrder: "asc" | "desc";
+  isIncomingScope?: boolean;
+  incomingSortBy?: "enteredAt" | "serviceType";
   disabled: boolean;
   onSearchChange: (value: string) => void;
   onDraftStartDateChange: (value: string) => void;
@@ -18,6 +27,7 @@ type Props = {
   onApplyFilters: () => void;
   onResetFilters: () => void;
   onToggleSort: () => void;
+  onIncomingSortByChange?: (value: "enteredAt" | "serviceType") => void;
 };
 
 export default function WorkerCompletedOrdersFilters({
@@ -26,6 +36,8 @@ export default function WorkerCompletedOrdersFilters({
   draftStartDate,
   draftEndDate,
   sortOrder,
+  isIncomingScope,
+  incomingSortBy,
   disabled,
   onSearchChange,
   onDraftStartDateChange,
@@ -33,6 +45,7 @@ export default function WorkerCompletedOrdersFilters({
   onApplyFilters,
   onResetFilters,
   onToggleSort,
+  onIncomingSortByChange,
 }: Props) {
   return (
     <>
@@ -77,14 +90,32 @@ export default function WorkerCompletedOrdersFilters({
         >
           Reset
         </Button>
-        <Button
-          variant="outline"
-          className={theme.ghostButtonClass}
-          onClick={onToggleSort}
-          disabled={disabled}
-        >
-          Sort: {sortOrder === "asc" ? "Terlama" : "Terbaru"}
-        </Button>
+        {isIncomingScope ? (
+          <Select
+            value={incomingSortBy ?? "enteredAt"}
+            onValueChange={(value) =>
+              onIncomingSortByChange?.(value as "enteredAt" | "serviceType")
+            }
+            disabled={disabled}
+          >
+            <SelectTrigger className={`w-[14rem] ${theme.ghostButtonClass}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="enteredAt">Sort by: Waktu Masuk</SelectItem>
+              <SelectItem value="serviceType">Sort by: Premium / Reguler</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <Button
+            variant="outline"
+            className={theme.ghostButtonClass}
+            onClick={onToggleSort}
+            disabled={disabled}
+          >
+            Sort: {sortOrder === "asc" ? "Terlama" : "Terbaru"}
+          </Button>
+        )}
       </div>
     </>
   );

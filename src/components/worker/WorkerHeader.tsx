@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Bell, Clock3 } from "lucide-react";
 import * as React from "react";
+import ConfirmActionDialog from "@/app/attendance/components/ConfirmActionDialog";
 
 export type WorkerHeaderTheme = {
   headerBgClass?: string;
@@ -27,7 +28,7 @@ type Props = {
   isCompleted: boolean;
   sinceText: string;
 
-  onClockOut: () => void;
+  onClockOut: () => void | Promise<void>;
   clockOutLoading?: boolean;
 
   theme?: WorkerHeaderTheme;
@@ -54,6 +55,8 @@ export default function WorkerHeader({
   onNotificationOpenChange,
   notificationContent,
 }: Props) {
+  const [openClockOut, setOpenClockOut] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const badgeText = loadingToday
     ? "Loading..."
     : isCompleted
@@ -69,6 +72,25 @@ export default function WorkerHeader({
       : isCheckedIn
       ? "text-green-600"
       : "text-muted-foreground");
+
+  const handleConfirmClockOut = async () => {
+    setErrorMsg(null);
+    try {
+      await onClockOut();
+      setOpenClockOut(false);
+    } catch (e: unknown) {
+      const msg: string =
+        typeof e === "object" &&
+        e !== null &&
+        "response" in e &&
+        typeof (e as { response?: { data?: { message?: string } } }).response?.data?.message ===
+          "string"
+          ? ((e as { response?: { data?: { message?: string } } }).response?.data?.message ??
+            "Clock-out gagal.")
+          : "Clock-out gagal.";
+      setErrorMsg(msg);
+    }
+  };
 
   return (
     <div className="p-4 pt-6 pb-8 rounded-b-3xl bg-gradient-to-r from-[#1dacbc] to-[#0b6c75]">
@@ -121,13 +143,30 @@ export default function WorkerHeader({
           <Button
             variant="outline"
             disabled={!isCheckedIn || isCompleted || clockOutLoading}
-            onClick={onClockOut}
+            onClick={() => setOpenClockOut(true)}
             className="rounded-xl"
           >
             {clockOutLabel}
           </Button>
         </div>
+
+        {errorMsg ? (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {errorMsg}
+          </div>
+        ) : null}
       </Card>
+
+      <ConfirmActionDialog
+        open={openClockOut}
+        onOpenChange={setOpenClockOut}
+        title="Konfirmasi Check Out"
+        description="Apakah kamu yakin ingin check-out sekarang? Setelah check-out, shift akan terkunci sampai besok."
+        confirmText="Ya, Check Out"
+        cancelText="Batal"
+        loading={!!clockOutLoading}
+        onConfirm={handleConfirmClockOut}
+      />
 
       <Dialog open={notificationOpen} onOpenChange={onNotificationOpenChange}>
         <DialogContent>

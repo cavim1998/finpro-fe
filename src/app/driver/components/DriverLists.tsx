@@ -15,6 +15,9 @@ type Props = {
     taskPage: number;
     pickupPage: number;
   };
+  pageSize: number;
+  taskTotal: number | null;
+  pickupTotal: number | null;
   onTaskPrev: () => void;
   onTaskNext: () => void;
   onPickupPrev: () => void;
@@ -30,6 +33,9 @@ export default function DriverLists({
   myTasks,
   pickupRequests,
   dashboardParams,
+  pageSize,
+  taskTotal,
+  pickupTotal,
   onTaskPrev,
   onTaskNext,
   onPickupPrev,
@@ -48,12 +54,16 @@ export default function DriverLists({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <DriverTaskList
         isAllowed={isAllowed}
         myTasks={dashboardLoading ? [] : myTasks}
         page={dashboardParams.taskPage}
         hasNextPage={taskHasNextPage}
+        dashboardMode
+        showViewAll={false}
+        totalItems={taskTotal}
+        pageSize={pageSize}
         loading={dashboardLoading}
         onPrev={onTaskPrev}
         onNext={onTaskNext}
@@ -64,6 +74,8 @@ export default function DriverLists({
         dashboardParams={dashboardParams}
         page={dashboardParams.pickupPage}
         hasNextPage={pickupHasNextPage}
+        totalItems={pickupTotal}
+        pageSize={pageSize}
         loading={dashboardLoading}
         onPrev={onPickupPrev}
         onNext={onPickupNext}

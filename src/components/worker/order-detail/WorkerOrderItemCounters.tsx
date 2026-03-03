@@ -48,7 +48,7 @@ export default function WorkerOrderItemCounters({
             return (
               <div
                 key={`${item.itemId}-${item.name}`}
-                className="rounded-lg border border-[#1DACBC]/15 px-3 py-2 text-sm transition-shadow hover:shadow-[0_12px_28px_rgba(29,172,188,0.1)]"
+                className="rounded-lg border border-[#1DACBC]/15 border-l-4 border-l-[#1DACBC] px-3 py-2 text-sm transition-shadow hover:shadow-[0_12px_28px_rgba(29,172,188,0.1)]"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">

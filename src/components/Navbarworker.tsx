@@ -60,11 +60,11 @@ const NavbarWorker = () => {
   return (
     <>
       <div className="fixed top-0 left-0 right-0 z-50 border-b bg-white">
-        <div className="container mx-auto">
-          <div className="flex justify-between items-center p-4">
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="flex items-center justify-between py-3">
             {/* Logo */}
             <Link href="/">
-              <h1 className="text-4xl font-bold text-[#1dacbc] tracking-tight">
+              <h1 className="text-3xl font-bold text-[#1dacbc] tracking-tight">
                 LAUNDRYQ
               </h1>
             </Link>
@@ -79,7 +79,7 @@ const NavbarWorker = () => {
                       onClick={() => setIsMenuOpen((prev) => !prev)}
                       aria-haspopup="menu"
                       aria-expanded={isMenuOpen}
-                      className="w-16 h-16 rounded-full bg-[#1dacbc] text-white font-semibold flex items-center justify-center hover:bg-[#14939e] transition overflow-hidden border-2 border-[#1dacbc]"
+                      className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 border-[#1dacbc] bg-[#1dacbc] font-semibold text-white transition hover:bg-[#14939e]"
                     >
                       {userData?.profileImage ? (
                         <img
@@ -88,7 +88,7 @@ const NavbarWorker = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-lg">
+                        <span className="text-base">
                           {getInitials(userData?.name || "U")}
                         </span>
                       )}
@@ -128,7 +128,7 @@ const NavbarWorker = () => {
                 </>
               ) : (
                 <Link href="/signin">
-                  <button className="bg-[#1dacbc] flex items-center gap-1 text-white py-4 px-4 rounded-full font-semibold hover:bg-[#14939e] transition">
+                  <button className="flex items-center gap-1 rounded-full bg-[#1dacbc] px-4 py-3 font-semibold text-white transition hover:bg-[#14939e]">
                     <FaCalendarDays /> Reservasion
                   </button>
                 </Link>
@@ -137,7 +137,7 @@ const NavbarWorker = () => {
           </div>
         </div>
       </div>
-      <div className="h-24" aria-hidden />
+      <div className="h-[73px]" aria-hidden />
     </>
   );
 };

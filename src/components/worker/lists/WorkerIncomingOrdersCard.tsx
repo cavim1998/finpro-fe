@@ -16,6 +16,8 @@ type Props = {
   items: WorkerOrderListItem[];
   incomingPage: number;
   hasNextIncomingPage: boolean;
+  totalItems: number | null;
+  pageSize: number;
   isLoading: boolean;
   isError: boolean;
   isFetching: boolean;
@@ -32,6 +34,8 @@ export default function WorkerIncomingOrdersCard({
   items,
   incomingPage,
   hasNextIncomingPage,
+  totalItems,
+  pageSize,
   isLoading,
   isError,
   isFetching,
@@ -41,9 +45,10 @@ export default function WorkerIncomingOrdersCard({
   onClaim,
 }: Props) {
   const theme = getIncomingListTheme();
+  const pageLabel = getPageLabel(incomingPage, pageSize, totalItems, hasNextIncomingPage);
 
   return (
-    <Card className={`rounded-2xl transition-all ${theme.containerClass}`}>
+    <Card className={`flex h-full min-h-[25rem] flex-col rounded-2xl transition-all ${theme.containerClass}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className={`text-base ${theme.accentClass}`}>{labels.incomingTitle}</CardTitle>
         <Button asChild variant="ghost" size="sm" className="gap-1">
@@ -53,7 +58,7 @@ export default function WorkerIncomingOrdersCard({
         </Button>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex flex-1 flex-col">
         {!isAllowed ? (
           <div className="text-sm text-muted-foreground">Silakan check-in dulu.</div>
         ) : isLoading ? (
@@ -63,21 +68,26 @@ export default function WorkerIncomingOrdersCard({
         ) : isError ? (
           <div className="text-sm text-destructive">Gagal memuat data.</div>
         ) : items.length === 0 ? (
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">{labels.emptyIncoming}</div>
+          <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 items-center justify-center text-center text-sm text-muted-foreground">
+              {labels.emptyIncoming}
+            </div>
             {incomingPage > 1 ? (
-              <Button size="sm" variant="outline" onClick={onPrevPage}>
-                Halaman sebelumnya
-              </Button>
+              <div className="pt-6">
+                <Button size="sm" variant="outline" onClick={onPrevPage}>
+                  prev
+                </Button>
+              </div>
             ) : null}
           </div>
         ) : (
-          <div className="space-y-3">
-            <div>
+          <div className="space-y-6">
+            <div className="space-y-3">
               {items.map((item) => (
                 <WorkerListOrderRow
                   key={item.orderStationId}
                   item={item}
+                  accentClassName={theme.itemAccentClass}
                   hoverClassName={theme.itemHoverClass}
                   right={
                     <Button
@@ -91,9 +101,10 @@ export default function WorkerIncomingOrdersCard({
                   }
                 />
               ))}
+              {items.length === 1 ? <div aria-hidden className="min-h-[9.25rem]" /> : null}
             </div>
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center justify-between">
               <Button
                 size="sm"
                 variant="outline"
@@ -103,7 +114,7 @@ export default function WorkerIncomingOrdersCard({
                 Prev
               </Button>
 
-              <div className="text-xs text-muted-foreground">Page {incomingPage}</div>
+              <div className="text-center text-xs text-muted-foreground">{pageLabel}</div>
 
               <Button
                 size="sm"
@@ -119,4 +130,22 @@ export default function WorkerIncomingOrdersCard({
       </CardContent>
     </Card>
   );
+}
+
+function getPageLabel(
+  currentPage: number,
+  pageSize: number,
+  totalItems: number | null,
+  hasNextPage: boolean,
+) {
+  if (!hasNextPage) {
+    return `Page ${currentPage} dari ${currentPage}`;
+  }
+
+  const totalPages =
+    Number.isFinite(totalItems) && totalItems !== null
+      ? Math.max(currentPage + 1, Math.ceil(totalItems / pageSize))
+      : currentPage + 1;
+
+  return `Page ${currentPage} dari ${totalPages}`;
 }

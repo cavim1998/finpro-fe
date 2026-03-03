@@ -26,7 +26,7 @@ export default function WorkerPackingHomeByOutletStaffPage() {
           incomingTitle: "Incoming to Packing",
           viewAll: "View all",
           emptyMyTasks: "Belum ada task.",
-          emptyIncoming: "Belum ada order masuk.",
+          emptyIncoming: "Belum ada task masuk.",
         },
       }}
     />

@@ -3,15 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { StationType } from "@/types";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   useWorkerStationOrdersQuery,
   useClaimWorkerOrderMutation,
@@ -36,9 +27,10 @@ type Props = {
 
 export default function WorkerLists({ station, isAllowed, labels }: Props) {
   const router = useRouter();
+  const [myPage, setMyPage] = React.useState(1);
   const [incomingPage, setIncomingPage] = React.useState(1);
-  const [claimWarningOpen, setClaimWarningOpen] = React.useState(false);
-  const incomingLimit = 3;
+  const myLimit = 2;
+  const incomingLimit = 2;
   const attendanceTodayQ = useAttendanceTodayQuery({
     enabled: isAllowed,
   });
@@ -60,8 +52,8 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
   const myQ = useWorkerStationOrdersQuery(station, "my", {
     enabled: isAllowed,
     outletId: workerOutletId,
-    limit: 3,
-    page: 1,
+    limit: myLimit,
+    page: myPage,
   });
   const incomingQ = useWorkerStationOrdersQuery(station, "incoming", {
     enabled: isAllowed,
@@ -71,9 +63,35 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
   });
 
   const claimM = useClaimWorkerOrderMutation();
-  const myItems = myQ.data ?? [];
-  const incomingItems = incomingQ.data ?? [];
-  const hasNextIncomingPage = incomingItems.length === incomingLimit;
+  const myItems = myQ.data?.items ?? [];
+  const incomingItems = incomingQ.data?.items ?? [];
+  const myTotal = Number(
+    myQ.data?.pagination?.total ?? (myItems.length < myLimit ? myItems.length : NaN),
+  );
+  const incomingTotal = Number(
+    incomingQ.data?.pagination?.total ?? (incomingItems.length < incomingLimit ? incomingItems.length : NaN),
+  );
+  const hasNextMyPageByCount = Number.isFinite(myTotal)
+    ? myPage * myLimit < myTotal
+    : myItems.length === myLimit;
+  const hasNextIncomingPageByCount = Number.isFinite(incomingTotal)
+    ? incomingPage * incomingLimit < incomingTotal
+    : incomingItems.length === incomingLimit;
+  const nextMyQ = useWorkerStationOrdersQuery(station, "my", {
+    enabled: isAllowed && hasNextMyPageByCount,
+    outletId: workerOutletId,
+    limit: myLimit,
+    page: myPage + 1,
+  });
+  const nextIncomingQ = useWorkerStationOrdersQuery(station, "incoming", {
+    enabled: isAllowed && hasNextIncomingPageByCount,
+    outletId: workerOutletId,
+    limit: incomingLimit,
+    page: incomingPage + 1,
+  });
+  const hasNextMyPage = hasNextMyPageByCount && (nextMyQ.data?.items?.length ?? 0) > 0;
+  const hasNextIncomingPage =
+    hasNextIncomingPageByCount && (nextIncomingQ.data?.items?.length ?? 0) > 0;
   const onClaim = (orderStationId: number) => {
     claimM.mutate(
       { stationType: station, orderStationId },
@@ -93,8 +111,15 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
         isAllowed={isAllowed}
         labels={resolvedLabels}
         items={myItems}
+        currentPage={myPage}
+        hasNextPage={hasNextMyPage}
+        totalItems={Number.isFinite(myTotal) ? myTotal : null}
+        pageSize={myLimit}
         isLoading={myQ.isLoading}
         isError={myQ.isError}
+        isFetching={myQ.isFetching}
+        onPrevPage={() => setMyPage((current) => Math.max(1, current - 1))}
+        onNextPage={() => setMyPage((current) => current + 1)}
       />
 
       <WorkerIncomingOrdersCard
@@ -104,35 +129,16 @@ export default function WorkerLists({ station, isAllowed, labels }: Props) {
         items={incomingItems}
         incomingPage={incomingPage}
         hasNextIncomingPage={hasNextIncomingPage}
+        totalItems={Number.isFinite(incomingTotal) ? incomingTotal : null}
+        pageSize={incomingLimit}
         isLoading={incomingQ.isLoading}
         isError={incomingQ.isError}
         isFetching={incomingQ.isFetching}
         claimPending={claimM.isPending}
         onPrevPage={() => setIncomingPage((current) => Math.max(1, current - 1))}
         onNextPage={() => setIncomingPage((current) => current + 1)}
-        onClaim={(item) => {
-          if (myItems.length > 0) {
-            setClaimWarningOpen(true);
-            return;
-          }
-
-          onClaim(item.orderStationId);
-        }}
+        onClaim={(item) => onClaim(item.orderStationId)}
       />
-
-      <Dialog open={claimWarningOpen} onOpenChange={setClaimWarningOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Task masih berjalan</DialogTitle>
-            <DialogDescription>
-              silakan selesaikan task sebelumnya sebelum mengambil task baru
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setClaimWarningOpen(false)}>Mengerti</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

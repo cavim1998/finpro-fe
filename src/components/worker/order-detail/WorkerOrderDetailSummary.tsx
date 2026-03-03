@@ -1,10 +1,15 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  formatWorkerServiceType,
+  getWorkerServiceTypeBadgeClass,
+} from "../lists/shared";
 import { formatDateTime, formatStatus } from "./shared";
 
 type Props = {
   orderLabel: string;
+  serviceType?: string;
   customerName: string;
   isBypassLocked: boolean;
   orderStatus?: string;
@@ -14,6 +19,7 @@ type Props = {
 
 export default function WorkerOrderDetailSummary({
   orderLabel,
+  serviceType,
   customerName,
   isBypassLocked,
   orderStatus,
@@ -25,7 +31,14 @@ export default function WorkerOrderDetailSummary({
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-lg font-semibold text-[#138A96]">#{orderLabel}</div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="text-lg font-semibold text-[#138A96]">#{orderLabel}</div>
+              <div
+                className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getWorkerServiceTypeBadgeClass(serviceType)}`}
+              >
+                {formatWorkerServiceType(serviceType)}
+              </div>
+            </div>
             <div className="mt-1 text-sm text-muted-foreground">{customerName}</div>
           </div>
           {isBypassLocked ? (

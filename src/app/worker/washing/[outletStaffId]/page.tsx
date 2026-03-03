@@ -26,7 +26,7 @@ export default function WorkerWashingHomeByOutletStaffPage() {
           incomingTitle: "Incoming to Washing",
           viewAll: "View all",
           emptyMyTasks: "Belum ada task.",
-          emptyIncoming: "Belum ada order masuk.",
+          emptyIncoming: "Belum ada task masuk.",
         },
       }}
     />

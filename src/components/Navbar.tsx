@@ -14,6 +14,15 @@ interface UserData {
     email: string;
     profileImage?: string | null;
     image?: string | null;
+    role?: string | null;
+    station?: string | null;
+    workerStation?: string | null;
+    outletStaff?: {
+        workerStation?: string | null;
+    } | null;
+    staff?: {
+        workerStation?: string | null;
+    } | null;
 }
 
 const Navbar = () => {
@@ -31,7 +40,13 @@ const Navbar = () => {
         email: session.user.email || '',
         profileImage: session.user.profileImage || session.user.image || null,
         image: session.user.image || session.user.profileImage || null,
+        role: session.user.role || null,
+        station: session.user.station || null,
+        workerStation: session.user.workerStation || null,
+        outletStaff: session.user.outletStaff || null,
+        staff: session.user.staff || null,
     } : null;
+    const dashboardHref = getDashboardHref(userData);
 
     const navItems = [
         { label: 'Home', href: '/' },
@@ -172,6 +187,14 @@ const Navbar = () => {
                                         </div>
 
                                         <div className="py-2">
+                                            {dashboardHref ? (
+                                                <Link
+                                                    href={dashboardHref}
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-[#f2fbfb]"
+                                                >
+                                                    Dashboard
+                                                </Link>
+                                            ) : null}
                                             <Link
                                                 href="/profile"
                                                 className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-[#f2fbfb]"
@@ -249,6 +272,15 @@ const Navbar = () => {
                     <div className="px-3 sm:px-4 pt-3 pb-4 space-y-2">
                         {!loading && isLoggedIn ? (
                             <>
+                                {dashboardHref ? (
+                                    <Link
+                                        href={dashboardHref}
+                                        onClick={() => setIsMobileNavOpen(false)}
+                                        className="w-full rounded-lg border border-[#e6f4f6] py-2.5 font-semibold text-[#1dacbc] flex items-center justify-center hover:bg-[#f2fbfb] transition"
+                                    >
+                                        Dashboard
+                                    </Link>
+                                ) : null}
                                 <Link
                                     href="/reservation"
                                     onClick={() => setIsMobileNavOpen(false)}
@@ -297,3 +329,30 @@ const Navbar = () => {
 }
 
 export default Navbar
+
+function getDashboardHref(user: UserData | null) {
+    if (!user) return null;
+
+    const role = String(user.role ?? '').toUpperCase();
+
+    if (role === 'DRIVER') {
+        return '/driver';
+    }
+
+    if (role !== 'WORKER') {
+        return null;
+    }
+
+    const rawStation =
+        user.station ??
+        user.workerStation ??
+        user.outletStaff?.workerStation ??
+        user.staff?.workerStation ??
+        'WASHING';
+
+    const station = String(rawStation).toUpperCase();
+
+    if (station.includes('IRONING')) return '/worker/ironing';
+    if (station.includes('PACKING')) return '/worker/packing';
+    return '/worker/washing';
+}
