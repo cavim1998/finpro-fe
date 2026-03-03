@@ -14,7 +14,7 @@ import {
   useDriverOrderDetailQuery,
   usePickupArrivedDirectMutation,
 } from "@/features/driver/driver.hooks";
-import { ArrowLeft, ExternalLink, Loader2, MapPin, Phone, User } from "lucide-react";
+import { ArrowLeft, CalendarDays, ExternalLink, Loader2, MapPin, Phone, User } from "lucide-react";
 import { toast } from "sonner";
 
 function asObj(v: unknown): Record<string, unknown> {
@@ -31,6 +31,19 @@ function pickText(...values: unknown[]) {
     if (typeof v === "string" && v.trim()) return v;
   }
   return "-";
+}
+
+function formatDateTime(v?: string | Date | null) {
+  if (!v) return "-";
+  const d = typeof v === "string" ? new Date(v) : v;
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function DriverOrderDetailPage() {
@@ -90,6 +103,12 @@ export default function DriverOrderDetailPage() {
     addressObj.addressText,
     addressObj.label,
   );
+  const schedulePickupAt = formatDateTime(
+    (task.schedulePickupAt as string | undefined) ??
+      (effectivePickup.schedulePickupAt as string | undefined) ??
+      (effectivePickup.scheduledPickupAt as string | undefined) ??
+      null,
+  );
 
   const lat = asNum(effectivePickup.latitude) ?? asNum(addressObj.latitude);
   const lng = asNum(effectivePickup.longitude) ?? asNum(addressObj.longitude);
@@ -110,6 +129,12 @@ export default function DriverOrderDetailPage() {
     ? "Apakah kamu yakin sudah tiba di alamat client untuk order ini?"
     : "Apakah kamu yakin sudah tiba di outlet untuk order ini?";
   const confirmText = isDeliveryTask ? "Ya, Arrived at Client" : "Ya, Arrived";
+  const accentColor = "#1DACBC";
+  const accentBorderClass = "border-[#1DACBC]/30";
+  const accentTitleClass = "text-[#138A96]";
+  const accentSoftBgClass = "bg-[#1DACBC]/5";
+  const accentButtonClass = "bg-[#1DACBC] text-white hover:bg-[#1697A5]";
+  const accentOutlineClass = "border-[#1DACBC]/30 text-[#138A96] hover:bg-[#1DACBC]/5";
 
   const onConfirmArrived = async () => {
     try {
@@ -139,16 +164,23 @@ export default function DriverOrderDetailPage() {
     <RequireCheckInRQ roles={["DRIVER"]} redirectTo={Number.isFinite(id) ? `/attendance?next=/driver/order/${id}` : "/attendance?next=/driver"}>
       <NavbarWorker />
 
-      <div className="container mx-auto px-4 py-6 pb-24 space-y-4">
-        <Button asChild variant="ghost" className="gap-2">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24 space-y-4">
+        <Button
+          asChild
+          variant="ghost"
+          className="gap-2 hover:bg-transparent"
+          style={{ color: accentColor }}
+        >
           <Link href="/driver">
             <ArrowLeft className="h-4 w-4" /> Kembali
           </Link>
         </Button>
 
-        <Card className="rounded-2xl">
+        <Card
+          className={`rounded-2xl border ${accentBorderClass} transition-shadow hover:shadow-[0_16px_36px_rgba(29,172,188,0.12)]`}
+        >
           <CardHeader>
-            <CardTitle className="text-lg">Detail Order Driver</CardTitle>
+            <CardTitle className={`text-lg ${accentTitleClass}`}>Detail Order Driver</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-4">
@@ -161,7 +193,9 @@ export default function DriverOrderDetailPage() {
             ) : (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="rounded-xl border overflow-hidden min-h-[320px]">
+                  <div
+                    className={`rounded-xl border ${accentBorderClass} overflow-hidden min-h-[320px]`}
+                  >
                     <iframe
                       title="Driver Order Map"
                       src={embedSrc}
@@ -171,9 +205,9 @@ export default function DriverOrderDetailPage() {
                     />
                   </div>
 
-                  <div className="rounded-xl border p-4 space-y-3">
+                  <div className={`rounded-xl border ${accentBorderClass} ${accentSoftBgClass} p-4 space-y-3`}>
                     <div className="flex items-start gap-2">
-                      <User className="h-4 w-4 mt-0.5" />
+                      <User className="h-4 w-4 mt-0.5" style={{ color: accentColor }} />
                       <div>
                         <p className="text-xs text-muted-foreground">Nama</p>
                         <p className="font-semibold">{customerName}</p>
@@ -181,7 +215,7 @@ export default function DriverOrderDetailPage() {
                     </div>
 
                     <div className="flex items-start gap-2">
-                      <Phone className="h-4 w-4 mt-0.5" />
+                      <Phone className="h-4 w-4 mt-0.5" style={{ color: accentColor }} />
                       <div>
                         <p className="text-xs text-muted-foreground">Nomor Telp</p>
                         <p className="font-semibold">{phone}</p>
@@ -189,14 +223,22 @@ export default function DriverOrderDetailPage() {
                     </div>
 
                     <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 mt-0.5" />
+                      <MapPin className="h-4 w-4 mt-0.5" style={{ color: accentColor }} />
                       <div>
                         <p className="text-xs text-muted-foreground">Alamat Lengkap</p>
                         <p className="font-semibold">{addressText}</p>
                       </div>
                     </div>
 
-                    <Button asChild variant="outline" className="w-full rounded-xl">
+                    <div className="flex items-start gap-2">
+                      <CalendarDays className="h-4 w-4 mt-0.5" style={{ color: accentColor }} />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Schedule Pickup At</p>
+                        <p className="font-semibold">{schedulePickupAt}</p>
+                      </div>
+                    </div>
+
+                    <Button asChild variant="outline" className={`w-full rounded-xl ${accentOutlineClass}`}>
                       <a href={mapsHref} target="_blank" rel="noopener noreferrer">
                         Open Google Maps <ExternalLink className="h-4 w-4" />
                       </a>
@@ -205,7 +247,7 @@ export default function DriverOrderDetailPage() {
                 </div>
 
                 <Button
-                  className="w-full rounded-xl"
+                  className={`w-full rounded-xl ${accentButtonClass}`}
                   disabled={actionLoading}
                   onClick={() => setConfirmOpen(true)}
                 >

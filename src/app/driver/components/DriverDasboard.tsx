@@ -32,12 +32,17 @@ export default function DriverDashboard() {
   const attendanceQ = useAttendanceTodayQuery();
   const clockOutM = useClockOutMutation();
 
-  const pageSize = 5;
+  const pageSize = 2;
   const [taskPage, setTaskPage] = useState(1);
   const [pickupPage, setPickupPage] = useState(1);
   const [notificationOpen, setNotificationOpen] = useState<boolean | null>(null);
 
   const dashboardQ = useDriverDashboard({ pageSize, taskPage, pickupPage });
+  const nextDashboardQ = useDriverDashboard({
+    pageSize,
+    taskPage: taskPage + 1,
+    pickupPage: pickupPage + 1,
+  });
 
   const today = attendanceQ.data;
   const isCheckedIn = !!today?.isCheckedIn;
@@ -69,19 +74,32 @@ export default function DriverDashboard() {
 
   const tasks = (dashboardQ.data?.tasks?.items ?? []).filter(isActiveTask);
   const pickupRequests = dashboardQ.data?.pickupRequests?.items ?? [];
-  const taskTotalPages = Number(dashboardQ.data?.tasks?.totalPages ?? 0);
+  const taskTotal = Number(
+    stats.inProgress ?? (tasks.length < pageSize ? tasks.length : NaN),
+  );
+  const pickupTotal = Number(
+    dashboardQ.data?.pickupRequests?.total ??
+      (pickupRequests.length < pageSize ? pickupRequests.length : NaN),
+  );
   const pickupTotalPages = Number(dashboardQ.data?.pickupRequests?.totalPages ?? 0);
+  const nextTasks = (nextDashboardQ.data?.tasks?.items ?? []).filter(isActiveTask);
+  const nextPickupRequests = nextDashboardQ.data?.pickupRequests?.items ?? [];
 
-  const taskHasNextPage =
-    (taskTotalPages > 0 && taskPage < taskTotalPages) || tasks.length === pageSize;
-  const pickupHasNextPage =
-    (pickupTotalPages > 0 && pickupPage < pickupTotalPages) || pickupRequests.length === pageSize;
+  const taskHasNextByCount =
+    Number.isFinite(taskTotal) ? taskPage * pageSize < taskTotal : tasks.length === pageSize;
+  const pickupHasNextByCount =
+    (pickupTotalPages > 0 && pickupPage < pickupTotalPages) ||
+    (Number.isFinite(pickupTotal)
+      ? pickupPage * pageSize < pickupTotal
+      : pickupRequests.length === pageSize);
+  const taskHasNextPage = taskHasNextByCount && nextTasks.length > 0;
+  const pickupHasNextPage = pickupHasNextByCount && nextPickupRequests.length > 0;
 
   const resolvedNotificationOpen =
     notificationOpen ?? (isAllowed && pickupRequests.length > 0);
 
   return (
-    <div className="container mx-auto space-y-6 pb-24">
+    <div className="mx-auto w-full max-w-7xl space-y-6 pb-24 px-4">
       <DriverHeader
         displayName={displayName}
         loadingToday={attendanceQ.isLoading}
@@ -148,6 +166,9 @@ export default function DriverDashboard() {
           myTasks={tasks}
           pickupRequests={pickupRequests}
           dashboardParams={{ pageSize, taskPage, pickupPage }}
+          pageSize={pageSize}
+          taskTotal={Number.isFinite(taskTotal) ? taskTotal : null}
+          pickupTotal={Number.isFinite(pickupTotal) ? pickupTotal : null}
           onTaskPrev={() => setTaskPage((p) => Math.max(1, p - 1))}
           onTaskNext={() => setTaskPage((p) => p + 1)}
           onPickupPrev={() => setPickupPage((p) => Math.max(1, p - 1))}

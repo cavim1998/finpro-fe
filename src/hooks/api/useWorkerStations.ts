@@ -21,6 +21,7 @@ export type WorkerOrderListItem = {
   orderStationId: number;
   orderId: string;
   orderNo: string;
+  serviceType?: string;
   customerName: string;
   clothesCount: number;
   totalKg: string | number; // Decimal sering jadi string
@@ -28,10 +29,21 @@ export type WorkerOrderListItem = {
   stationStatus: StationStatus;
 };
 
+export type WorkerStationOrdersResponse = {
+  items: WorkerOrderListItem[];
+  pagination?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    totalPages?: number;
+  };
+};
+
 export type WorkerOrderDetail = {
   id: string;
   orderNo?: string;
   orderNumber?: string;
+  serviceType?: string;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -91,7 +103,48 @@ async function getStationOrders(params: {
   const res = await axiosInstance.get(`/worker/stations/${stationType}/orders/${outletId}`, {
     params: { scope, page, limit },
   });
-  return res.data?.data as WorkerOrderListItem[];
+  return normalizeStationOrdersResponse(res.data?.data ?? res.data);
+}
+
+function normalizeStationOrdersResponse(raw: unknown): WorkerStationOrdersResponse {
+  if (Array.isArray(raw)) {
+    return { items: raw as WorkerOrderListItem[] };
+  }
+
+  const payload = (raw ?? {}) as {
+    items?: WorkerOrderListItem[];
+    data?: WorkerOrderListItem[];
+    pagination?: {
+      page?: number;
+      limit?: number;
+      total?: number;
+      totalPages?: number;
+    };
+    meta?: {
+      page?: number;
+      take?: number;
+      total?: number;
+    };
+  };
+
+  const pagination = payload.pagination ?? {
+    page: payload.meta?.page,
+    limit: payload.meta?.take,
+    total: payload.meta?.total,
+    totalPages:
+      typeof payload.meta?.total === "number" && typeof payload.meta?.take === "number"
+        ? Math.ceil(payload.meta.total / payload.meta.take)
+        : undefined,
+  };
+
+  return {
+    items: Array.isArray(payload.items)
+      ? payload.items
+      : Array.isArray(payload.data)
+        ? payload.data
+        : [],
+    pagination,
+  };
 }
 
 async function claimOrder(params: { stationType: StationType; orderStationId: number }) {

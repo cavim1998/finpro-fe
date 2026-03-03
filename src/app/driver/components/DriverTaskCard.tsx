@@ -38,9 +38,15 @@ export default function DriverTaskCard({ task, disabled }: Props) {
   const customerName =
     String(profile.fullName ?? profile.name ?? pickupRequest.customerName ?? customer.email ?? "Pelanggan");
   const createdAt = formatDateTime((pickupRequest.createdAt as string | undefined) ?? undefined);
+  const schedulePickupAt = formatDateTime(
+    (t.schedulePickupAt as string | undefined) ??
+      (pickupRequest.schedulePickupAt as string | undefined) ??
+      (pickupRequest.scheduledPickupAt as string | undefined) ??
+      undefined,
+  );
 
   return (
-    <div className="rounded-xl border p-3 transition-shadow hover:shadow-[0_12px_28px_rgba(249,115,22,0.12)]">
+    <div className="min-h-[7.25rem] rounded-2xl border border-l-4 border-l-orange-500 p-3 transition-shadow hover:shadow-[0_12px_28px_rgba(249,115,22,0.12)]">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <p className="font-semibold text-base line-clamp-1">{customerName}</p>
@@ -48,6 +54,7 @@ export default function DriverTaskCard({ task, disabled }: Props) {
             Status: <span className="font-medium">{status}</span>
           </p>
           <p className="text-xs text-muted-foreground">Request: {createdAt}</p>
+          <p className="text-xs text-muted-foreground">Schedule Pickup At: {schedulePickupAt}</p>
         </div>
 
         <Button asChild variant="outline" size="sm" disabled={disabled || !Number.isFinite(taskId)}>

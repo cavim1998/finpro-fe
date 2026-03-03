@@ -30,6 +30,9 @@ export default function WorkerCompletedOrders({
 }: Props) {
   const [page, setPage] = React.useState(1);
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
+  const [incomingSortBy, setIncomingSortBy] = React.useState<"enteredAt" | "serviceType">(
+    "enteredAt",
+  );
   const [draftStartDate, setDraftStartDate] = React.useState("");
   const [draftEndDate, setDraftEndDate] = React.useState("");
   const [startDate, setStartDate] = React.useState("");
@@ -51,7 +54,7 @@ export default function WorkerCompletedOrders({
   }, [search, startDate, endDate]);
 
   const filteredItems = React.useMemo(() => {
-    const items = ordersQ.data ?? [];
+    const items = ordersQ.data?.items ?? [];
 
     return items
       .filter((item) => {
@@ -65,13 +68,22 @@ export default function WorkerCompletedOrders({
         return matchesSearch && matchesDate;
       })
       .sort((a, b) => {
+        if (scope === "incoming" && incomingSortBy === "serviceType") {
+          const leftRank = a.serviceType?.toUpperCase() === "PREMIUM" ? 0 : 1;
+          const rightRank = b.serviceType?.toUpperCase() === "PREMIUM" ? 0 : 1;
+
+          if (leftRank !== rightRank) {
+            return leftRank - rightRank;
+          }
+        }
+
         const left = new Date(a.enteredAt).getTime();
         const right = new Date(b.enteredAt).getTime();
 
         if (Number.isNaN(left) || Number.isNaN(right)) return 0;
         return sortOrder === "asc" ? left - right : right - left;
       });
-  }, [endDate, ordersQ.data, search, sortOrder, startDate]);
+  }, [endDate, incomingSortBy, ordersQ.data, scope, search, sortOrder, startDate]);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / limit));
   const currentPage = Math.min(page, totalPages);
   const paginatedItems = filteredItems.slice((currentPage - 1) * limit, currentPage * limit);
@@ -96,9 +108,16 @@ export default function WorkerCompletedOrders({
     setPage(1);
     setSortOrder((current) => (current === "asc" ? "desc" : "asc"));
   };
+  const onIncomingSortByChange = (value: "enteredAt" | "serviceType") => {
+    setPage(1);
+    setIncomingSortBy(value);
+    if (value === "enteredAt") {
+      setSortOrder("asc");
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-6 pb-24 space-y-4">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24 space-y-4">
       <Card className={`rounded-2xl border ${theme.borderClass} ${theme.hoverShadowClass}`}>
         <CardHeader>
           <CardTitle className={`text-lg ${theme.textClass}`}>{title}</CardTitle>
@@ -111,6 +130,8 @@ export default function WorkerCompletedOrders({
             draftStartDate={draftStartDate}
             draftEndDate={draftEndDate}
             sortOrder={sortOrder}
+            isIncomingScope={scope === "incoming"}
+            incomingSortBy={incomingSortBy}
             disabled={ordersQ.isFetching}
             onSearchChange={setSearchInput}
             onDraftStartDateChange={setDraftStartDate}
@@ -118,6 +139,7 @@ export default function WorkerCompletedOrders({
             onApplyFilters={onApplyFilters}
             onResetFilters={onResetFilters}
             onToggleSort={onToggleSort}
+            onIncomingSortByChange={onIncomingSortByChange}
           />
 
           {ordersQ.isLoading ? (

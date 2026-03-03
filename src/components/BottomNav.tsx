@@ -187,6 +187,8 @@ export function BottomNav({ role, workerHomePath }: BottomNavProps) {
 
   const isActivePath = (target: string) =>
     pathname === target || pathname.startsWith(target + "/");
+  const useHighlightedActiveState =
+    effectiveRole === "WORKER" || effectiveRole === "DRIVER";
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 safe-bottom">
@@ -199,13 +201,26 @@ export function BottomNav({ role, workerHomePath }: BottomNavProps) {
             <Link
               key={item.path}
               href={item.path}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-lg transition-colors ${
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={[
+                "flex-1 flex flex-col items-center justify-center gap-1 px-1 py-2 transition-all",
+                useHighlightedActiveState
+                  ? isActive
+                    ? "mx-1 my-1 rounded-2xl text-[#138A96]"
+                    : "mx-1 my-1 rounded-2xl text-slate-500 hover:text-slate-700"
+                  : isActive
+                    ? "rounded-lg text-primary"
+                    : "rounded-lg text-muted-foreground hover:text-foreground",
+              ].join(" ")}
             >
-              <Icon className={`h-5 w-5 ${isActive ? "stroke-[2.5px]" : ""}`} />
+              <Icon
+                className={`h-5 w-5 ${
+                  isActive
+                    ? useHighlightedActiveState
+                      ? "stroke-[2.25px]"
+                      : "stroke-[2.5px]"
+                    : ""
+                }`}
+              />
               <span
                 className={`text-[10px] font-medium ${
                   isActive ? "font-semibold" : ""

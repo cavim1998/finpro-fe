@@ -109,7 +109,7 @@ export default function DriverOutletHistoryPage() {
           <NavbarWorker />
         </div>
 
-        <div className="container mx-auto px-4 py-6 pb-24">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24">
           <Card className={`shadow-card ${theme.borderClass} ${theme.hoverShadowClass}`}>
             <CardHeader>
               <CardTitle className={`text-xl ${theme.textClass}`}>Completed Driver Tasks</CardTitle>

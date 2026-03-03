@@ -113,6 +113,7 @@ export default function WorkerStationOrderDetailPage({
                 <div className="space-y-4">
                   <WorkerOrderDetailSummary
                     orderLabel={detailState.orderLabel}
+                    serviceType={order?.serviceType}
                     customerName={detailState.customerName}
                     isBypassLocked={detailState.isBypassLocked}
                     orderStatus={order?.status}

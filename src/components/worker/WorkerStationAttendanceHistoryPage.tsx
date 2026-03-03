@@ -38,7 +38,7 @@ export default function WorkerStationAttendanceHistoryPage({ stationPath }: Prop
         </div>
 
         {effectiveOutletStaffId > 0 ? (
-          <div className="container mx-auto px-4 py-6 pb-24">
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24">
             <AttendanceHistoryPanel />
           </div>
         ) : null}

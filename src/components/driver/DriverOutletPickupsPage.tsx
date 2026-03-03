@@ -96,7 +96,7 @@ export default function DriverOutletPickupsPage() {
           <NavbarWorker />
         </div>
 
-        <div className="container mx-auto px-4 py-6 pb-24">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24">
           <Card className={`shadow-card ${theme.borderClass} ${theme.hoverShadowClass}`}>
             <CardHeader>
               <CardTitle className={`text-xl ${theme.textClass}`}>All Pickup and Deliver Requests</CardTitle>

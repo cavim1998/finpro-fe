@@ -79,7 +79,7 @@ export default function WorkerTaskHistory({
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 pb-24">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 pb-24">
       <Card className="rounded-2xl border border-green-200 transition-shadow hover:shadow-[0_16px_36px_rgba(34,197,94,0.14)]">
         <CardHeader className="space-y-2">
           <CardTitle className="text-lg text-green-600">{title}</CardTitle>
